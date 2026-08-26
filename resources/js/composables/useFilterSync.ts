@@ -1,4 +1,4 @@
-import { reactive, watch } from 'vue'
+import { reactive, watch, onUnmounted } from 'vue'
 import { router } from '@inertiajs/vue3'
 
 type FilterValue =
@@ -11,99 +11,190 @@ type FilterValue =
     | number[]
     | boolean[]
 
-interface UseFilterSyncOptions<T extends Record<string, FilterValue>> {
-    routeName?: string
+type FilterRecord = Record<string, FilterValue>
+
+interface UseFilterSyncOptions<T extends FilterRecord> {
+    /**
+     * Wayfinder-generated URL.
+     *
+     * If omitted, the current URL is used.
+     */
+    url?: string
+
+    /**
+     * Initial filter values.
+     */
     initialFilters: T
+
+    /**
+     * Debounce time in milliseconds.
+     */
     debounce?: number
+
+    /**
+     * Automatically apply filters when they change.
+     */
     autoApply?: boolean
+
+    /**
+     * Preserve Inertia component state.
+     */
     preserveState?: boolean
+
+    /**
+     * Preserve scroll position.
+     */
     preserveScroll?: boolean
 }
 
-export function useFilterSync<T extends Record<string, FilterValue>>({
-    routeName,
+export function useFilterSync<T extends FilterRecord>({
+    url,
     initialFilters,
     debounce = 500,
     autoApply = true,
     preserveState = true,
     preserveScroll = true,
 }: UseFilterSyncOptions<T>) {
-    const filters = reactive({ ...initialFilters }) as T
+    const filters = reactive({
+        ...initialFilters,
+    }) as T
 
     let timeout: ReturnType<typeof setTimeout> | null = null
 
-    const applyFilters = (): void => {
-        const cleanedFilters: Partial<T> = {}
+    /**
+     * Remove empty values before sending the request.
+     */
+    const getCleanedFilters = (): Partial<T> => {
+        const cleaned: Partial<T> = {}
 
-        Object.keys(filters).forEach((key) => {
-            const value = filters[key as keyof T]
+        for (const key of Object.keys(filters) as Array<keyof T>) {
+            const value = filters[key]
 
             if (
                 value === '' ||
                 value === null ||
                 value === undefined
             ) {
-                return
+                continue
             }
 
             if (Array.isArray(value) && value.length === 0) {
-                return
+                continue
             }
 
-            cleanedFilters[key as keyof T] = value
-        })
+            cleaned[key] = value
+        }
+
+        return cleaned
+    }
+
+    /**
+     * Set a filter value.
+     *
+     * The assignment is isolated here because TypeScript cannot
+     * safely narrow generic indexed properties after Array.isArray().
+     */
+    const setFilterValue = (
+        key: keyof T,
+        value: FilterValue,
+    ): void => {
+        ;(filters as Record<keyof T, unknown>)[key] = value
+    }
+
+    /**
+     * Apply filters.
+     */
+    const applyFilters = (): void => {
+        const cleanedFilters = getCleanedFilters()
 
         router.get(
-            route(routeName ?? route().current()!),
+            url ?? window.location.pathname,
             cleanedFilters,
             {
                 preserveState,
                 preserveScroll,
                 replace: true,
-            }
+            },
         )
     }
 
-    const resetFilters = (): void => {
-        Object.keys(filters).forEach((key) => {
-            const filterKey = key as keyof T
-            const value = filters[filterKey]
-
-            if (Array.isArray(value)) {
-                ;(filters[filterKey] as FilterValue) = [] as never
-            } else {
-                ;(filters[filterKey] as FilterValue) = '' as never
-            }
-        })
-
-        applyFilters()
+    /**
+     * Cancel pending debounced request.
+     */
+    const clearDebounce = (): void => {
+        if (timeout !== null) {
+            clearTimeout(timeout)
+            timeout = null
+        }
     }
 
-    const removeFilter = (key: keyof T): void => {
-        if (Array.isArray(filters[key])) {
-            ;(filters[key] as FilterValue) = [] as never
-        } else {
-            ;(filters[key] as FilterValue) = '' as never
+    /**
+     * Schedule filter application.
+     */
+    const scheduleApply = (): void => {
+        clearDebounce()
+
+        timeout = setTimeout(() => {
+            timeout = null
+            applyFilters()
+        }, debounce)
+    }
+
+    /**
+     * Reset all filters.
+     */
+    const resetFilters = (): void => {
+        for (const key of Object.keys(filters) as Array<keyof T>) {
+            const currentValue = filters[key]
+
+            if (Array.isArray(currentValue)) {
+                setFilterValue(key, [])
+            } else {
+                setFilterValue(key, '')
+            }
         }
 
+        clearDebounce()
         applyFilters()
     }
 
+    /**
+     * Remove one filter.
+     */
+    const removeFilter = (key: keyof T): void => {
+        const currentValue = filters[key]
+
+        if (Array.isArray(currentValue)) {
+            setFilterValue(key, [])
+        } else {
+            setFilterValue(key, '')
+        }
+
+        clearDebounce()
+        applyFilters()
+    }
+
+    /**
+     * Automatically apply filters when changed.
+     */
     if (autoApply) {
         watch(
             filters,
             () => {
-                if (timeout) {
-                    clearTimeout(timeout)
-                }
-
-                timeout = setTimeout(applyFilters, debounce)
+                scheduleApply()
             },
             {
                 deep: true,
-            }
+            },
         )
     }
+
+    /**
+     * Cleanup debounce timer when component is destroyed.
+     */
+    onUnmounted(() => {
+        clearDebounce()
+    })
 
     return {
         filters,
@@ -112,4 +203,5 @@ export function useFilterSync<T extends Record<string, FilterValue>>({
         removeFilter,
     }
 }
+
 export default useFilterSync

@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { useId } from 'vue'
 
-import AppFormField from '@/Components/Ui/AppFormField.vue'
-import AppSelectControl from '@/Components/Ui/AppSelectControl.vue'
+import AppFormField from '@/components/ui/AppFormField.vue'
+import AppSelectControl from '@/components/ui/AppSelectControl.vue'
 
 import type {
     FormOptionInput,

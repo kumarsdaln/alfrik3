@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import AppFormField from '@/Components/Ui/AppFormField.vue'
+import AppFormField from '@/components/ui/AppFormField.vue'
 
 interface Props {
     name?: string

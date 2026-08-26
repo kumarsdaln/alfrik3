@@ -1,78 +1,77 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import { Form } from '@inertiajs/vue3'
+    import { ref } from 'vue'
+    import { Form } from '@inertiajs/vue3'
 
-import AdminLayout from '@/Layouts/AdminLayout.vue'
-import AdminFormLayout from '@/Layouts/AdminFormLayout.vue'
+    import AppFormLayout from '@/layouts/dashboard/AppFormLayout.vue'
 
-import AppButton from '@/components/Ui/AppButton.vue'
-import AppTextarea from '@/components/form/AppTextarea.vue'
+    import AppButton from '@/components/ui/AppButton.vue'
+    import AppTextarea from '@/components/form/AppTextarea.vue'
 
-import UserPicker from '../Partials/UserPicker.vue'
+    import UserPicker from '../Partials/UserPicker.vue'
 
-import {
-    update,
-} from '@/actions/App/Domains/Interview/Http/Controllers/AdminQuestionController'
-
-
-// Types
-type ParticipantRole =
-    | 'interviewer'
-    | 'interviewee'
+    import {
+        update,
+    } from '@/actions/App/Http/Controllers/Admin/Interview/QuestionController'
 
 
-interface ParticipantUser {
-    id: number
-    name: string
-    email?: string
-    avatar?: string | null
-}
+    // Types
+    type ParticipantRole =
+        | 'interviewer'
+        | 'interviewee'
 
 
-interface Participant {
-    id: number
-    user_id: number
-    role: ParticipantRole
-    user: ParticipantUser
-}
+    interface ParticipantUser {
+        id: number
+        name: string
+        email?: string
+        avatar?: string | null
+    }
 
 
-interface Interview {
-    id: number
-    participants: Participant[]
-}
+    interface Participant {
+        id: number
+        user_id: number
+        role: ParticipantRole
+        user: ParticipantUser
+    }
 
 
-interface Question {
-    id: number
-    question: string
-    asked_by: number | null
-}
+    interface Interview {
+        id: number
+        participants: Participant[]
+    }
 
 
-interface Props {
-    interview: Interview
-    question: Question
-}
+    interface Question {
+        id: number
+        question: string
+        asked_by: number | null
+    }
 
 
-const props = defineProps<Props>()
+    interface Props {
+        interview: Interview
+        question: Question
+    }
 
 
-// Form Values
-const questionText = ref(
-    props.question.question ?? '',
-)
-
-const askedBy = ref<number | null>(
-    props.question.asked_by ?? null,
-)
+    const props = defineProps<Props>()
 
 
-// Navigation
-function goBack(): void {
-    history.back()
-}
+    // Form Values
+    const questionText = ref(
+        props.question.question ?? '',
+    )
+
+    const askedBy = ref<number | null>(
+        props.question.asked_by ?? null,
+    )
+
+
+    // Navigation
+    function goBack(): void {
+        history.back()
+    }
 </script>
 
 
@@ -87,7 +86,7 @@ function goBack(): void {
             processing,
             isDirty,
         }">
-            <AdminFormLayout title="Edit Question" description="Update the question and select who asked it.">
+            <AppFormLayout title="Edit Question" description="Update the question and select who asked it.">
 
                 <div class="max-w-4xl space-y-6">
 
@@ -127,7 +126,7 @@ function goBack(): void {
                     </div>
                 </template>
 
-            </AdminFormLayout>
+            </AppFormLayout>
         </template>
     </Form>
 </template>

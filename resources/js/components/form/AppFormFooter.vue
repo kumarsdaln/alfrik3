@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Check } from '@lucide/vue'
-import AppButton from '@/Components/Ui/AppButton.vue'
+import AppButton from '@/components/ui/AppButton.vue'
 
 interface Props {
     processing?: boolean

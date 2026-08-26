@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { useId } from 'vue'
 
-import AppFormField from '@/Components/Ui/AppFormField.vue'
-import AppTextareaControl from '@/Components/Ui/AppTextareaControl.vue'
+import AppFormField from '@/components/ui/AppFormField.vue'
+import AppTextareaControl from '@/components/ui/AppTextareaControl.vue'
 
 interface Props {
     name?: string

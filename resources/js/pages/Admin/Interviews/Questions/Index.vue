@@ -13,16 +13,14 @@ import {
     UserRound,
 } from '@lucide/vue'
 
-import AdminLayout from '@/Layouts/AdminLayout.vue'
+import PageHeader from '@/components/dashboard/PageHeader.vue'
+import AppButton from '@/components/ui/AppButton.vue'
+import AppHeading from '@/components/ui/AppHeading.vue'
+import AppText from '@/components/ui/AppText.vue'
 
-import PageHeader from '@/components/Admin/PageHeader.vue'
-import AppButton from '@/components/Ui/AppButton.vue'
-import AppHeading from '@/components/Ui/AppHeading.vue'
-import AppText from '@/components/Ui/AppText.vue'
+import AdminQuestionController from '@/actions/App/Http/Controllers/Admin/Interview/QuestionController'
 
-import AdminQuestionController from '@/actions/App/Domains/Interview/Http/Controllers/AdminQuestionController'
-
-import AdminAnswerController from '@/actions/App/Domains/Interview/Http/Controllers/AdminAnswerController'
+import AdminAnswerController from '@/actions/App/Http/Controllers/Admin/Interview/AnswerController'
 
 interface User {
     id: number

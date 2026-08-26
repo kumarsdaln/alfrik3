@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
-import AppFormField from '@/Components/Ui/AppFormField.vue'
+import AppFormField from '@/components/ui/AppFormField.vue'
 import X from '@/Icons/X.vue'
 
 interface Row {

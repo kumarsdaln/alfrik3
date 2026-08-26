@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Admin\User;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\Role;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -14,7 +16,7 @@ class UserController extends Controller
     /**
      * Display a listing of users.
      */
-    public function index(Request $request): Response
+    public function index(Request $request): Response|\Illuminate\Http\JsonResponse
     {
         $users = User::query()
             ->with('roles')
@@ -32,7 +34,7 @@ class UserController extends Controller
             )
             ->when(
                 $request->filled('status'),
-                fn ($query) => $query->where(
+                fn($query) => $query->where(
                     'status',
                     $request->string('status')->toString()
                 )
@@ -70,6 +72,10 @@ class UserController extends Controller
             )
             ->withQueryString();
 
+        if ($request->expectsJson()) {
+            return response()->json($users);
+        }
+
         return Inertia::render('Admin/Users/Index', [
             'users' => $users,
         ]);
@@ -80,7 +86,17 @@ class UserController extends Controller
      */
     public function create(): Response
     {
-        return Inertia::render('Admin/Users/Create');
+        $roles = Role::query()
+            ->orderBy('name')
+            ->get([
+                'id',
+                'slug',
+                'name',
+            ]);
+
+        return Inertia::render('Admin/Users/Create', [
+            'roles' => $roles,
+        ]);
     }
 
     /**
@@ -94,6 +110,7 @@ class UserController extends Controller
                 'string',
                 'max:255',
             ],
+
             'email' => [
                 'required',
                 'string',
@@ -101,20 +118,34 @@ class UserController extends Controller
                 'max:255',
                 'unique:users,email',
             ],
+
             'password' => [
                 'required',
                 'string',
                 'min:8',
                 'confirmed',
             ],
-            'status' => [
+
+            'is_active' => [
+                'required',
+                'boolean',
+            ],
+
+            'role' => [
                 'required',
                 'string',
-                'in:active,inactive',
+                'exists:roles,id',
             ],
         ]);
 
-        $user = User::create($validated);
+        $user = User::create([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'password' => Hash::make($validated['password']),
+            'is_active' => $validated['is_active'],
+        ]);
+
+        $user->roles()->attach($validated['role']);
 
         Inertia::flash('toast', [
             'type' => 'success',
@@ -164,6 +195,7 @@ class UserController extends Controller
                 'string',
                 'max:255',
             ],
+
             'email' => [
                 'required',
                 'string',
@@ -171,14 +203,28 @@ class UserController extends Controller
                 'max:255',
                 'unique:users,email,' . $user->id,
             ],
-            'status' => [
+
+            'is_active' => [
                 'required',
-                'string',
-                'in:active,inactive',
+                'boolean',
+            ],
+
+            'role' => [
+                'required',
+                'integer',
+                'exists:roles,id',
             ],
         ]);
 
-        $user->update($validated);
+        $user->update([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'is_active' => $validated['is_active'],
+        ]);
+
+        $user->roles()->sync([
+            $validated['role'],
+        ]);
 
         Inertia::flash('toast', [
             'type' => 'success',
@@ -199,15 +245,14 @@ class UserController extends Controller
         User $user,
     ): RedirectResponse {
         $validated = $request->validate([
-            'status' => [
+            'is_active' => [
                 'required',
-                'string',
-                'in:active,inactive',
+                'boolean',
             ],
         ]);
 
         $user->update([
-            'status' => $validated['status'],
+            'is_active' => $validated['is_active'],
         ]);
 
         Inertia::flash('toast', [

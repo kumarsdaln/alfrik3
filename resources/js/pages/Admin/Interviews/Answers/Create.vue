@@ -3,7 +3,7 @@ import { computed, ref } from 'vue'
 import { Form } from '@inertiajs/vue3'
 import { CircleHelp } from '@lucide/vue'
 
-import AdminFormLayout from '@/Layouts/AdminFormLayout.vue'
+import AppFormLayout from '@/layouts/dashboard/AppFormLayout.vue'
 
 import AppButton from '@/components/ui/AppButton.vue'
 import AppHeading from '@/components/ui/AppHeading.vue'
@@ -14,7 +14,7 @@ import UserPicker from '../Partials/UserPicker.vue'
 
 import {
     store,
-} from '@/actions/App/Domains/Interview/Http/Controllers/AdminAnswerController'
+} from '@/actions/App/Http/Controllers/Admin/Interview/AnswerController'
 
 
 // Types
@@ -94,7 +94,7 @@ function goBack(): void {
             processing,
             isDirty,
         }">
-            <AdminFormLayout title="Submit Answer"
+            <AppFormLayout title="Submit Answer"
                 description="Select the participant answering this question and add their response.">
                 <div class="max-w-5xl space-y-6">
 
@@ -216,7 +216,7 @@ function goBack(): void {
                     </div>
                 </template>
 
-            </AdminFormLayout>
+            </AppFormLayout>
         </template>
     </Form>
 </template>

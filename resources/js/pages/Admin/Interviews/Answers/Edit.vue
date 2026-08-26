@@ -2,11 +2,11 @@
 import { computed, ref } from 'vue'
 import { Form } from '@inertiajs/vue3'
 
-import AdminFormLayout from '@/Layouts/AdminFormLayout.vue'
+import AppFormLayout from '@/layouts/dashboard/AppFormLayout.vue'
 
-import AppButton from '@/Components/Ui/AppButton.vue'
-import AppHeading from '@/Components/Ui/AppHeading.vue'
-import AppText from '@/Components/Ui/AppText.vue'
+import AppButton from '@/components/ui/AppButton.vue'
+import AppHeading from '@/components/ui/AppHeading.vue'
+import AppText from '@/components/ui/AppText.vue'
 import AppTextarea from '@/components/form/AppTextarea.vue'
 
 import UserPicker from '../Partials/UserPicker.vue'
@@ -131,7 +131,7 @@ function goBack(): void {
             processing,
             isDirty,
         }">
-            <AdminFormLayout title="Edit Answer" description="Update the interviewee and their response.">
+            <AppFormLayout title="Edit Answer" description="Update the interviewee and their response.">
                 <div class="max-w-5xl space-y-6">
 
                     <!-- Question Preview -->
@@ -263,7 +263,7 @@ function goBack(): void {
                     </div>
                 </template>
 
-            </AdminFormLayout>
+            </AppFormLayout>
         </template>
     </Form>
 </template>

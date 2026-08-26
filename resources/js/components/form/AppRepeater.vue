@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import AppInput from '@/Components/Form/AppInput.vue'
-import AppTextarea from '@/Components/Form/AppTextarea.vue'
+import AppInput from '@/components/form/AppInput.vue'
+import AppTextarea from '@/components/form/AppTextarea.vue'
 import TextEditor from '@/Components/Editor/TextEditor.vue'
 import X from '@/Icons/X.vue'
 

@@ -7,7 +7,7 @@
     onBeforeUnmount,
   } from 'vue'
 
-  import AppFormField from '@/Components/Ui/AppFormField.vue'
+  import AppFormField from '@/components/ui/AppFormField.vue'
   import DownAngle from '@/Icons/DownAngle.vue'
   import type {
     FormOption,

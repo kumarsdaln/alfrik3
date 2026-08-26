@@ -150,10 +150,20 @@ class ReportController extends Controller
     private function authorOptions()
     {
         return User::query()
-            ->whereIn('user_type', ['admin', 'alfrik', 'expert', 'staff'])
+            ->whereHas('roles', function ($query) {
+                $query->whereIn('slug', [
+                    'admin',
+                    'editor',
+                    'author'
+                ]);
+            })
             ->orderBy('name')
             ->limit(200)
-            ->get(['id', 'name', 'username']);
+            ->get([
+                'id',
+                'name',
+                'email',
+            ]);
     }
 
     private function storeCover(Request $request): ?string

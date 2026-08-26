@@ -1,6 +1,6 @@
 <script setup lang="ts">
     import { computed, useId } from 'vue'
-    import AppFormField from '@/Components/Ui/AppFormField.vue'
+    import AppFormField from '@/components/ui/AppFormField.vue'
     import type {
         FormOption,
         FormOptionInput,

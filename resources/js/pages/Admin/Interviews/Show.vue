@@ -1,7 +1,6 @@
 <script setup>
-    import PageHeader from '@/Components/Admin/PageHeader.vue';
-    import AdminLayout from '@/Layouts/AdminLayout.vue';
-    import MediaManager from '@/Pages/Admin/Interviews/Partials/MediaManager.vue';
+    import PageHeader from '@/components/dashboard/PageHeader.vue';
+    import MediaManager from '@/pages/Admin/Interviews/Partials/MediaManager.vue';
     import { formatDate } from '@/utils/dateUtils';
     import { Link } from '@inertiajs/vue3';
     import { show as adminUsersShow } from '@/routes/admin/users';
@@ -15,7 +14,6 @@
 </script>
 
 <template>
-    <AdminLayout>
         <PageHeader title="Interview Details" />
         <div class="min-h-screen bg-[#f8f8fc] dark:bg-[#0b0b0c] text-gray-900 dark:text-white">
 
@@ -223,5 +221,4 @@
             </div>
 
         </div>
-    </AdminLayout>
 </template>

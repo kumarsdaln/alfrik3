@@ -6,17 +6,20 @@ import {
 } from 'vue'
 
 import { Form } from '@inertiajs/vue3'
-import type {
-    FormDataConvertible,
-} from '@inertiajs/core'
+import type { FormDataConvertible } from '@inertiajs/core'
 
 import AppFormLayout from '@/layouts/dashboard/AppFormLayout.vue'
 
-import AppButton from '@/Components/Ui/AppButton.vue'
+import AppButton from '@/components/ui/AppButton.vue'
 import ParticipantSelector from './Partials/ParticipantSelector.vue'
 
-import {save} from '@/actions/App/Http/Controllers/Admin/Interview/ParticipantController'
-import {index as usersIndex} from '@/actions/App/Http/Controllers/Profile/UserAdminHandlerController'
+import {
+    save as saveParticipants,
+} from '@/actions/App/Http/Controllers/Admin/Interview/ParticipantController'
+
+import {
+    index as usersIndex,
+} from '@/actions/App/Http/Controllers/Admin/User/UserController'
 
 
 /*
@@ -103,12 +106,12 @@ const props = defineProps<Props>()
 
 const participants = ref<SelectedParticipant[]>(
     props.interview.participants?.map(
-        participant => ({
+        (participant): SelectedParticipant => ({
             user_id: participant.user_id,
 
-            label: participant.user
-                ? participant.user.name
-                : `User #${participant.user_id}`,
+            label:
+                participant.user?.name ??
+                `User #${participant.user_id}`,
 
             role: participant.role,
 
@@ -126,9 +129,13 @@ const participants = ref<SelectedParticipant[]>(
 */
 
 const users = ref<UserOption[]>([])
+
 const page = ref(1)
+
 const search = ref('')
+
 const loading = ref(false)
+
 const hasMore = ref(true)
 
 
@@ -138,11 +145,9 @@ const hasMore = ref(true)
 |--------------------------------------------------------------------------
 */
 
-let searchTimeout:
-    ReturnType<typeof setTimeout> | null = null
+let searchTimeout: ReturnType<typeof setTimeout> | null = null
 
-let requestController:
-    AbortController | null = null
+let requestController: AbortController | null = null
 
 let requestId = 0
 
@@ -157,10 +162,9 @@ async function fetchUsers(
     searchValue = search.value,
     reset = false,
 ): Promise<void> {
-
     /*
     |--------------------------------------------------------------------------
-    | Prevent Duplicate Pagination Requests
+    | Prevent duplicate pagination requests
     |--------------------------------------------------------------------------
     */
 
@@ -175,7 +179,7 @@ async function fetchUsers(
 
     /*
     |--------------------------------------------------------------------------
-    | Reset Search State
+    | Reset search
     |--------------------------------------------------------------------------
     */
 
@@ -192,7 +196,7 @@ async function fetchUsers(
 
     /*
     |--------------------------------------------------------------------------
-    | Create Request
+    | Request ID
     |--------------------------------------------------------------------------
     */
 
@@ -206,6 +210,12 @@ async function fetchUsers(
 
 
     try {
+        /*
+        |--------------------------------------------------------------------------
+        | Wayfinder URL
+        |--------------------------------------------------------------------------
+        */
+
         const action = usersIndex({
             query: {
                 search: searchValue || undefined,
@@ -213,10 +223,20 @@ async function fetchUsers(
             },
         })
 
+
+        /*
+        |--------------------------------------------------------------------------
+        | Request JSON
+        |--------------------------------------------------------------------------
+        */
+
         const response = await fetch(
             action.url,
             {
+                method: 'GET',
+
                 signal: controller.signal,
+
                 headers: {
                     Accept: 'application/json',
                 },
@@ -224,27 +244,63 @@ async function fetchUsers(
         )
 
 
+        /*
+        |--------------------------------------------------------------------------
+        | HTTP Error
+        |--------------------------------------------------------------------------
+        */
+
         if (!response.ok) {
             throw new Error(
                 `Failed to fetch users: ${response.status}`,
             )
         }
 
-        const result = await response.json() as UserApiResponse
 
+        /*
+        |--------------------------------------------------------------------------
+        | Response
+        |--------------------------------------------------------------------------
+        */
+
+        const result =
+            await response.json() as UserApiResponse
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Ignore stale response
+        |--------------------------------------------------------------------------
+        */
 
         if (currentRequestId !== requestId) {
             return
         }
 
+
+        /*
+        |--------------------------------------------------------------------------
+        | Convert users
+        |--------------------------------------------------------------------------
+        */
+
         const incomingUsers: UserOption[] =
-            result.data.map(user => ({
-                value: user.id,
-                label: user.name,
-                name: user.name,
-                email: user.email,
-                avatar: user.avatar ?? null,
-            }))
+            result.data.map(
+                (user): UserOption => ({
+                    value: user.id,
+                    label: user.name,
+                    name: user.name,
+                    email: user.email,
+                    avatar: user.avatar ?? null,
+                }),
+            )
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Remove duplicates
+        |--------------------------------------------------------------------------
+        */
 
         const existingIds = new Set(
             users.value.map(
@@ -252,59 +308,90 @@ async function fetchUsers(
             ),
         )
 
-
-        users.value.push(
-            ...incomingUsers.filter(
+        const uniqueUsers =
+            incomingUsers.filter(
                 user =>
                     !existingIds.has(user.value),
-            ),
-        )
+            )
+
+
+        users.value.push(...uniqueUsers)
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Pagination
+        |--------------------------------------------------------------------------
+        */
 
         hasMore.value =
             result.next_page_url !== null
-
 
         if (hasMore.value) {
             page.value++
         }
 
-    }
-    catch (error) {
+    } catch (error) {
+        /*
+        |--------------------------------------------------------------------------
+        | Ignore aborted requests
+        |--------------------------------------------------------------------------
+        */
+
         if (
             error instanceof DOMException &&
             error.name === 'AbortError'
         ) {
             return
         }
+
         console.error(
             'Failed to fetch users:',
             error,
         )
-    }
-    finally {
+    } finally {
         if (currentRequestId === requestId) {
             loading.value = false
+
+            if (requestController === controller) {
+                requestController = null
+            }
         }
     }
 }
+
+
+/*
+|--------------------------------------------------------------------------
+| Search
+|--------------------------------------------------------------------------
+*/
 
 function handleSearch(
     value: string,
 ): void {
     search.value = value
-    if (searchTimeout) {
+
+    if (searchTimeout !== null) {
         clearTimeout(searchTimeout)
     }
-    searchTimeout = setTimeout(
-        () => {
-            fetchUsers(
-                value,
-                true,
-            )
-        },
-        400,
-    )
+
+    searchTimeout = setTimeout(() => {
+        fetchUsers(
+            value,
+            true,
+        )
+
+        searchTimeout = null
+    }, 400)
 }
+
+
+/*
+|--------------------------------------------------------------------------
+| Load More
+|--------------------------------------------------------------------------
+*/
 
 function loadMore(): void {
     if (
@@ -313,24 +400,49 @@ function loadMore(): void {
     ) {
         return
     }
+
     fetchUsers()
 }
+
+
+/*
+|--------------------------------------------------------------------------
+| Form Transform
+|--------------------------------------------------------------------------
+*/
 
 function transformData(
     data: Record<string, FormDataConvertible>,
 ): Record<string, FormDataConvertible> {
     return {
         ...data,
-        participants: participants.value.map(participant => ({
-            user_id: participant.user_id,
-            role: participant.role,
-        })),
+
+        participants: participants.value.map(
+            participant => ({
+                user_id: participant.user_id,
+                role: participant.role,
+            }),
+        ),
     }
 }
 
+
+/*
+|--------------------------------------------------------------------------
+| Navigation
+|--------------------------------------------------------------------------
+*/
+
 function goBack(): void {
-    history.back()
+    window.history.back()
 }
+
+
+/*
+|--------------------------------------------------------------------------
+| Lifecycle
+|--------------------------------------------------------------------------
+*/
 
 onMounted(() => {
     fetchUsers()
@@ -338,40 +450,65 @@ onMounted(() => {
 
 
 onBeforeUnmount(() => {
+    requestId++
+
     requestController?.abort()
-    if (searchTimeout) {
+
+    requestController = null
+
+    if (searchTimeout !== null) {
         clearTimeout(searchTimeout)
+
+        searchTimeout = null
     }
 })
 </script>
 
 
 <template>
-    <Form :action="save(interview.id)" :transform="transformData">
-        <template #default="{
-            errors,
-            processing,
-        }">
+    <Form
+        :action="saveParticipants(props.interview.id)"
+        :transform="transformData"
+    >
+        <template #default="{ errors, processing }">
+            <AppFormLayout
+                title="Manage Interview Participants"
+                description="Add participants and assign their roles in this interview."
+            >
+                <ParticipantSelector
+                    v-model="participants"
+                    :options="users"
+                    :loading="loading"
+                    :has-more="hasMore"
+                    :error="errors.participants"
+                    @search="handleSearch"
+                    @load-more="loadMore"
+                />
 
-            <AppFormLayout title="Manage Interview Participants"
-                description="Add participants and assign their roles in this interview.">
-
-                <!-- Participant Selector -->
-                <ParticipantSelector v-model="participants" :options="users" :loading="loading" :has-more="hasMore"
-                    :error="errors.participants" @search="handleSearch" @load-more="loadMore" />
-
-
-                <!-- Footer -->
                 <template #footer>
-                    <div class="
-                                flex flex-col-reverse gap-3
-                                sm:flex-row
-                                sm:items-center
-                                sm:justify-end">
-                        <AppButton variant="cancel" type="button" :disabled="processing" @click="goBack">
+                    <div
+                        class="
+                            flex flex-col-reverse gap-3
+                            sm:flex-row
+                            sm:items-center
+                            sm:justify-end
+                        "
+                    >
+                        <AppButton
+                            variant="cancel"
+                            type="button"
+                            :disabled="processing"
+                            @click="goBack"
+                        >
                             Cancel
                         </AppButton>
-                        <AppButton variant="submit" type="submit" :loading="processing" :disabled="processing">
+
+                        <AppButton
+                            variant="submit"
+                            type="submit"
+                            :loading="processing"
+                            :disabled="processing"
+                        >
                             Save Participants
                         </AppButton>
                     </div>

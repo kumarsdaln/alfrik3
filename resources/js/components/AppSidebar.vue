@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
-import { BookOpen, FolderGit2, LayoutGrid } from '@lucide/vue';
+import { BookOpen, BookOpenCheck, Cctv, ClipboardList, FolderGit2, LayoutGrid, MessagesSquare, NotebookPen, Users } from '@lucide/vue';
 import AppLogo from '@/components/AppLogo.vue';
 import NavFooter from '@/components/NavFooter.vue';
 import NavMain from '@/components/NavMain.vue';
@@ -17,6 +17,7 @@ import {
 import type { NavItem } from '@/types';
 
 import { dashboard } from '@/routes';
+import { index as users } from '@/routes/admin/users';
 import { index as interviews } from '@/routes/admin/interviews';
 import { index as magazines } from '@/routes/admin/magazine';
 // import { index as events } from '@/routes/admin/events';
@@ -31,14 +32,19 @@ const mainNavItems: NavItem[] = [
         icon: LayoutGrid,
     },
     {
+        title: 'Users',
+        href: users(),
+        icon: Users,
+    },
+    {
         title: 'Interviews',
         href: interviews(),
-        icon: LayoutGrid,
+        icon: MessagesSquare,
     },
      {
         title: 'Magazines',
         href: magazines(),
-        icon: LayoutGrid,
+        icon: BookOpenCheck,
     },
     // {
     //     title: 'Events',
@@ -48,17 +54,17 @@ const mainNavItems: NavItem[] = [
     {
         title: 'Research',
         href: research(),
-        icon: LayoutGrid,
+        icon: NotebookPen,
     },
     {
         title: 'Reports',
         href: reports(),
-        icon: LayoutGrid,
+        icon: ClipboardList,
     },
     {
         title: 'Surveys',
         href: surveys(),
-        icon: LayoutGrid,
+        icon: Cctv,
     },
 ];
 </script>

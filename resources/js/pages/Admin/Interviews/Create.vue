@@ -2,7 +2,7 @@
 import { Form } from '@inertiajs/vue3'
 import AppFormLayout from '@/layouts/dashboard/AppFormLayout.vue'
 
-import AppButton from '@/Components/Ui/AppButton.vue'
+import AppButton from '@/components/ui/AppButton.vue'
 import AppInput from '@/components/form/AppInput.vue'
 import AppSelect from '@/components/form/AppSelect.vue'
 import AppTextarea from '@/components/form/AppTextarea.vue'

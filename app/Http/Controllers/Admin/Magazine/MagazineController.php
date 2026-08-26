@@ -140,10 +140,23 @@ class MagazineController extends Controller
     private function authorOptions()
     {
         return User::query()
-            ->where(fn ($q) => $q->whereIn('user_type', ['admin', 'alfrik', 'staff'])->orWhereHas('expert'))
+            ->where(function ($query) {
+                $query
+                    ->whereHas('roles', function ($roleQuery) {
+                        $roleQuery->whereIn('name', [
+                            'admin',
+                            'editor',
+                            'author',
+                        ]);
+                    });
+            })
             ->orderBy('name')
             ->limit(200)
-            ->get(['id', 'name', 'username']);
+            ->get([
+                'id',
+                'name',
+                'email',
+            ]);
     }
 
     private function pullFields(array $validated): array

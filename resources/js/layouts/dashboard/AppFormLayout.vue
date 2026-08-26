@@ -23,7 +23,7 @@
 
 <template>
   <div
-    class="flex h-[calc(100vh-142px)] flex-col overflow-hidden border border-gray-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
+    class="flex h-[calc(100vh-80px)] flex-col overflow-hidden bg-white dark:bg-zinc-950">
     <!-- Header -->
     <PageHeader :title="title" :description="description" :show-back-button="showBackButton" @go-back="goBack" />
 

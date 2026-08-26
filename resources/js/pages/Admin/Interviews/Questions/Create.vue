@@ -1,73 +1,73 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import { Form } from '@inertiajs/vue3'
+    import { ref } from 'vue'
+    import { Form } from '@inertiajs/vue3'
 
-import AdminFormLayout from '@/Layouts/AdminFormLayout.vue'
+    import AppFormLayout from '@/layouts/dashboard/AppFormLayout.vue'
 
-import AppButton from '@/components/Ui/AppButton.vue'
-import AppTextarea from '@/components/form/AppTextarea.vue'
+    import AppButton from '@/components/ui/AppButton.vue'
+    import AppTextarea from '@/components/form/AppTextarea.vue'
 
-import UserPicker from '../Partials/UserPicker.vue'
+    import UserPicker from '../Partials/UserPicker.vue'
 
-import {
-    store,
-} from '@/actions/App/Domains/Interview/Http/Controllers/AdminQuestionController'
-
-
-/*
-|--------------------------------------------------------------------------
-| Types
-|--------------------------------------------------------------------------
-*/
-
-interface ParticipantUser {
-    id: number
-    name: string
-    email: string
-    avatar?: string | null
-}
-
-interface Participant {
-    id: number
-    user_id: number
-    role: 'interviewer' | 'interviewee'
-    user: ParticipantUser
-}
-
-interface Interview {
-    id: number
-    participants: Participant[]
-}
-
-interface Props {
-    interview: Interview
-}
-
-const props = defineProps<Props>()
+    import {
+        store,
+    } from '@/actions/App/Http/Controllers/Admin/Interview/QuestionController'
 
 
-/*
-|--------------------------------------------------------------------------
-| Form Values
-|--------------------------------------------------------------------------
-*/
+    /*
+    |--------------------------------------------------------------------------
+    | Types
+    |--------------------------------------------------------------------------
+    */
 
-const question = ref('')
+    interface ParticipantUser {
+        id: number
+        name: string
+        email: string
+        avatar?: string | null
+    }
 
-const askedBy = ref<number | string>(
-    props.interview.participants[0]?.user.id ?? '',
-)
+    interface Participant {
+        id: number
+        user_id: number
+        role: 'interviewer' | 'interviewee'
+        user: ParticipantUser
+    }
+
+    interface Interview {
+        id: number
+        participants: Participant[]
+    }
+
+    interface Props {
+        interview: Interview
+    }
+
+    const props = defineProps<Props>()
 
 
-/*
-|--------------------------------------------------------------------------
-| Navigation
-|--------------------------------------------------------------------------
-*/
+    /*
+    |--------------------------------------------------------------------------
+    | Form Values
+    |--------------------------------------------------------------------------
+    */
 
-function goBack(): void {
-    history.back()
-}
+    const question = ref('')
+
+    const askedBy = ref<number | string>(
+        props.interview.participants[0]?.user.id ?? '',
+    )
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Navigation
+    |--------------------------------------------------------------------------
+    */
+
+    function goBack(): void {
+        history.back()
+    }
 </script>
 
 <template>
@@ -76,7 +76,7 @@ function goBack(): void {
         processing,
         isDirty
     }">
-        <AdminFormLayout title="Add Question" description="Add a question and select the participant who asked it.">
+        <AppFormLayout title="Add Question" description="Add a question and select the participant who asked it.">
             <div class="max-w-4xl space-y-6">
 
                 <!-- Asked By -->
@@ -108,6 +108,6 @@ function goBack(): void {
                 </div>
             </template>
 
-        </AdminFormLayout>
+        </AppFormLayout>
     </Form>
 </template>
