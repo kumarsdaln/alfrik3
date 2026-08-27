@@ -43,7 +43,7 @@ class ResearchController extends Controller
                 ->first($columns);
         }
 
-        return Inertia::render('Research/Index', [
+        return Inertia::render('research/Index', [
             'papers' => Inertia::scroll(fn () => $query->paginate(12, $columns)->withQueryString()),
             'featured' => $featured,
             'areas' => ResearchArea::query()
@@ -70,7 +70,7 @@ class ResearchController extends Controller
             ->take(3)
             ->get(['id', 'title', 'slug', 'authors', 'cover_image', 'area_id', 'published_at']);
 
-        return Inertia::render('Research/Show', [
+        return Inertia::render('research/Show', [
             'paper' => $paper,
             'related' => $related,
             'breadcrumbs' => BreadcrumbBuilder::make()->home()

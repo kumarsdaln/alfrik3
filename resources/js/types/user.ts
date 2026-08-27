@@ -1,9 +1,17 @@
 import type { TableRow } from '@/types/table'
 
-export interface UserRole extends TableRow {
-    id: number
-    name: string
-    slug: string
+export interface Role extends TableRow {
+    id: number,
+    name: string,
+    slug: string,
+    description: string,
+}
+
+export interface Permission extends TableRow {
+    id: number,
+    name: string,
+    slug: string,
+    description: string,
 }
 
 export interface User extends TableRow {
@@ -11,26 +19,12 @@ export interface User extends TableRow {
     name: string
     email: string
     status: string
-    roles: UserRole[]
+    roles: Role[]
     created_at: string
     updated_at: string
 }
 
-export interface PaginatedUsers {
-    data: User[]
-    total: number
-    current_page: number
-    last_page: number
-    per_page: number
-    prev_page_url: string | null
-    next_page_url: string | null
-}
-
 export interface UserStatusOption {
-    value: string
+    value: boolean
     label: string
-}
-
-export interface UserIndexProps {
-    users: PaginatedUsers
 }

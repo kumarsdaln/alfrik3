@@ -6,7 +6,7 @@ import {
     onBeforeUnmount,
 } from 'vue'
 
-import X from '@/Icons/X.vue'
+import { X } from '@lucide/vue'
 import DownAngle from '@/Icons/DownAngle.vue'
 import type { FormValue } from '@/types/forms'
 

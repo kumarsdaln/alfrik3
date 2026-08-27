@@ -23,7 +23,7 @@ class SurveyController extends Controller
             ->orderByDesc('created_at')
             ->get(['id', 'title', 'slug', 'description', 'closes_at', 'published_at', 'created_at']);
 
-        return Inertia::render('Surveys/Index', [
+        return Inertia::render('surveys/Index', [
             'surveys' => $surveys,
             'breadcrumbs' => BreadcrumbBuilder::make()->home()->add('Surveys')->toArray(),
         ]);
@@ -35,12 +35,12 @@ class SurveyController extends Controller
 
         $survey->load(['questions.options']);
 
-        return Inertia::render('Surveys/Show', [
+        return Inertia::render('surveys/Show', [
             'survey' => $survey,
             'isOpen' => $survey->isOpen(),
             'hasResponded' => $this->hasResponded($request, $survey),
             'breadcrumbs' => BreadcrumbBuilder::make()->home()
-                ->add('Surveys', route('surveys.index'))
+                ->add('surveys', route('surveys.index'))
                 ->add($survey->title)
                 ->toArray(),
         ]);
@@ -123,11 +123,11 @@ class SurveyController extends Controller
         abort_unless($this->isLive($survey), 404);
         abort_unless($survey->show_results, 403, 'Results are not public for this survey.');
 
-        return Inertia::render('Surveys/Results', [
+        return Inertia::render('surveys/Results', [
             'survey' => $survey->only('id', 'title', 'slug', 'description'),
             'results' => app(SurveyResultService::class)->aggregate($survey),
             'breadcrumbs' => BreadcrumbBuilder::make()->home()
-                ->add('Surveys', route('surveys.index'))
+                ->add('surveys', route('surveys.index'))
                 ->add($survey->title, route('surveys.show', $survey->slug))
                 ->add('Results')
                 ->toArray(),

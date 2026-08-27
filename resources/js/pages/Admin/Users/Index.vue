@@ -33,9 +33,10 @@
 
     import type {
         User,
-        UserIndexProps,
         UserStatusOption,
     } from '@/types/user'
+    import { Pagination } from '@/types/pagination'
+import AppToggle from '@/components/ui/AppToggle.vue'
 
 
     /*
@@ -43,8 +44,10 @@
     | Props
     |--------------------------------------------------------------------------
     */
-
-    const props = defineProps<UserIndexProps>()
+    interface Props {
+        users: Pagination<User>
+    }
+    const props = defineProps<Props>()
 
 
     /*
@@ -162,11 +165,11 @@
 
     const statusOptions: UserStatusOption[] = [
         {
-            value: 'active',
+            value: 1,
             label: 'Active',
         },
         {
-            value: 'inactive',
+            value: 0,
             label: 'Inactive',
         },
     ]
@@ -275,16 +278,12 @@
 
     const updateStatus = (
         user: User,
-        option: UserStatusOption,
+        isActive: boolean,
     ): void => {
-        if (user.status === option.value) {
-            return
-        }
-
         router.patch(
             routes.status(user.id),
             {
-                status: option.value,
+                is_active: isActive,
             },
         )
     }
@@ -444,7 +443,7 @@
         <!-- Status -->
 
         <template #status="{ data }">
-            <AppStatusDropdown v-model="data.status" :options="statusOptions" @change="updateStatus(data, $event)" />
+            <AppToggle v-model="data.is_active" true-label="Active" false-label="Inactive" @update:modelValue="updateStatus(data, $event)" />
         </template>
 
 

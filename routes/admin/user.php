@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\Admin\User\PermissionController;
+use App\Http\Controllers\Admin\User\RoleController;
 use App\Http\Controllers\Admin\User\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -35,4 +37,10 @@ Route::middleware(['auth', 'role:admin'])
                 Route::delete('/{user}', 'destroy')
                     ->name('destroy');
             });
+
+        Route::resource('permissions', PermissionController::class)
+            ->except(['show']);
+
+        Route::resource('roles', RoleController::class)
+            ->except(['show']);
     });

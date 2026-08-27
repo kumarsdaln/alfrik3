@@ -42,7 +42,7 @@ class ReportController extends Controller
                 ?? (clone $query)->first($columns);
         }
 
-        return Inertia::render('Reports/Index', [
+        return Inertia::render('reports/Index', [
             'reports' => Inertia::scroll(fn () => $query->paginate(12, $columns)->withQueryString()),
             'featured' => $featured,
             'categories' => ReportCategory::query()
@@ -69,12 +69,12 @@ class ReportController extends Controller
             ->take(3)
             ->get(['id', 'title', 'slug', 'summary', 'cover_image', 'category_id', 'published_at']);
 
-        return Inertia::render('Reports/Show', [
+        return Inertia::render('reports/Show', [
             'report' => $report,
             'related' => $related,
             'canDownload' => ! $report->gated || auth()->check(),
             'breadcrumbs' => BreadcrumbBuilder::make()->home()
-                ->add('Reports', route('reports.index'))
+                ->add('reports', route('reports.index'))
                 ->add($report->title)
                 ->toArray(),
             'meta_data' => [

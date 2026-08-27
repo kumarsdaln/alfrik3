@@ -3,11 +3,11 @@
 namespace App\Http\Controllers\Public\Interview;
 
 use App\Enums\Interview\Type;
-use App\Filters\CategoryFilter;
 use App\Filters\SearchFilter;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Interview\InterviewResource;
 use App\Models\Interview\Interview;
+use App\Support\Breadcrumbs\BreadcrumbBuilder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Pipeline;
 use Inertia\Inertia;
@@ -26,14 +26,14 @@ class InterviewController extends Controller
             ->through($pipes)
             ->thenReturn();
 
-        return Inertia::render('Interviews/Index', [
+        return Inertia::render('interviews/Index', [
             'interviews' => Inertia::scroll(
                 fn() =>
                 InterviewResource::collection(
                     $query
                         ->with([
                             'participants:id,interview_id,user_id',
-                            'participants.user:id,name,avatar,external_id',
+                            'participants.user:id,name,avatar',
                         ])
                         ->where('status', 'published')
                         ->latest('published_at')
@@ -45,7 +45,8 @@ class InterviewController extends Controller
                 'search' => $request->search,
                 'type' => $request->type,
             ],
-            'types' => Type::dropdown()
+            'types' => Type::dropdown(),
+            'breadcrumbs' => BreadcrumbBuilder::make()->home()->add('Interview')->toArray(),
         ]);
     }
 
@@ -64,7 +65,7 @@ class InterviewController extends Controller
             'media:id,interview_id,media_type,source_type,file_url,embed_url,thumbnail,duration',
         ]);
 
-        return Inertia::render('Interviews/Show', [
+        return Inertia::render('interviews/Show', [
             'interview' => InterviewResource::make($interview),
         ]);
     }
