@@ -20,7 +20,7 @@ class InterviewAnswerResource extends JsonResource
 
             'answered_by' => [
                 'id' => $this->answeredBy?->id,
-                'external_id' => $this->answeredBy?->external_id,
+                'username' => $this->answeredBy?->username,
                 'name' => $this->answeredBy?->name,
                 'avatar' => $this->answeredBy?->avatar,
             ],

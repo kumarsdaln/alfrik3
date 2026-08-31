@@ -1,183 +1,466 @@
 <script setup lang="ts">
-    import { Head, Link, InfiniteScroll } from '@inertiajs/vue3'
-    import { computed } from 'vue'
-    import AppHeading from '@/components/ui/AppHeading.vue'
-    import AppText from '@/components/ui/AppText.vue'
-    import AppBadge from '@/components/ui/AppBadge.vue'
-    import ArticleCard from '@/components/magazine/ArticleCard.vue'
-    import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
-    import AppFilterLayout from '@/Components/filters/layout/AppFilterLayout.vue'
-    import FilterInput from '@/Components/filters/fields/FilterInput.vue'
-    import FilterSelect from '@/Components/filters/fields/FilterSelect.vue'
-    import { useInfiniteFilters } from '@/composables/useInfiniteFilters'
-    import { index as magazineIndex, view as magazineView } from '@/routes/magazine'
-    import type { Magazine, MagazineCategory } from '@/types'
+import { Head, Link } from '@inertiajs/vue3'
 
-    const props = defineProps<{
-        magazines: { data: Magazine[] }
-        featured: Magazine | null
-        categories: MagazineCategory[]
-        qfilters: { category?: string; search?: string }
-    }>()
+import AppHeading from '@/components/ui/AppHeading.vue'
+import AppText from '@/components/ui/AppText.vue'
+import AppBadge from '@/components/ui/AppBadge.vue'
 
-    const PAGE_URL = magazineIndex().url
+import { index as magazineIndex, show as magazineShow } from '@/routes/magazine'
 
-    /*
-    |--------------------------------------------------------------------------
-    | Catalog filtering — shared filter system (see Courses/Index)
-    |--------------------------------------------------------------------------
-    */
+import type { Magazine, MagazineCategory } from '@/types'
 
-    const {
-        filters,
-        applyFilters,
-        resetFilters,
-    } = useInfiniteFilters({
-        route: 'magazine.index',
-        dataKey: 'magazines',
-        initialFilters: {
-            search: props.qfilters.search ?? '',
-            category: props.qfilters.category ?? '',
-        },
-    })
+interface MagazinePagination {
+    data: Magazine[]
+    current_page: number
+    last_page: number
+    total: number
+}
 
-    const categoryOptions = computed(() =>
-        props.categories.map((c) => ({ value: c.slug, label: c.name }))
-    )
-
-    const dateLabel = (d?: string | null) =>
-        d ? new Date(d).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : ''
-
-    const issueDate = (m: Magazine) => dateLabel(m.published_at || m.created_at)
-
-    const coverUrl = (m: Magazine) => m.cover_image || '/frontend/images/placeholder.jpg'
-
-    const jsonLdData = {
-        '@context': 'https://schema.org',
-        '@type': 'CollectionPage',
-        name: 'Magazine - Alfrik',
-        description:
-            'Alfrik Magazine features stories, interviews, and digital covers spotlighting creativity, leadership and style.',
-        url: PAGE_URL,
-        publisher: {
-            '@type': 'Organization',
-            name: 'Alfrik',
-            url: 'https://www.alfrik.com',
-        },
+const props = defineProps<{
+    magazines: MagazinePagination
+    featured: Magazine | null
+    categories: MagazineCategory[]
+    qfilters: {
+        search?: string
+        category?: string
     }
+}>()
+
+const formatDate = (date?: string | null) => {
+    if (!date) {
+        return ''
+    }
+
+    return new Date(date).toLocaleDateString('en-US', {
+        month: 'long',
+        year: 'numeric',
+    })
+}
+
+const coverUrl = (magazine: Magazine) =>
+    magazine.cover_image || '/frontend/images/placeholder.jpg'
+
+const issueCount = (magazine: Magazine) =>
+    magazine.published_issues_count ?? 0
 </script>
 
 <template>
-
-    <Head title="Magazine - Alfrik">
-        <meta name="description"
-            content="Alfrik Magazine features stories, interviews, and digital covers that spotlight creativity, leadership, and style across fashion, business, healthcare, lifestyle, and innovation." />
-        <meta name="keywords"
-            content="Alfrik Magazine, Fashion Magazine, Model Interviews, Digital Cover, Creative Stories, Fashion Industry" />
-        <link rel="canonical" :href="PAGE_URL" />
-        <component :is="'script'" type="application/ld+json">{{ JSON.stringify(jsonLdData) }}</component>
+    <Head title="Magazine — Alfrik">
+        <meta
+            name="description"
+            content="Explore Alfrik Magazine — stories, interviews and perspectives covering business, culture, innovation and modern life."
+        />
     </Head>
-        <!-- Masthead -->
-        <div class="relative isolate overflow-hidden">
-            <div class="container mx-auto px-4 pt-12 pb-6 text-center">
-                <AppText tag="p" font="redhat" size="xs" weight="bold" tracking="wide" uppercase color="brand"
-                    align="center" class="mb-4">
-                    The Digital Edition
-                </AppText>
-                <AppHeading tag="h1" font="prata" size="5xl" weight="normal" align="center" leading="tight" class="mb-5">
-                    Alfrik Magazine
-                </AppHeading>
-                <AppText tag="p" font="lora" size="lg" color="muted" align="center" leading="relaxed"
-                    class="max-w-2xl mx-auto">
-                    Powerful stories, exclusive interviews, and artistic covers featuring the voices redefining
-                    fashion, business, healthcare, lifestyle, and innovation.
+
+    <!-- ================================================================
+         Masthead
+    ================================================================= -->
+
+    <header class="border-b border-border-light dark:border-border-dark">
+        <div class="container mx-auto px-4 py-16 sm:py-20 lg:py-24">
+            <div class="grid gap-8 lg:grid-cols-[1fr_auto] lg:items-end">
+                <div>
+                    <div class="mb-6 flex items-center gap-3">
+                        <span
+                            class="h-px w-10 bg-border-light dark:bg-border-dark"
+                            aria-hidden="true"
+                        />
+
+                        <AppText
+                            tag="span"
+                            font="redhat"
+                            size="xs"
+                            weight="bold"
+                            tracking="wide"
+                            uppercase
+                            color="primary"
+                        >
+                            Alfrik Publications
+                        </AppText>
+                    </div>
+
+                    <AppHeading
+                        tag="h1"
+                        font="prata"
+                        size="5xl"
+                        weight="normal"
+                        leading="tight"
+                    >
+                        Magazine
+                    </AppHeading>
+
+                    <AppText
+                        tag="p"
+                        font="lora"
+                        size="lg"
+                        color="muted"
+                        leading="relaxed"
+                        class="mt-6 max-w-2xl"
+                    >
+                        Stories, conversations and perspectives exploring the
+                        people, ideas and movements shaping the world.
+                    </AppText>
+                </div>
+
+                <AppText
+                    tag="p"
+                    font="redhat"
+                    size="xs"
+                    color="muted"
+                    class="lg:pb-1"
+                >
+                    {{ magazines.total }}
+                    {{ magazines.total === 1 ? 'publication' : 'publications' }}
                 </AppText>
             </div>
         </div>
+    </header>
 
-        <!-- Featured issue -->
-        <section v-if="featured" class="container mx-auto px-4 mt-6">
-            <Link :href="magazineView([featured.category?.slug ?? 'issue', featured.slug]).url"
-                class="group grid md:grid-cols-2 gap-8 items-center rounded-3xl border border-border-light dark:border-border-dark bg-surface-light dark:bg-surface-dark overflow-hidden p-6 md:p-10 hover:shadow-2xl transition-shadow">
-                <div class="relative overflow-hidden rounded-2xl bg-canvas-light dark:bg-white/5">
-                    <!-- cover_image can be set but point at a file that no longer exists,
-                         so fall back on error as well as on an empty value. -->
-                    <img :src="coverUrl(featured)" :alt="featured.title"
-                        @error="($event.target as HTMLImageElement).src = '/frontend/images/placeholder.jpg'"
-                        class="w-full aspect-[5/6] object-cover transform group-hover:scale-105 transition-transform duration-700" />
-                    <span class="absolute top-4 left-4">
-                        <AppBadge variant="primary" size="sm">Latest Issue</AppBadge>
-                    </span>
-                </div>
-                <div>
-                    <AppText v-if="featured.category" tag="p" font="redhat" size="xs" weight="bold" tracking="wide"
-                        uppercase color="brand" class="mb-4">
-                        {{ featured.category.name }}
-                    </AppText>
-                    <AppHeading tag="h2" font="prata" size="2xl" weight="normal" hover-brand leading="tight"
-                        class="mb-4">
-                        {{ featured.title }}
-                    </AppHeading>
-                    <AppText v-if="featured.subtitle" tag="p" font="lora" color="muted" leading="relaxed" :clamp="4"
-                        class="mb-6">
+    <!-- ================================================================
+         Featured Publication
+    ================================================================= -->
+
+    <section
+        v-if="featured"
+        class="border-b border-border-light dark:border-border-dark"
+    >
+        <div class="container mx-auto px-4 py-12 sm:py-16 lg:py-20">
+            <div class="grid gap-10 lg:grid-cols-[0.8fr_1.2fr] lg:gap-16">
+                <!-- Cover -->
+
+                <Link
+                    :href="magazineShow(featured.slug).url"
+                    class="group block"
+                >
+                    <div
+                        class="relative mx-auto max-w-md overflow-hidden border border-border-light bg-muted dark:border-border-dark"
+                    >
+                        <div class="aspect-[4/5]">
+                            <img
+                                :src="coverUrl(featured)"
+                                :alt="featured.title"
+                                class="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.02]"
+                                @error="
+                                    ($event.target as HTMLImageElement).src =
+                                        '/frontend/images/placeholder.jpg'
+                                "
+                            />
+                        </div>
+
+                        <div
+                            class="absolute left-0 top-0 border-b border-r border-border-light bg-surface-light px-4 py-2 dark:border-border-dark dark:bg-surface-dark"
+                        >
+                            <AppText
+                                tag="span"
+                                font="redhat"
+                                size="xs"
+                                weight="bold"
+                                uppercase
+                                tracking="wide"
+                                color="primary"
+                            >
+                                Featured
+                            </AppText>
+                        </div>
+                    </div>
+                </Link>
+
+                <!-- Information -->
+
+                <div class="flex flex-col justify-center">
+                    <div class="mb-5">
+                        <AppText
+                            v-if="featured.category"
+                            tag="p"
+                            font="redhat"
+                            size="xs"
+                            weight="bold"
+                            tracking="wide"
+                            uppercase
+                            color="primary"
+                        >
+                            {{ featured.category.name }}
+                        </AppText>
+                    </div>
+
+                    <Link
+                        :href="magazineShow(featured.slug).url"
+                        class="group"
+                    >
+                        <AppHeading
+                            tag="h2"
+                            font="prata"
+                            size="4xl"
+                            weight="normal"
+                            leading="tight"
+                            hover-primary
+                        >
+                            {{ featured.title }}
+                        </AppHeading>
+                    </Link>
+
+                    <AppText
+                        v-if="featured.subtitle"
+                        tag="p"
+                        font="lora"
+                        size="lg"
+                        color="muted"
+                        leading="relaxed"
+                        class="mt-5 max-w-2xl"
+                    >
                         {{ featured.subtitle }}
                     </AppText>
-                    <div class="flex flex-wrap items-center gap-x-4 gap-y-1">
-                        <AppText v-if="featured.author" tag="span" font="redhat" size="sm" weight="medium">
-                            By {{ featured.author.name }}
+
+                    <div
+                        class="mt-7 flex flex-wrap items-center gap-x-5 gap-y-2 border-y border-border-light py-4 dark:border-border-dark"
+                    >
+                        <AppText
+                            tag="span"
+                            font="redhat"
+                            size="xs"
+                            color="muted"
+                        >
+                            {{ issueCount(featured) }}
+                            {{ issueCount(featured) === 1 ? 'Issue' : 'Issues' }}
                         </AppText>
-                        <AppText tag="span" font="redhat" size="sm" color="muted">{{ issueDate(featured) }}</AppText>
-                        <AppText v-if="featured.reading_minutes" tag="span" font="redhat" size="sm" color="muted">
-                            · {{ featured.reading_minutes }} min read
+
+                        <span
+                            class="h-1 w-1 rounded-full bg-border-light dark:bg-border-dark"
+                        />
+
+                        <AppText
+                            v-if="featured.published_at"
+                            tag="span"
+                            font="redhat"
+                            size="xs"
+                            color="muted"
+                        >
+                            {{ formatDate(featured.published_at) }}
                         </AppText>
-                        <AppText tag="span" font="redhat" size="sm" weight="semibold" color="brand"
-                            class="inline-flex items-center gap-1 group-hover:gap-2 transition-all">
-                            Read issue →
-                        </AppText>
+                    </div>
+
+                    <div class="mt-7">
+                        <Link
+                            :href="magazineShow(featured.slug).url"
+                            class="inline-flex items-center gap-2 font-redhat text-sm font-semibold text-primary transition-all hover:gap-3"
+                        >
+                            Explore publication
+                            <span aria-hidden="true">→</span>
+                        </Link>
                     </div>
                 </div>
-            </Link>
-        </section>
-
-        <!-- Filters (shared filter system) -->
-        <section class="container mx-auto px-4 mt-12">
-            <div class="sticky top-4 z-40 mb-8 sm:top-20">
-                <AppFilterLayout :filters="filters" @apply="applyFilters" @reset="resetFilters">
-                    <template #search>
-                        <FilterInput v-model="filters.search" :field="{ placeholder: 'Search the magazine...' }" />
-                    </template>
-
-                    <template #inline-filters>
-                        <FilterSelect v-model="filters.category" :field="{ placeholder: 'All Categories' }"
-                            :options="categoryOptions" />
-                    </template>
-                </AppFilterLayout>
             </div>
-        </section>
+        </div>
+    </section>
 
-        <!-- Issue grid (infinite scroll) — magazine-style cover cards -->
-        <section class="container mx-auto px-4 py-10 pb-20">
-            <InfiniteScroll data="magazines" :key="[filters.search, filters.category].join('-')"
-                class="grid grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
-                <ArticleCard v-for="item in magazines.data" :key="item.id" :item="item"
-                    :href="magazineView([item.category?.slug ?? 'issue', item.slug]).url" />
-                <template #loading>
-                    <div class="col-span-full flex justify-center py-20">
-                        <LoadingSpinner :loading="true" />
-                    </div>
-                </template>
-            </InfiniteScroll>
+    <!-- ================================================================
+         Collection
+    ================================================================= -->
 
-            <!-- Empty state -->
-            <div v-if="!magazines.data.length"
-                class="py-28 text-center border border-dashed border-border-light dark:border-border-dark rounded-3xl">
-                <AppHeading tag="p" font="prata" size="2xl" weight="normal" color="muted" align="center"
-                    class="italic mb-3">
-                    No issues found.
-                </AppHeading>
-                <AppText tag="p" font="redhat" size="sm" color="muted" align="center">
-                    Try a different category or search term.
+    <section>
+        <div class="container mx-auto px-4 py-12 sm:py-16 lg:py-20">
+            <div
+                class="mb-8 flex flex-col gap-5 border-b border-border-light pb-6 dark:border-border-dark sm:flex-row sm:items-end sm:justify-between"
+            >
+                <div>
+                    <AppText
+                        tag="p"
+                        font="redhat"
+                        size="xs"
+                        weight="bold"
+                        tracking="wide"
+                        uppercase
+                        color="primary"
+                    >
+                        Our Publications
+                    </AppText>
+
+                    <AppHeading
+                        tag="h2"
+                        font="prata"
+                        size="3xl"
+                        weight="normal"
+                        leading="tight"
+                        class="mt-2"
+                    >
+                        Browse Magazine
+                    </AppHeading>
+                </div>
+
+                <AppText
+                    tag="p"
+                    font="lora"
+                    size="sm"
+                    color="muted"
+                >
+                    Discover every edition and publication.
                 </AppText>
             </div>
-        </section>
+
+            <!-- ========================================================
+                 Filters
+            ========================================================= -->
+
+            <!--
+                Filter UI should be added here using the NEW filter
+                implementation used elsewhere in the application.
+
+                We intentionally do NOT use:
+                - FilterControl
+                - FilterText
+                - FilterSelect
+                - route()
+            -->
+
+            <!-- ========================================================
+                 Magazine Grid
+            ========================================================= -->
+
+            <div
+                v-if="magazines.data.length"
+                class="grid gap-x-8 gap-y-14 sm:grid-cols-2 lg:grid-cols-3"
+            >
+                <article
+                    v-for="magazine in magazines.data"
+                    :key="magazine.id"
+                    class="group"
+                >
+                    <Link
+                        :href="magazineShow(magazine.slug).url"
+                        class="block"
+                    >
+                        <div
+                            class="relative overflow-hidden border border-border-light bg-muted dark:border-border-dark"
+                        >
+                            <div class="aspect-[4/5] overflow-hidden">
+                                <img
+                                    :src="coverUrl(magazine)"
+                                    :alt="magazine.title"
+                                    class="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.02]"
+                                    @error="
+                                        ($event.target as HTMLImageElement).src =
+                                            '/frontend/images/placeholder.jpg'
+                                    "
+                                />
+                            </div>
+
+                            <div
+                                v-if="magazine.featured"
+                                class="absolute left-0 top-0"
+                            >
+                                <AppBadge
+                                    variant="primary"
+                                    size="sm"
+                                >
+                                    Featured
+                                </AppBadge>
+                            </div>
+                        </div>
+                    </Link>
+
+                    <div class="pt-5">
+                        <div class="flex items-center gap-3">
+                            <AppText
+                                v-if="magazine.category"
+                                tag="span"
+                                font="redhat"
+                                size="xs"
+                                weight="bold"
+                                uppercase
+                                tracking="wide"
+                                color="primary"
+                            >
+                                {{ magazine.category.name }}
+                            </AppText>
+
+                            <span
+                                v-if="magazine.category"
+                                class="h-1 w-1 rounded-full bg-border-light dark:bg-border-dark"
+                            />
+
+                            <AppText
+                                tag="span"
+                                font="redhat"
+                                size="xs"
+                                color="muted"
+                            >
+                                {{ issueCount(magazine) }}
+                                {{ issueCount(magazine) === 1 ? 'Issue' : 'Issues' }}
+                            </AppText>
+                        </div>
+
+                        <Link
+                            :href="magazineShow(magazine.slug).url"
+                            class="mt-3 block"
+                        >
+                            <AppHeading
+                                tag="h3"
+                                font="prata"
+                                size="xl"
+                                weight="normal"
+                                leading="tight"
+                                hover-primary
+                            >
+                                {{ magazine.title }}
+                            </AppHeading>
+                        </Link>
+
+                        <AppText
+                            v-if="magazine.subtitle"
+                            tag="p"
+                            font="lora"
+                            size="sm"
+                            color="muted"
+                            leading="relaxed"
+                            :clamp="2"
+                            class="mt-3"
+                        >
+                            {{ magazine.subtitle }}
+                        </AppText>
+
+                        <AppText
+                            v-if="magazine.published_at"
+                            tag="p"
+                            font="redhat"
+                            size="xs"
+                            color="muted"
+                            class="mt-4"
+                        >
+                            {{ formatDate(magazine.published_at) }}
+                        </AppText>
+                    </div>
+                </article>
+            </div>
+
+            <!-- Empty -->
+
+            <div
+                v-else
+                class="border border-dashed border-border-light px-6 py-24 text-center dark:border-border-dark"
+            >
+                <AppHeading
+                    tag="p"
+                    font="prata"
+                    size="2xl"
+                    weight="normal"
+                    color="muted"
+                    align="center"
+                    class="italic"
+                >
+                    No publications found.
+                </AppHeading>
+
+                <AppText
+                    tag="p"
+                    font="lora"
+                    size="sm"
+                    color="muted"
+                    align="center"
+                    class="mt-3"
+                >
+                    Try changing your search or category.
+                </AppText>
+            </div>
+        </div>
+    </section>
 </template>

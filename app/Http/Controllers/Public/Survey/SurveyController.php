@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Public\Survey;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\Survey\SurveyResource;
 use App\Support\Breadcrumbs\BreadcrumbBuilder;
 use App\Models\Survey\Survey;
 use App\Models\Survey\SurveyAnswer;
@@ -11,21 +12,37 @@ use App\Services\SurveyResultService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
+use Inertia\Response;
 
 class SurveyController extends Controller
 {
-    public function index()
+    public function index(): Response
     {
         $surveys = Survey::query()
             ->open()
-            ->withCount('questions', 'responses')
+            ->withCount([
+                'questions',
+                'responses',
+            ])
             ->orderByDesc('published_at')
             ->orderByDesc('created_at')
-            ->get(['id', 'title', 'slug', 'description', 'closes_at', 'published_at', 'created_at']);
+            ->get([
+                'id',
+                'title',
+                'slug',
+                'description',
+                'closes_at',
+                'published_at',
+                'created_at',
+            ]);
 
         return Inertia::render('surveys/Index', [
-            'surveys' => $surveys,
-            'breadcrumbs' => BreadcrumbBuilder::make()->home()->add('Surveys')->toArray(),
+            'surveys' => SurveyResource::collection($surveys),
+
+            'breadcrumbs' => BreadcrumbBuilder::make()
+                ->home()
+                ->add('Surveys')
+                ->toArray(),
         ]);
     }
 
@@ -33,14 +50,18 @@ class SurveyController extends Controller
     {
         abort_unless($this->isLive($survey), 404);
 
-        $survey->load(['questions.options']);
+        $survey->load([
+            'questions.options',
+        ]);
 
         return Inertia::render('surveys/Show', [
             'survey' => $survey,
             'isOpen' => $survey->isOpen(),
             'hasResponded' => $this->hasResponded($request, $survey),
-            'breadcrumbs' => BreadcrumbBuilder::make()->home()
-                ->add('surveys', route('surveys.index'))
+
+            'breadcrumbs' => BreadcrumbBuilder::make()
+                ->home()
+                ->add('Surveys', route('surveys.index'))
                 ->add($survey->title)
                 ->toArray(),
         ]);

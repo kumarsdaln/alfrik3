@@ -8,11 +8,11 @@
     import AppSelect from '@/components/form/AppSelect.vue'
 
     import type { FormOption } from '@/types/forms'
+    import type { Role, User } from '@/types/user'
 
     import {
-        store,
+        update,
     } from '@/actions/App/Http/Controllers/Admin/User/UserController'
-import { UserRole } from '@/types/user'
 
 
     /*
@@ -22,7 +22,8 @@ import { UserRole } from '@/types/user'
     */
 
     interface Props {
-        roles: UserRole[]
+        user: User
+        roles: Role[]
     }
 
     const props = defineProps<Props>()
@@ -55,56 +56,68 @@ import { UserRole } from '@/types/user'
 
 
 <template>
-    <Form :action="store()">
+    <Form :action="update(props.user.id)" method="put">
         <template #default="{
             errors,
             processing,
             isDirty,
         }">
-            <AppFormLayout title="Create User" description="Create a new user and assign their role.">
+            <AppFormLayout title="Edit User"
+                description="Update the user's profile, account details, role, and status.">
                 <div class="max-w-5xl space-y-6">
 
                     <!-- Name -->
 
-                    <AppInput name="name" label="Name" placeholder="Enter user name" :error="errors.name" />
+                    <AppInput name="name" label="Name" placeholder="Enter user name" :default-value="props.user.name"
+                        :error="errors.name" />
+
+
+                    <!-- Username -->
+
+                    <AppInput name="username" label="Username" placeholder="Enter username"
+                        :default-value="props.user.username" :error="errors.username" />
+
+                    <p class="-mt-4 text-xs text-muted-foreground">
+                        This username is used for the user's public profile.
+                    </p>
 
 
                     <!-- Email -->
 
                     <AppInput name="email" type="email" label="Email" placeholder="Enter email address"
-                        :error="errors.email" />
+                        :default-value="props.user.email" :error="errors.email" />
 
 
                     <!-- Password -->
 
-                    <AppInput name="password" type="password" label="Password" placeholder="Enter password"
-                        :error="errors.password" />
+                    <AppInput name="password" type="password" label="New Password"
+                        placeholder="Leave blank to keep the current password" :error="errors.password" />
 
 
                     <!-- Password Confirmation -->
 
-                    <AppInput name="password_confirmation" type="password" label="Confirm Password"
-                        placeholder="Confirm password" :error="errors.password_confirmation" />
+                    <AppInput name="password_confirmation" type="password" label="Confirm New Password"
+                        placeholder="Confirm new password" :error="errors.password_confirmation" />
 
 
                     <!-- Role -->
 
                     <AppSelect name="role" label="Role" placeholder="Select a role" :options="roleOptions"
-                        :error="errors.role" />
+                        :default-value="props.user.role_id" :error="errors.role" />
 
 
                     <!-- Status -->
 
-                    <AppSelect name="status" label="Status" :options="[
+                    <AppSelect name="is_active" label="Status" :options="[
                         {
-                            value: 'active',
+                            value: '0',
                             label: 'Active',
                         },
                         {
-                            value: 'inactive',
+                            value: '1',
                             label: 'Inactive',
                         },
-                    ]" :error="errors.status" />
+                    ]" :default-value="props.user.is_active" :error="errors.is_active" />
 
                 </div>
 
@@ -124,7 +137,7 @@ import { UserRole } from '@/types/user'
 
                         <AppButton variant="submit" type="submit" :loading="processing"
                             :disabled="!isDirty || processing">
-                            Create User
+                            Save Changes
                         </AppButton>
                     </div>
                 </template>

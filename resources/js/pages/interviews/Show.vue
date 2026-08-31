@@ -1,526 +1,599 @@
 <script setup lang="ts">
-    import { computed } from 'vue'
-    import { Head } from '@inertiajs/vue3'
+import { computed } from 'vue'
+import { Head, Link } from '@inertiajs/vue3'
 
-    import AppContainer from '@/components/ui/AppContainer.vue'
-    import AppBadge from '@/components/ui/AppBadge.vue'
-    import AppHeading from '@/components/ui/AppHeading.vue'
-    import AppText from '@/components/ui/AppText.vue'
-    import Avatar from '@/components/profile/Avatar.vue'
+import AppContainer from '@/components/ui/AppContainer.vue'
+import AppHeading from '@/components/ui/AppHeading.vue'
+import AppText from '@/components/ui/AppText.vue'
+import Avatar from '@/components/profile/Avatar.vue'
 
-    import InterviewSpeakerCard from '@/components/interview/InterviewSpeakerCard.vue'
-    import InterviewMediaPlayer from '@/components/interview/InterviewMediaPlayer.vue'
-    import AppReadingProgress from '@/components/datadisplay/progress/AppReadingProgress.vue'
-    import { formatDate } from '@/utils/dateUtils'
-    import InterviewController from '@/actions/App/Http/Controllers/Public/Interview/InterviewController'
+import InterviewSpeakerCard from '@/components/interview/InterviewSpeakerCard.vue'
+import InterviewMediaPlayer from '@/components/interview/InterviewMediaPlayer.vue'
+import AppReadingProgress from '@/components/datadisplay/progress/AppReadingProgress.vue'
 
+import { formatDate } from '@/utils/dateUtils'
 
-    // Types
-    type ParticipantRole =
-        | 'interviewer'
-        | 'interviewee'
+import InterviewController from '@/actions/App/Http/Controllers/Public/Interview/InterviewController'
+import { show as profileShow } from '@/actions/App/Http/Controllers/Public/Profile/ProfileController'
 
 
-    interface User {
-        id: number
-        name: string
-        avatar?: string | null
-        external_id: string
+/*
+|--------------------------------------------------------------------------
+| Types
+|--------------------------------------------------------------------------
+*/
+
+type ParticipantRole =
+    | 'interviewer'
+    | 'interviewee'
+
+interface User {
+    id: number
+    username: string
+    name: string
+    avatar?: string | null
+}
+
+interface Participant {
+    id: number
+    role: ParticipantRole
+    user: User
+}
+
+interface InterviewMedia {
+    id: number
+    media_type: 'video' | 'audio'
+    source_type: 'upload' | 'external'
+    file_url?: string | null
+    embed_url?: string | null
+    duration?: number | null
+    thumbnail?: string | null
+}
+
+interface InterviewAnswer {
+    id: number
+    answer: string
+    answered_by: User
+}
+
+interface InterviewQuestion {
+    id: number
+    question: string
+    order: number
+    asked_by: User
+    answers: InterviewAnswer[]
+}
+
+interface InterviewData {
+    id: number
+    slug: string
+    title: string
+    description?: string | null
+    thumbnail?: string | null
+    interview_type: string
+    duration: string | number | null
+    action_label: string
+    published_at: string
+    media: InterviewMedia[]
+    participants: Participant[]
+    questions: InterviewQuestion[]
+}
+
+interface InterviewResource {
+    data: InterviewData
+}
+
+interface Props {
+    interview: InterviewResource
+}
+
+const props = defineProps<Props>()
+
+
+/*
+|--------------------------------------------------------------------------
+| Interview
+|--------------------------------------------------------------------------
+*/
+
+const interviewData = computed(() => props.interview.data)
+
+
+/*
+|--------------------------------------------------------------------------
+| Participants
+|--------------------------------------------------------------------------
+*/
+
+const interviewers = computed(() =>
+    interviewData.value.participants.filter(
+        participant => participant.role === 'interviewer',
+    ),
+)
+
+const interviewees = computed(() =>
+    interviewData.value.participants.filter(
+        participant => participant.role === 'interviewee',
+    ),
+)
+
+const interviewerNames = computed(() =>
+    interviewers.value
+        .map(participant => participant.user.name)
+        .join(', '),
+)
+
+const intervieweeNames = computed(() =>
+    interviewees.value
+        .map(participant => participant.user.name)
+        .join(', '),
+)
+
+const visibleInterviewees = computed(() =>
+    interviewees.value.slice(0, 5),
+)
+
+const visibleInterviewers = computed(() =>
+    interviewers.value.slice(0, 4),
+)
+
+
+/*
+|--------------------------------------------------------------------------
+| Media
+|--------------------------------------------------------------------------
+*/
+
+const primaryMedia = computed(
+    () => interviewData.value.media?.[0] ?? null,
+)
+
+const hasMedia = computed(
+    () => Boolean(primaryMedia.value),
+)
+
+
+/*
+|--------------------------------------------------------------------------
+| Interview Type
+|--------------------------------------------------------------------------
+*/
+
+const interviewTypeLabel = computed(() => {
+    const type = interviewData.value.interview_type
+
+    if (!type) {
+        return 'Interview'
     }
 
+    return type
+        .replace(/[-_]/g, ' ')
+        .replace(/\b\w/g, character => character.toUpperCase())
+})
 
-    interface Participant {
-        id: number
-        role: ParticipantRole
-        user: User
+
+/*
+|--------------------------------------------------------------------------
+| Statistics
+|--------------------------------------------------------------------------
+*/
+
+const questionCount = computed(
+    () => interviewData.value.questions.length,
+)
+
+const participantCount = computed(
+    () => interviewData.value.participants.length,
+)
+
+
+/*
+|--------------------------------------------------------------------------
+| Profile URL
+|--------------------------------------------------------------------------
+*/
+
+function profileUrl(username: string | null | undefined): string {
+    if (!username) {
+        return '#'
     }
 
-
-    interface InterviewAnswer {
-        id: number
-        answer: string
-        answered_by: User
-    }
-
-
-    interface InterviewQuestion {
-        id: number
-        question: string
-        asked_by: User
-        answers: InterviewAnswer[]
-    }
-
-
-    interface InterviewData {
-        id: number
-        slug: string
-        title: string
-        description?: string | null
-        thumbnail?: string | null
-        interview_type: string
-        duration: string | number
-        action_label: string
-        published_at: string
-
-        participants: Participant[]
-        questions: InterviewQuestion[]
-    }
-
-
-    interface InterviewResource {
-        data: InterviewData
-    }
-
-
-    interface Props {
-        interview: InterviewResource
-    }
-
-
-    const props = defineProps<Props>()
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | Interview
-    |--------------------------------------------------------------------------
-    */
-
-    const interviewData = computed(
-        () => props.interview.data,
-    )
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | Participants
-    |--------------------------------------------------------------------------
-    */
-
-    const interviewers = computed(
-        () =>
-            interviewData.value.participants.filter(
-                participant =>
-                    participant.role === 'interviewer',
-            ),
-    )
-
-
-    const interviewees = computed(
-        () =>
-            interviewData.value.participants.filter(
-                participant =>
-                    participant.role === 'interviewee',
-            ),
-    )
-
-
-    const interviewerNames = computed(
-        () =>
-            interviewers.value
-                .map(participant => participant.user.name)
-                .join(', '),
-    )
-
-
-    const intervieweeNames = computed(
-        () =>
-            interviewees.value
-                .map(participant => participant.user.name)
-                .join(', '),
-    )
+    return profileShow(username).url
+}
 </script>
 
-
 <template>
-
     <Head :title="interviewData.title" />
-    <AppContainer id="interview">
 
-        <!-- Interview Header -->
-        <header class="
-                    relative
-                    mb-16
+    <div id="interview" class="pb-16 sm:pb-24 lg:pb-32" >
+        <header class="mb-20 sm:mb-28 lg:mb-36">
+            <!-- Title -->
+            <div class="max-w-6xl">
+                <AppHeading
+                    tag="h1"
+                    font="prata"
+                    weight="normal"
+                    size="5xl"
+                    leading="tight"
+                    tracking="tight"
+                    class="text-balance sm:text-6xl lg:text-7xl xl:text-[5.5rem]"
+                >
+                    {{ interviewData.title }}
+                </AppHeading>
+            </div>
 
-                    lg:mb-28
-                ">
 
-            <!-- Cover -->
+            <!-- Description -->
 
-            <div class="
-                        relative
-                        overflow-hidden
-
-                        bg-zinc-100
-
-                        dark:bg-zinc-900
-                    ">
-                <!-- Media player (video / audio interviews) -->
-                <InterviewMediaPlayer v-if="interviewData.media && interviewData.media.length"
-                    :media="interviewData.media[0]" />
-
-                <img v-else-if="interviewData.thumbnail" :src="interviewData.thumbnail" :alt="interviewData.title"
+            <div
+                v-if="interviewData.description"
+                class="mt-7 max-w-3xl sm:mt-9"
+            >
+                <div
                     class="
-                            aspect-video
-                            w-full
+                        font-lora
+                        text-base
+                        font-light
+                        leading-relaxed
+                        text-content-lightMuted
+                        sm:text-xl
+                        sm:leading-[1.8]
+                        dark:text-content-darkMuted
+                    "
+                    v-html="interviewData.description"
+                />
+            </div>
 
-                            object-cover
-                        ">
+
+            <!-- People -->
+
+            <div
+                v-if="interviewees.length || interviewers.length"
+                class="
+                    mt-10
+                    flex
+                    flex-col
+                    gap-7
+                    border-y
+                    border-border
+                    py-6
+                    sm:mt-12
+                    sm:flex-row
+                    sm:flex-wrap
+                    sm:items-center
+                    sm:gap-10
+                "
+            >
+
+                <!-- Interviewees -->
+
+                <div
+                    v-if="interviewees.length"
+                    class="flex min-w-0 items-center gap-4"
+                >
+                    <div class="flex shrink-0 -space-x-3">
+                        <Link
+                            v-for="participant in visibleInterviewees"
+                            :key="participant.id"
+                            :href="profileUrl(participant.user.username)"
+                            class="
+                                rounded-full
+                                border-2
+                                border-background
+                                transition-transform
+                                hover:z-10
+                                hover:-translate-y-1
+                            "
+                        >
+                            <Avatar
+                                :name="participant.user.name"
+                                :image="participant.user.avatar"
+                                size="size-11"
+                            />
+                        </Link>
+
+                        <div
+                            v-if="interviewees.length > visibleInterviewees.length"
+                            class="
+                                flex
+                                size-11
+                                items-center
+                                justify-center
+                                rounded-full
+                                border-2
+                                border-background
+                                bg-muted
+                                text-xs
+                                font-semibold
+                                text-muted-foreground
+                            "
+                        >
+                            +{{ interviewees.length - visibleInterviewees.length }}
+                        </div>
+                    </div>
+
+                    <div class="min-w-0">
+                        <AppText
+                            tag="span"
+                            size="xs"
+                            weight="semibold"
+                            color="muted"
+                            class="uppercase tracking-[0.16em]"
+                        >
+                            Featuring
+                        </AppText>
+
+                        <AppText
+                            tag="div"
+                            size="sm"
+                            weight="semibold"
+                            class="mt-1 max-w-[280px]"
+                            truncate
+                            :title="intervieweeNames"
+                        >
+                            {{ intervieweeNames }}
+                        </AppText>
+                    </div>
+                </div>
 
 
-                <!-- No Thumbnail -->
+                <!-- Divider -->
 
-                <div v-else class="
-                            flex aspect-video
-                            items-center
-                            justify-center
+                <span
+                    v-if="interviewees.length && interviewers.length"
+                    class="
+                        hidden
+                        h-10
+                        w-px
+                        bg-border
+                        sm:block
+                    "
+                    aria-hidden="true"
+                />
 
-                            bg-zinc-100
 
-                            dark:bg-zinc-900
-                        ">
-                    <AppText size="sm" color="muted">
-                        No interview cover image
+                <!-- Interviewers -->
+
+                <div
+                    v-if="interviewers.length"
+                    class="flex min-w-0 items-center gap-4"
+                >
+                    <div class="flex shrink-0 -space-x-2">
+                        <Link
+                            v-for="participant in visibleInterviewers"
+                            :key="participant.id"
+                            :href="profileUrl(participant.user.username)"
+                            class="
+                                rounded-full
+                                border-2
+                                border-background
+                                transition-transform
+                                hover:z-10
+                                hover:-translate-y-1
+                            "
+                        >
+                            <Avatar
+                                :name="participant.user.name"
+                                :image="participant.user.avatar"
+                                size="size-10"
+                            />
+                        </Link>
+                    </div>
+
+                    <div class="min-w-0">
+                        <AppText
+                            tag="span"
+                            size="xs"
+                            weight="semibold"
+                            color="muted"
+                            class="uppercase tracking-[0.16em]"
+                        >
+                            Interviewed by
+                        </AppText>
+
+                        <AppText
+                            tag="div"
+                            size="sm"
+                            weight="medium"
+                            class="mt-1 max-w-[260px]"
+                            truncate
+                            :title="interviewerNames"
+                        >
+                            {{ interviewerNames }}
+                        </AppText>
+                    </div>
+                </div>
+
+
+                <!-- Meta -->
+
+                <div class="flex items-center gap-3 sm:ml-auto">
+                    <AppText
+                        tag="span"
+                        size="sm"
+                        color="muted"
+                    >
+                        {{ formatDate(interviewData.published_at) }}
+                    </AppText>
+
+                    <span
+                        class="size-1 rounded-full bg-muted-foreground/40"
+                        aria-hidden="true"
+                    />
+
+                    <AppText
+                        tag="span"
+                        size="sm"
+                        color="muted"
+                    >
+                        {{ interviewData.duration || '—' }}
+
+                        <span v-if="interviewData.action_label">
+                            {{ interviewData.action_label }}
+                        </span>
                     </AppText>
                 </div>
-
-
-                <!-- Badge -->
-
-                <div class="
-                            absolute
-                            left-4 top-4
-
-                            sm:left-6
-                            sm:top-6
-                        ">
-                    <AppBadge>
-                        {{ interviewData.interview_type }}
-                    </AppBadge>
-                </div>
-
             </div>
 
 
-            <!-- Header Information -->
+            <!-- Media -->
 
-            <div class="
-                        relative z-10
+            <div
+                v-if="hasMedia || interviewData.thumbnail"
+                class="relative mt-10 overflow-hidden bg-muted sm:mt-14"
+            >
+                <InterviewMediaPlayer
+                    v-if="hasMedia"
+                    :media="primaryMedia"
+                />
 
-                        pt-8
-
-                        lg:-mt-16
-                        lg:px-8
-                        lg:pt-0
-                    ">
-
-                <!-- Title -->
-
-                <div class="
-                            lg:max-w-5xl
-                            lg:bg-[#FAFAFA]
-                            lg:p-8
-                            lg:pb-6
-
-                            dark:lg:bg-[#050505]
-                        ">
-                    <AppHeading tag="h1" font="prata" weight="normal" size="5xl" leading="tight" tracking="tight">
-                        {{ interviewData.title }}
-                    </AppHeading>
-                </div>
-
-
-                <!-- Interview Meta -->
-
-                <div class="
-                            flex flex-col
-                            gap-6
-
-                            border-t
-                            border-zinc-200
-
-                            pt-6
-
-                            sm:flex-row
-                            sm:flex-wrap
-                            sm:items-center
-
-                            lg:gap-10
-
-                            dark:border-white/10
-                        ">
-
-                    <!-- Featured Guests -->
-
-                    <div v-if="interviewees.length" class="
-                                flex
-                                items-center
-                                gap-3
-                            ">
-
-                        <div class="flex -space-x-3">
-
-                            <div v-for="guest in interviewees.slice(0, 3)" :key="guest.id" class="
-                                        rounded-full
-
-                                        border-2
-                                        border-[#FAFAFA]
-
-                                        dark:border-[#050505]
-                                    ">
-                                <Avatar :name="guest.user.name" :image="guest.user.avatar" size="h-11 w-11" />
-                            </div>
-
-                        </div>
-
-
-                        <div class="min-w-0">
-
-                            <AppText size="xs" color="muted" weight="medium" class="
-                                        uppercase
-                                        tracking-widest
-                                    ">
-                                Featuring
-                            </AppText>
-
-
-                            <AppText size="sm" weight="semibold" truncate class="
-                                        mt-1
-                                        max-w-[240px]
-                                    ">
-                                {{ intervieweeNames }}
-                            </AppText>
-
-                        </div>
-
-                    </div>
-
-
-                    <!-- Hosts -->
-
-                    <div v-if="interviewers.length" class="
-                                flex
-                                items-center
-                                gap-3
-
-                                sm:border-l
-                                sm:border-zinc-200
-                                sm:pl-8
-
-                                dark:sm:border-white/10
-                            ">
-
-                        <div class="flex -space-x-2">
-
-                            <div v-for="host in interviewers.slice(0, 2)" :key="host.id" class="
-                                        rounded-full
-
-                                        border-2
-                                        border-[#FAFAFA]
-
-                                        dark:border-[#050505]
-                                    ">
-                                <Avatar :name="host.user.name" :image="host.user.avatar" size="h-10 w-10" />
-                            </div>
-
-                        </div>
-
-
-                        <div class="min-w-0">
-
-                            <AppText size="xs" color="muted" weight="medium" class="
-                                        uppercase
-                                        tracking-widest
-                                    ">
-                                Hosted By
-                            </AppText>
-
-
-                            <AppText size="sm" weight="medium" truncate class="
-                                        mt-1
-                                        max-w-[220px]
-                                    ">
-                                {{ interviewerNames }}
-                            </AppText>
-
-                        </div>
-
-                    </div>
-
-
-                    <!-- Date and Duration -->
-
-                    <div class="
-                                flex
-                                items-center
-                                gap-3
-
-                                sm:ml-auto
-                            ">
-                        <AppText size="sm" color="muted" weight="medium">
-                            {{
-                                formatDate(
-                                    interviewData.published_at,
-                                )
-                            }}
-                        </AppText>
-
-
-                        <span class="
-                                    h-1 w-1
-                                    rounded-full
-
-                                    bg-zinc-300
-
-                                    dark:bg-zinc-700
-                                " />
-
-
-                        <AppText size="sm" color="muted" weight="medium">
-                            {{ interviewData.duration }}
-                            {{ interviewData.action_label }}
-                        </AppText>
-
-                    </div>
-
-                </div>
-
+                <img
+                    v-else
+                    :src="interviewData.thumbnail!"
+                    :alt="interviewData.title"
+                    class="aspect-[16/9] w-full object-cover"
+                />
             </div>
-
         </header>
 
 
-        <!--
-            |--------------------------------------------------------------------------
-            | Interview Introduction
-            |--------------------------------------------------------------------------
-            -->
+        <!-- ================================================================
+             CONTENT INTRO
+        ================================================================= -->
 
-        <section v-if="interviewData.description" class="
-                    mb-24
-                    max-w-3xl
-
-                    lg:mb-36
-                ">
-            <div class="
-                        prose
-                        prose-lg
-                        prose-zinc
-
-                        max-w-none
-
-                        font-lora
-
-                        prose-p:text-xl
-                        prose-p:font-light
-                        prose-p:leading-[1.8]
-                        prose-p:text-zinc-700
-
-                        dark:prose-invert
-                        dark:prose-p:text-slate-300
-
-                        sm:prose-p:text-2xl
-                    " v-html="interviewData.description" />
+        <section
+            v-if="interviewData.description"
+            class="mb-20 sm:mb-28 lg:hidden"
+        >
+            <div class="border-l-2 border-brand pl-5 sm:pl-7">
+                <AppText
+                    tag="p"
+                    font="lora"
+                    size="lg"
+                    leading="relaxed"
+                    color="muted"
+                    class="italic sm:text-xl"
+                >
+                    A conversation exploring ideas, experiences,
+                    challenges, and the work behind the person.
+                </AppText>
+            </div>
         </section>
 
 
-        <!--
-            |--------------------------------------------------------------------------
-            | Questions and Answers
-            |--------------------------------------------------------------------------
-            -->
+        <!-- ================================================================
+             INTERVIEW CONTENT
+        ================================================================= -->
 
-        <main class="pb-28">
+        <main>
 
-            <div class="
+            <!-- Section Heading -->
+
+            <div
+                class="
+                    mb-14
+                    flex
+                    items-end
+                    justify-between
+                    gap-6
+                    sm:mb-20
+                "
+            >
+                <div>
+                    <AppText
+                        tag="div"
+                        size="xs"
+                        weight="semibold"
+                        color="brand"
+                        class="mb-3 uppercase tracking-[0.18em]"
+                    >
+                        The Conversation
+                    </AppText>
+
+                    <AppHeading
+                        tag="h2"
+                        font="prata"
+                        weight="normal"
+                        size="3xl"
+                        leading="tight"
+                        class="sm:text-4xl"
+                    >
+                        Questions &amp; Answers
+                    </AppHeading>
+                </div>
+
+                <AppText
+                    tag="span"
+                    size="sm"
+                    color="muted"
+                    class="shrink-0"
+                >
+                    {{ questionCount }}
+                    {{ questionCount === 1 ? 'Question' : 'Questions' }}
+                </AppText>
+            </div>
+
+
+            <!-- Questions -->
+
+            <div class="space-y-20 sm:space-y-28 lg:space-y-36">
+                <article
+                    v-for="(question, index) in interviewData.questions"
+                    :key="question.id"
+                    class="
                         relative
-                        space-y-24
+                        grid
+                        grid-cols-1
+                        gap-8
+                        lg:grid-cols-12
+                        lg:gap-16
+                    "
+                >
 
-                        lg:space-y-44
-                    ">
+                    <!-- Question -->
 
-                <!-- Vertical Timeline -->
-
-                <div class="
-                            absolute
-                            bottom-0
-                            left-5/12
-                            top-0
-
-                            hidden
-                            w-px
-
-                            -translate-x-1/2
-
-                            bg-zinc-200
-
-                            lg:block
-
-                            dark:bg-white/5
-                        " />
-
-
-                <!-- Question -->
-
-                <article v-for="(question, index) in interviewData.questions" :key="question.id" class="
-                            group relative
-                            grid grid-cols-1
-                            gap-10
-                            lg:grid-cols-12
-                            lg:gap-20
-                        ">
-
-                    <!-- Question Side -->
-                    <div class="relative lg:col-span-5">
+                    <div class="lg:col-span-5">
                         <div class="lg:sticky lg:top-28">
 
-                            <!-- Decorative Number -->
-                            <div aria-hidden="true" class="
-                                        pointer-events-none
+                            <!-- Number -->
 
-                                        absolute
-                                        -left-4
-                                        -top-16
-
-                                        select-none
-
-                                        font-prata
-                                        text-[7rem]
-                                        leading-none
-
-                                        text-zinc-100
-
-                                        transition-colors
-                                        duration-500
-
-                                        group-hover:text-brand/10
-
-                                        dark:text-white/[0.025]
-                                        dark:group-hover:text-brand/[0.05]
-
-                                        sm:-left-8
-                                        sm:text-[9rem]
-                                    ">
-                                {{
-                                    String(index + 1)
-                                        .padStart(2, '0')
-                                }}
+                            <div
+                                class="
+                                    mb-5
+                                    font-prata
+                                    text-5xl
+                                    leading-none
+                                    text-muted-foreground/20
+                                    sm:text-7xl
+                                "
+                                aria-hidden="true"
+                            >
+                                {{ String(index + 1).padStart(2, '0') }}
                             </div>
 
 
-                            <!-- Question Content -->
-                            <div class="relative z-10">
-                                <InterviewSpeakerCard :href="expertsProfile(
-                                    question.asked_by.external_id,
-                                ).url" :name="question.asked_by.name" :avatar="question.asked_by.avatar" />
+                            <!-- Speaker -->
+
+                            <InterviewSpeakerCard
+                                :href="profileUrl(question.asked_by.username)"
+                                :name="question.asked_by.name"
+                                :avatar="question.asked_by.avatar"
+                                role="Interviewer"
+                            />
 
 
-                                <AppHeading tag="h2" font="redhat" size="3xl" weight="normal" leading="relaxed"
-                                    class="mt-5 sm:text-4xl">
-                                    “{{ question.question }}”
-                                </AppHeading>
+                            <!-- Question -->
 
-                            </div>
+                            <AppHeading
+                                tag="h2"
+                                font="prata"
+                                weight="normal"
+                                size="2xl"
+                                leading="relaxed"
+                                class="mt-6 text-balance sm:text-3xl lg:text-4xl"
+                            >
+                                {{ question.question }}
+                            </AppHeading>
 
                         </div>
                     </div>
@@ -528,61 +601,93 @@
 
                     <!-- Answers -->
 
-                    <div class="
-                                space-y-14
-                                lg:col-span-7
-                                lg:pt-14
-                                lg:space-y-20
-                            ">
+                    <div
+                        class="
+                            space-y-12
+                            lg:col-span-7
+                            lg:pt-16
+                            lg:space-y-20
+                        "
+                    >
 
-                        <article v-for="answer in question.answers" :key="answer.id" class="relative">
-                            <InterviewSpeakerCard :href="expertsProfile(
-                                answer.answered_by.external_id,
-                            ).url" :name="answer.answered_by.name" :avatar="answer.answered_by.avatar"
-                                role="Guest" />
+                        <article
+                            v-for="answer in question.answers"
+                            :key="answer.id"
+                            class="
+                                relative
+                                border-l
+                                border-border
+                                pl-5
+                                sm:pl-8
+                            "
+                        >
 
-                            <div class="
-                                        mt-5
-                                        max-w-prose
-                                        whitespace-pre-wrap
-                                        font-lora
-                                        text-xl
-                                        font-light
-                                        leading-[1.8]
-                                        text-zinc-800
-                                        sm:text-2xl
-                                        dark:text-slate-300" v-html="answer.answer" />
+                            <!-- Answer Speaker -->
+
+                            <InterviewSpeakerCard
+                                :href="profileUrl(answer.answered_by.username)"
+                                :name="answer.answered_by.name"
+                                :avatar="answer.answered_by.avatar"
+                                role="Interviewee"
+                                variant="answer"
+                            />
+
+
+                            <!-- Answer -->
+
+                            <div
+                                class="
+                                    mt-6
+                                    max-w-prose
+                                    font-lora
+                                    text-lg
+                                    font-light
+                                    leading-[1.85]
+                                    text-content-light
+                                    sm:text-xl
+                                    lg:text-2xl
+                                    dark:text-content-dark
+                                "
+                                v-html="answer.answer"
+                            />
 
                         </article>
 
 
-                        <!-- No Answers -->
+                        <!-- No Answer -->
 
-                        <div v-if="!question.answers.length" class="
-                                    border-l-2
-                                    border-zinc-200
-
-                                    py-2 pl-5
-
-                                    dark:border-zinc-800
-                                ">
-                            <AppText size="sm" color="muted" leading="relaxed">
-                                No response has been published for this question yet.
+                        <div
+                            v-if="!question.answers.length"
+                            class="
+                                border-l-2
+                                border-border
+                                py-2
+                                pl-5
+                            "
+                        >
+                            <AppText
+                                size="sm"
+                                color="muted"
+                                leading="relaxed"
+                            >
+                                No response has been published for this
+                                question yet.
                             </AppText>
                         </div>
 
                     </div>
-
                 </article>
-
             </div>
 
         </main>
-
-    </AppContainer>
+    </div>
 
 
     <!-- Reading Progress -->
-    <AppReadingProgress :title="interviewData.title" :href="InterviewController.show(interviewData.slug).url"
-        target="#interview" />
+
+    <AppReadingProgress
+        :title="interviewData.title"
+        :href="InterviewController.show(interviewData.slug).url"
+        target="#interview"
+    />
 </template>

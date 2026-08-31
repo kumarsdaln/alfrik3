@@ -1,55 +1,48 @@
 <script setup lang="ts">
 import { useId } from 'vue'
 
-import AppFormField from '@/components/ui/AppFormField.vue'
-import AppInputControl from '@/components/ui/AppInputControl.vue'
-
-import type { FormValue } from '@/types/forms'
+import { Input } from '@/components/ui/input'
 
 interface Props {
     name?: string
-    label?: string
     type?: string
-    error?: string
     placeholder?: string
     disabled?: boolean
     required?: boolean
     autocomplete?: string
+    id?: string
+    error?: boolean
 }
 
-withDefaults(
+const props = withDefaults(
     defineProps<Props>(),
     {
         type: 'text',
         disabled: false,
         required: false,
+        error: false,
     },
 )
 
-const model = defineModel<FormValue>({
+const model = defineModel<string | number>({
     default: '',
 })
 
-const id = useId()
+const generatedId = useId()
+
+const inputId = props.id ?? generatedId
 </script>
 
 <template>
-    <AppFormField
-        :id="id"
-        :label="label"
-        :error="error"
+    <Input
+        :id="inputId"
+        v-model="model"
+        :name="name"
+        :type="type"
+        :placeholder="placeholder"
+        :disabled="disabled"
         :required="required"
-    >
-        <AppInputControl
-            :id="id"
-            v-model="model"
-            :name="name"
-            :type="type"
-            :placeholder="placeholder"
-            :disabled="disabled"
-            :required="required"
-            :autocomplete="autocomplete"
-            :error="!!error"
-        />
-    </AppFormField>
+        :autocomplete="autocomplete"
+        :aria-invalid="error || undefined"
+    />
 </template>

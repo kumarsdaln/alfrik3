@@ -6,118 +6,105 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Str;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Magazine extends Model
 {
     use HasFactory;
 
-    protected $table = 'magazine';
-
-    protected $primaryKey = 'id';
+    protected $table = 'magazines';
 
     protected $fillable = [
         'title',
+        'slug',
         'subtitle',
-        'content',
+        'description',
         'cover_image',
         'category_id',
         'author_id',
         'status',
+        'featured',
         'published_at',
         'meta_title',
         'meta_description',
         'meta_keywords',
-        'slug',
     ];
 
     protected $casts = [
         'status' => 'boolean',
+        'featured' => 'boolean',
         'published_at' => 'datetime',
-        'created_at' => 'datetime',
-        'updated_at' => 'datetime',
     ];
 
-    protected $appends = ['reading_minutes'];
+    protected $appends = [
+        'is_published',
+    ];
 
-    public function category()
+    /*
+    |--------------------------------------------------------------------------
+    | Relationships
+    |--------------------------------------------------------------------------
+    */
+
+    public function category(): BelongsTo
     {
-        return $this->belongsTo(MagazineCategory::class, 'category_id', 'id');
+        return $this->belongsTo(
+            MagazineCategory::class,
+            'category_id'
+        );
     }
 
-    public function author()
+    public function author(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'author_id');
+        return $this->belongsTo(
+            User::class,
+            'author_id'
+        );
     }
 
-    /**
-     * Live issues: toggled on and either unscheduled or past their publish time.
-     */
+    public function issues(): HasMany
+    {
+        return $this->hasMany(
+            MagazineIssue::class,
+            'magazine_id'
+        );
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Scopes
+    |--------------------------------------------------------------------------
+    */
+
     public function scopePublished(Builder $query): Builder
     {
-        return $query->where('status', true)
-            ->where(function (Builder $q) {
-                $q->whereNull('published_at')
-                    ->orWhere('published_at', '<=', now());
-            });
-    }
-
-    /**
-     * Toggled on but scheduled for a future publish time.
-     */
-    public function scopeScheduled(Builder $query): Builder
-    {
-        return $query->where('status', true)
+        return $query
+            ->where('status', true)
             ->whereNotNull('published_at')
-            ->where('published_at', '>', now());
+            ->where('published_at', '<=', now());
     }
 
-    /**
-     * Decoded content sections: [{ section, content, subsections? }, ...].
-     *
-     * @return array<int, array<string, mixed>>
-     */
-    public function getSectionsAttribute(): array
+    public function scopeFeatured(Builder $query): Builder
     {
-        if (blank($this->content)) {
-            return [];
-        }
-
-        $decoded = json_decode($this->content, true);
-
-        return is_array($decoded) && isset($decoded['sections']) && is_array($decoded['sections'])
-            ? $decoded['sections']
-            : [];
+        return $query->where('featured', true);
     }
 
-    /**
-     * Rough reading time across all section HTML (~200 wpm).
-     */
-    public function getReadingMinutesAttribute(): int
+    public function scopeDraft(Builder $query): Builder
     {
-        $text = collect($this->sections)->pluck('content')->implode(' ');
-        $words = str_word_count(strip_tags($text));
-
-        return max(1, (int) ceil($words / 200));
+        return $query->where('status', false);
     }
 
-    /**
-     * Build a unique slug from a title, optionally ignoring a record id.
-     */
-    public static function uniqueSlug(string $title, ?int $ignoreId = null): string
+    /*
+    |--------------------------------------------------------------------------
+    | Accessors
+    |--------------------------------------------------------------------------
+    */
+
+    public function getIsPublishedAttribute(): bool
     {
-        $base = Str::slug($title) ?: 'issue';
-        $slug = $base;
-        $i = 1;
-
-        while (
-            static::where('slug', $slug)
-                ->when($ignoreId, fn ($q) => $q->where('id', '!=', $ignoreId))
-                ->exists()
-        ) {
-            $slug = $base.'-'.$i++;
-        }
-
-        return $slug;
+        return $this->status
+            && $this->published_at !== null
+            && $this->published_at->isPast();
     }
 }

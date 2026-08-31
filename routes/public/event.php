@@ -1,15 +1,76 @@
 <?php
 
-use App\Http\Controllers\Public\Events\EventController;
+use App\Http\Controllers\Public\Event\EventController;
+use App\Http\Controllers\Public\Event\EventRegistrationController;
+use App\Http\Controllers\Public\Event\EventReviewController;
 use Illuminate\Support\Facades\Route;
 
-Route::name('events.')->prefix('events')->group(function () {
-    Route::get('', [EventController::class, 'index'])->name('index');
+/*
+|--------------------------------------------------------------------------
+| Public Events
+|--------------------------------------------------------------------------
+*/
 
-    // Auth-only registration toggle, registered before the slug route so
-    // /events/{slug}/register resolves to the action, not the detail page.
-    Route::post('{event:slug}/register', [EventController::class, 'register'])
-        ->middleware('auth')->name('register');
+Route::get('/events', [
+    EventController::class,
+    'index',
+])->name('events.index');
 
-    Route::get('{event:slug}', [EventController::class, 'show'])->name('show');
+Route::get('/events/{event:slug}', [
+    EventController::class,
+    'show',
+])->name('events.show');
+
+
+/*
+|--------------------------------------------------------------------------
+| Event Registration
+|--------------------------------------------------------------------------
+*/
+
+Route::middleware('auth')->group(function () {
+    Route::get('/events/{event}/register', [
+        EventRegistrationController::class,
+        'create',
+    ])->name('events.register');
+
+    Route::post('/events/{event}/register', [
+        EventRegistrationController::class,
+        'store',
+    ])->name('events.registrations.store');
+
+    Route::get('/event-registrations/{registration}', [
+        EventRegistrationController::class,
+        'show',
+    ])->name('events.registrations.show');
+
+    Route::post(
+        '/event-registrations/{registration}/cancel',
+        [
+            EventRegistrationController::class,
+            'cancel',
+        ]
+    )->name('events.registrations.cancel');
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Reviews
+    |--------------------------------------------------------------------------
+    */
+
+    Route::post('/events/{event}/reviews', [
+        EventReviewController::class,
+        'store',
+    ])->name('events.reviews.store');
+
+    Route::put('/event-reviews/{review}', [
+        EventReviewController::class,
+        'update',
+    ])->name('events.reviews.update');
+
+    Route::delete('/event-reviews/{review}', [
+        EventReviewController::class,
+        'destroy',
+    ])->name('events.reviews.destroy');
 });

@@ -1,96 +1,54 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+    import {
+        Avatar,
+        AvatarFallback,
+        AvatarImage,
+    } from '@/components/ui/avatar';
 
-interface Props {
-    image?: string | null
-    name?: string | null
-    size?: string
-    textSize?: string
-    rounded?: 'full' | 'xl' | 'lg' | 'md'
-}
+    import { getInitials } from '@/composables/useInitials';
 
-const props = withDefaults(
-    defineProps<Props>(),
-    {
-        image: null,
-        name: null,
-        size: 'h-12 w-12',
-        textSize: 'text-sm',
-        rounded: 'full',
-    },
-)
-
-const imageError = ref(false)
-
-const initial = computed(() => {
-    const name = props.name?.trim()
-
-    if (!name) {
-        return '?'
+    interface Props {
+        image?: string | null;
+        name?: string | null;
+        size?: string;
+        textSize?: string;
+        rounded?: 'full' | 'xl' | 'lg' | 'md';
     }
 
-    return name.charAt(0).toUpperCase()
-})
+    const props = withDefaults(
+        defineProps<Props>(),
+        {
+            image: null,
+            name: null,
+            size: 'size-8',
+            textSize: 'text-sm',
+            rounded: 'full',
+        },
+    );
 
-const roundedClass = computed(() => {
-    const classes = {
+    const roundedClasses = {
         full: 'rounded-full',
         xl: 'rounded-xl',
         lg: 'rounded-lg',
         md: 'rounded-md',
-    }
-
-    return classes[props.rounded]
-})
-
-const showImage = computed(() => {
-    return Boolean(props.image) && !imageError.value
-})
-
-watch(
-    () => props.image,
-    () => {
-        imageError.value = false
-    },
-)
-
-function handleImageError(): void {
-    imageError.value = true
-}
+    };
 </script>
 
 <template>
-    <div
-        :class="[
-            size,
-            textSize,
-            roundedClass,
+    <Avatar :class="[
+        props.size,
+        roundedClasses[props.rounded],
+        'overflow-hidden',
+    ]">
+        <AvatarImage v-if="props.image" :src="props.image" :alt="props.name || 'User avatar'"
+            class="h-full w-full object-cover" />
 
-            'relative shrink-0 overflow-hidden',
-            'flex items-center justify-center',
-            'font-semibold uppercase',
-
-            !showImage && [
-                'bg-brand',
-                'text-white',
-            ],
-        ]"
-    >
-        <img
-            v-if="showImage"
-            :src="image!"
-            :alt="name || 'Avatar'"
-            class="h-full w-full object-cover"
-            loading="lazy"
-            @error="handleImageError"
-        />
-
-        <span
-            v-else
-            aria-hidden="true"
-            class="select-none"
-        >
-            {{ initial }}
-        </span>
-    </div>
+        <AvatarFallback :class="[
+            roundedClasses[props.rounded],
+            props.textSize,
+            'bg-neutral-200 font-semibold text-black dark:bg-neutral-700 dark:text-white',
+        ]">
+            {{ getInitials(props.name ?? '') }}
+        </AvatarFallback>
+    </Avatar>
 </template>

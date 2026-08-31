@@ -49,10 +49,10 @@
     <!-- HERO -->
     <section class="relative overflow-hidden bg-white dark:bg-black">
         <div
-            class="pointer-events-none absolute -top-40 left-1/2 -z-0 h-[34rem] w-[34rem] -translate-x-1/2 rounded-full bg-brand/10 opacity-60 blur-3xl" />
+            class="pointer-events-none absolute -top-40 left-1/2 -z-0 h-[34rem] w-[34rem] -translate-x-1/2 rounded-full bg-primary/10 opacity-60 blur-3xl" />
         <div class="container relative mx-auto px-4 pb-10 pt-16 text-center sm:pt-24">
             <span
-                class="inline-flex items-center gap-2 rounded-full border border-brand/20 bg-brand/5 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-brand">
+                class="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-primary">
                 <Handshake class="h-3.5 w-3.5" /> Sponsors &amp; Partners
             </span>
             <h1 class="mt-6 font-prata text-4xl leading-[1.1] text-zinc-900 dark:text-white sm:text-6xl">
@@ -63,7 +63,7 @@
             </p>
             <div class="mt-8 flex justify-center">
                 <button
-                    class="inline-flex items-center gap-2 rounded-full bg-brand px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-brand/20 transition hover:bg-brand/90"
+                    class="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-primary/20 transition hover:bg-primary/90"
                     @click="scrollTo('become')">
                     <Handshake class="h-4 w-4" /> Become a sponsor
                 </button>
@@ -86,7 +86,7 @@
                         <component :is="s.website_url ? 'a' : 'div'" v-for="s in group.items" :key="s.id"
                             :href="s.website_url || undefined" :target="s.website_url ? '_blank' : undefined"
                             :rel="s.website_url ? 'noopener' : undefined"
-                            class="group relative flex flex-col rounded-3xl border border-black/5 bg-white p-6 transition-all duration-300 hover:-translate-y-1 hover:border-brand/30 hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.12)] dark:border-white/10 dark:bg-zinc-900">
+                            class="group relative flex flex-col rounded-3xl border border-black/5 bg-white p-6 transition-all duration-300 hover:-translate-y-1 hover:border-primary/30 hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.12)] dark:border-white/10 dark:bg-zinc-900">
                             <div
                                 class="flex h-24 items-center justify-center rounded-2xl bg-zinc-50 p-4 dark:bg-white/[0.03]">
                                 <img v-if="s.logo_url" :src="s.logo_url" :alt="s.name"
@@ -96,7 +96,7 @@
                             <div class="mt-5 flex items-center justify-between gap-2">
                                 <h3 class="font-prata text-lg text-zinc-900 dark:text-white">{{ s.name }}</h3>
                                 <ExternalLink v-if="s.website_url"
-                                    class="h-4 w-4 shrink-0 text-zinc-300 transition group-hover:text-brand" />
+                                    class="h-4 w-4 shrink-0 text-zinc-300 transition group-hover:text-primary" />
                             </div>
                             <p v-if="s.description"
                                 class="mt-2 font-lora text-sm leading-relaxed text-zinc-600 line-clamp-3 dark:text-zinc-300">
@@ -122,11 +122,11 @@
             <div class="grid items-start gap-10 lg:grid-cols-2 lg:gap-16">
                 <!-- pitch -->
                 <div>
-                    <p class="text-xs font-bold uppercase tracking-[0.16em] text-brand">Partner with us</p>
+                    <p class="text-xs font-bold uppercase tracking-[0.16em] text-primary">Partner with us</p>
                     <h2 class="mt-2 font-prata text-3xl text-zinc-900 dark:text-white sm:text-4xl">How to become a
                         sponsor</h2>
                     <p class="mt-4 font-lora text-zinc-600 dark:text-zinc-300">
-                        Sponsoring Alfrik puts your brand in front of an engaged community of founders, creators
+                        Sponsoring Alfrik puts your primary in front of an engaged community of founders, creators
                         and technology leaders across our events, awards and content. Choose a tier that fits your
                         goals — we'll tailor the benefits with you.
                     </p>
@@ -134,7 +134,7 @@
                     <ul class="mt-8 space-y-4">
                         <li v-for="(t, i) in tiers" :key="t" class="flex items-center gap-4">
                             <span
-                                class="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-brand/10 font-redhat text-sm font-bold text-brand">{{
+                                class="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-primary/10 font-redhat text-sm font-bold text-primary">{{
                                 i + 1 }}</span>
                             <div>
                                 <span class="font-redhat font-semibold capitalize text-zinc-900 dark:text-white">{{
@@ -164,14 +164,14 @@
                                 <label class="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Your
                                     name</label>
                                 <input v-model="form.name" type="text" required
-                                    class="w-full rounded-xl border border-black/10 bg-white px-4 py-2.5 text-sm text-zinc-900 outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-white/10 dark:bg-zinc-800 dark:text-white" />
+                                    class="w-full rounded-xl border border-black/10 bg-white px-4 py-2.5 text-sm text-zinc-900 outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-white/10 dark:bg-zinc-800 dark:text-white" />
                                 <p v-if="form.errors.name" class="mt-1 text-xs text-red-600">{{ form.errors.name }}</p>
                             </div>
                             <div>
                                 <label
                                     class="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Organisation</label>
                                 <input v-model="form.organization" type="text" required
-                                    class="w-full rounded-xl border border-black/10 bg-white px-4 py-2.5 text-sm text-zinc-900 outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-white/10 dark:bg-zinc-800 dark:text-white" />
+                                    class="w-full rounded-xl border border-black/10 bg-white px-4 py-2.5 text-sm text-zinc-900 outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-white/10 dark:bg-zinc-800 dark:text-white" />
                                 <p v-if="form.errors.organization" class="mt-1 text-xs text-red-600">{{
                                     form.errors.organization }}</p>
                             </div>
@@ -179,7 +179,7 @@
                                 <label
                                     class="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Email</label>
                                 <input v-model="form.email" type="email" required
-                                    class="w-full rounded-xl border border-black/10 bg-white px-4 py-2.5 text-sm text-zinc-900 outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-white/10 dark:bg-zinc-800 dark:text-white" />
+                                    class="w-full rounded-xl border border-black/10 bg-white px-4 py-2.5 text-sm text-zinc-900 outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-white/10 dark:bg-zinc-800 dark:text-white" />
                                 <p v-if="form.errors.email" class="mt-1 text-xs text-red-600">{{ form.errors.email }}
                                 </p>
                             </div>
@@ -187,7 +187,7 @@
                                 <label class="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Phone
                                     <span class="text-zinc-400">(optional)</span></label>
                                 <input v-model="form.phone" type="tel"
-                                    class="w-full rounded-xl border border-black/10 bg-white px-4 py-2.5 text-sm text-zinc-900 outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-white/10 dark:bg-zinc-800 dark:text-white" />
+                                    class="w-full rounded-xl border border-black/10 bg-white px-4 py-2.5 text-sm text-zinc-900 outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-white/10 dark:bg-zinc-800 dark:text-white" />
                             </div>
                         </div>
 
@@ -195,7 +195,7 @@
                             <label class="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Preferred
                                 tier</label>
                             <select v-model="form.tier"
-                                class="w-full rounded-xl border border-black/10 bg-white px-4 py-2.5 text-sm text-zinc-900 outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-white/10 dark:bg-zinc-800 dark:text-white">
+                                class="w-full rounded-xl border border-black/10 bg-white px-4 py-2.5 text-sm text-zinc-900 outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-white/10 dark:bg-zinc-800 dark:text-white">
                                 <option value="">Not sure yet — advise me</option>
                                 <option v-for="t in tiers" :key="t" :value="t">{{ label(t) }}</option>
                             </select>
@@ -205,11 +205,11 @@
                             <label class="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Message
                                 <span class="text-zinc-400">(optional)</span></label>
                             <textarea v-model="form.message" rows="4" placeholder="What are you hoping to achieve?"
-                                class="w-full rounded-xl border border-black/10 bg-white px-4 py-2.5 text-sm text-zinc-900 outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-white/10 dark:bg-zinc-800 dark:text-white"></textarea>
+                                class="w-full rounded-xl border border-black/10 bg-white px-4 py-2.5 text-sm text-zinc-900 outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-white/10 dark:bg-zinc-800 dark:text-white"></textarea>
                         </div>
 
                         <button type="submit" :disabled="form.processing"
-                            class="inline-flex w-full items-center justify-center gap-2 rounded-full bg-brand px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-brand/20 transition hover:bg-brand/90 disabled:opacity-60">
+                            class="inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-primary/20 transition hover:bg-primary/90 disabled:opacity-60">
                             <Send class="h-4 w-4" /> {{ form.processing ? 'Sending…' : 'Send sponsorship enquiry' }}
                         </button>
                     </form>

@@ -1,0 +1,200 @@
+<?php
+
+namespace Database\Seeders;
+
+use App\Models\Research\ResearchPaper;
+use Illuminate\Database\Seeder;
+use Illuminate\Support\Str;
+
+class ResearchPaperSeeder extends Seeder
+{
+    public function run(): void
+    {
+        $papers = [
+            [
+                'title' => 'The Future of Artificial Intelligence in Global Business',
+                'abstract' => 'An in-depth study examining how artificial intelligence is transforming business operations, decision-making, productivity, and competitive strategy across global markets.',
+                'authors' => 'Alexander Morgan, Emily Carter',
+                'institution' => 'Alfrik Institute for Technology & Business',
+                'methodology' => 'This study combines qualitative interviews with business leaders and quantitative analysis of technology adoption across multiple industries.',
+                'doi' => '10.0000/alfrik.ai.2026.001',
+                'citation' => 'Morgan, A., & Carter, E. (2026). The Future of Artificial Intelligence in Global Business. Alfrik Institute for Technology & Business.',
+                'keywords' => 'artificial intelligence, AI, business, technology, automation',
+                'cover_image' => 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=1200&q=80',
+                'file_path' => 'research/artificial-intelligence-global-business.pdf',
+                'file_size' => 5033165,
+                'file_type' => 'PDF',
+                'published_at' => '2026-08-15',
+                'status' => true,
+                'featured' => true,
+                'download_count' => 248,
+                'meta_title' => 'The Future of Artificial Intelligence in Global Business',
+                'meta_description' => 'Research examining the impact of artificial intelligence on global business operations, productivity and competitive strategy.',
+                'meta_keywords' => 'artificial intelligence, AI, business, automation, technology',
+            ],
+
+            [
+                'title' => 'Emerging Trends in Biomedical Research',
+                'abstract' => 'This paper explores emerging developments in biomedical research, focusing on new technologies, research methodologies, and their potential impact on healthcare systems.',
+                'authors' => 'Dr. Sarah Mitchell, Daniel Brooks',
+                'institution' => 'Centre for Biomedical Studies',
+                'methodology' => 'The research uses a systematic review of recent biomedical publications combined with expert interviews.',
+                'doi' => '10.0000/alfrik.bio.2026.002',
+                'citation' => 'Mitchell, S., & Brooks, D. (2026). Emerging Trends in Biomedical Research. Centre for Biomedical Studies.',
+                'keywords' => 'biomedical research, healthcare, medicine, science, biotechnology',
+                'cover_image' => 'https://images.unsplash.com/photo-1532094349884-543bc11b234d?auto=format&fit=crop&w=1200&q=80',
+                'file_path' => 'research/emerging-biomedical-research.pdf',
+                'file_size' => 6501171,
+                'file_type' => 'PDF',
+                'published_at' => '2026-07-28',
+                'status' => true,
+                'featured' => false,
+                'download_count' => 193,
+                'meta_title' => 'Emerging Trends in Biomedical Research',
+                'meta_description' => 'A study of emerging developments and technologies in modern biomedical research.',
+                'meta_keywords' => 'biomedical research, healthcare, biotechnology, medicine',
+            ],
+
+            [
+                'title' => 'Digital Transformation and the Modern Enterprise',
+                'abstract' => 'A comprehensive analysis of digital transformation strategies and how organizations are adapting their operations, workforce, and customer experiences to an increasingly digital economy.',
+                'authors' => 'Michael Anderson',
+                'institution' => 'Institute for Digital Economy',
+                'methodology' => 'The study analyzes organizational transformation through case studies of technology-driven enterprises.',
+                'doi' => '10.0000/alfrik.digital.2026.003',
+                'citation' => 'Anderson, M. (2026). Digital Transformation and the Modern Enterprise. Institute for Digital Economy.',
+                'keywords' => 'digital transformation, enterprise, technology, innovation',
+                'cover_image' => 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1200&q=80',
+                'file_path' => 'research/digital-transformation-enterprise.pdf',
+                'file_size' => 5347737,
+                'file_type' => 'PDF',
+                'published_at' => '2026-07-12',
+                'status' => true,
+                'featured' => false,
+                'download_count' => 167,
+                'meta_title' => 'Digital Transformation and the Modern Enterprise',
+                'meta_description' => 'Research exploring digital transformation strategies in modern enterprises.',
+                'meta_keywords' => 'digital transformation, enterprise, technology, innovation',
+            ],
+
+            [
+                'title' => 'Climate Change, Technology and Sustainable Development',
+                'abstract' => 'This research investigates the relationship between technological innovation, climate change mitigation, and sustainable economic development.',
+                'authors' => 'Olivia Bennett, James Wilson',
+                'institution' => 'Global Sustainability Research Centre',
+                'methodology' => 'A comparative analysis of sustainability initiatives and technology adoption across developed and emerging economies.',
+                'doi' => '10.0000/alfrik.climate.2026.004',
+                'citation' => 'Bennett, O., & Wilson, J. (2026). Climate Change, Technology and Sustainable Development. Global Sustainability Research Centre.',
+                'keywords' => 'climate change, sustainability, technology, environment, development',
+                'cover_image' => 'https://images.unsplash.com/photo-1507413245164-6160d8298b31?auto=format&fit=crop&w=1200&q=80',
+                'file_path' => 'research/climate-technology-sustainability.pdf',
+                'file_size' => 7759462,
+                'file_type' => 'PDF',
+                'published_at' => '2026-06-24',
+                'status' => true,
+                'featured' => false,
+                'download_count' => 312,
+                'meta_title' => 'Climate Change, Technology and Sustainable Development',
+                'meta_description' => 'Research exploring technology, climate change mitigation and sustainable development.',
+                'meta_keywords' => 'climate change, sustainability, technology, environment',
+            ],
+
+            [
+                'title' => 'The Economics of Automation and Employment',
+                'abstract' => 'An examination of how automation is changing labor markets, employment patterns, workforce skills, and economic productivity.',
+                'authors' => 'Robert Hughes',
+                'institution' => 'Alfrik Economic Research Institute',
+                'methodology' => 'The research combines labor market datasets with industry-level automation indicators.',
+                'doi' => '10.0000/alfrik.econ.2026.005',
+                'citation' => 'Hughes, R. (2026). The Economics of Automation and Employment. Alfrik Economic Research Institute.',
+                'keywords' => 'automation, employment, economics, labor market, productivity',
+                'cover_image' => 'https://images.unsplash.com/photo-1535378917042-10a22c95931a?auto=format&fit=crop&w=1200&q=80',
+                'file_path' => 'research/economics-automation-employment.pdf',
+                'file_size' => 4089446,
+                'file_type' => 'PDF',
+                'published_at' => '2026-06-05',
+                'status' => true,
+                'featured' => false,
+                'download_count' => 421,
+                'meta_title' => 'The Economics of Automation and Employment',
+                'meta_description' => 'Research examining automation, employment and changes in modern labor markets.',
+                'meta_keywords' => 'automation, employment, economics, labor market',
+            ],
+
+            [
+                'title' => 'Advances in Modern Healthcare Technology',
+                'abstract' => 'This paper examines how emerging healthcare technologies are improving diagnosis, treatment, patient monitoring, and healthcare delivery.',
+                'authors' => 'Dr. Emma Richardson, Noah Taylor',
+                'institution' => 'International Health Technology Institute',
+                'methodology' => 'A review of healthcare technology implementations supported by interviews with healthcare professionals.',
+                'doi' => '10.0000/alfrik.health.2026.006',
+                'citation' => 'Richardson, E., & Taylor, N. (2026). Advances in Modern Healthcare Technology. International Health Technology Institute.',
+                'keywords' => 'healthcare, technology, medicine, digital health, innovation',
+                'cover_image' => 'https://images.unsplash.com/photo-1559757148-5c350d0d3c56?auto=format&fit=crop&w=1200&q=80',
+                'file_path' => 'research/modern-healthcare-technology.pdf',
+                'file_size' => 5976883,
+                'file_type' => 'PDF',
+                'published_at' => '2026-05-19',
+                'status' => true,
+                'featured' => false,
+                'download_count' => 286,
+                'meta_title' => 'Advances in Modern Healthcare Technology',
+                'meta_description' => 'Research examining emerging technologies and innovation in healthcare.',
+                'meta_keywords' => 'healthcare, technology, medicine, digital health',
+            ],
+
+            [
+                'title' => 'Cybersecurity Risks in a Connected World',
+                'abstract' => 'A study of the evolving cybersecurity landscape and the risks created by increasingly connected digital systems and organizations.',
+                'authors' => 'William Foster',
+                'institution' => 'Digital Security Research Group',
+                'methodology' => 'The research evaluates documented cybersecurity incidents and identifies recurring organizational vulnerabilities.',
+                'doi' => '10.0000/alfrik.cyber.2026.007',
+                'citation' => 'Foster, W. (2026). Cybersecurity Risks in a Connected World. Digital Security Research Group.',
+                'keywords' => 'cybersecurity, digital security, privacy, technology, cyber threats',
+                'cover_image' => 'https://images.unsplash.com/photo-1504639725590-34d0984388bd?auto=format&fit=crop&w=1200&q=80',
+                'file_path' => 'research/cybersecurity-connected-world.pdf',
+                'file_size' => 4508876,
+                'file_type' => 'PDF',
+                'published_at' => '2026-04-30',
+                'status' => true,
+                'featured' => false,
+                'download_count' => 354,
+                'meta_title' => 'Cybersecurity Risks in a Connected World',
+                'meta_description' => 'Research examining cybersecurity risks in increasingly connected digital environments.',
+                'meta_keywords' => 'cybersecurity, digital security, privacy, cyber threats',
+            ],
+
+            [
+                'title' => 'Innovation, Entrepreneurship and Economic Growth',
+                'abstract' => 'This research explores the role of entrepreneurship and innovation in driving economic growth, productivity, and regional development.',
+                'authors' => 'Sophia Williams, Ethan Clark',
+                'institution' => 'Centre for Entrepreneurship Studies',
+                'methodology' => 'The study uses comparative economic data and case studies of innovation-driven companies.',
+                'doi' => '10.0000/alfrik.entre.2026.008',
+                'citation' => 'Williams, S., & Clark, E. (2026). Innovation, Entrepreneurship and Economic Growth. Centre for Entrepreneurship Studies.',
+                'keywords' => 'entrepreneurship, innovation, economic growth, startups, productivity',
+                'cover_image' => 'https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=1200&q=80',
+                'file_path' => 'research/innovation-entrepreneurship-growth.pdf',
+                'file_size' => 4823449,
+                'file_type' => 'PDF',
+                'published_at' => '2026-04-11',
+                'status' => true,
+                'featured' => false,
+                'download_count' => 231,
+                'meta_title' => 'Innovation, Entrepreneurship and Economic Growth',
+                'meta_description' => 'Research exploring entrepreneurship, innovation and economic growth.',
+                'meta_keywords' => 'entrepreneurship, innovation, economic growth, startups',
+            ],
+        ];
+
+        foreach ($papers as $paper) {
+            $paper['slug'] = Str::slug($paper['title']);
+
+            ResearchPaper::updateOrCreate(
+                ['slug' => $paper['slug']],
+                $paper
+            );
+        }
+    }
+}

@@ -1,13 +1,42 @@
 import type { Component } from 'vue'
 
-export type FormPrimitiveValue = string | number | boolean
+/*
+|--------------------------------------------------------------------------
+| Form Values
+|--------------------------------------------------------------------------
+|
+| Generic form controls can work with strings, numbers and booleans.
+|
+*/
+
+export type FormPrimitiveValue =
+    | string
+    | number
+    | boolean
 
 export type FormValue =
     | FormPrimitiveValue
     | null
     | undefined
 
-export interface FormOption<TValue extends FormValue = FormValue> {
+
+/*
+|--------------------------------------------------------------------------
+| Select Values
+|--------------------------------------------------------------------------
+|
+| Reka UI Select does not accept boolean values.
+| Use this type for Select / Combobox options.
+|
+*/
+
+export type FormSelectValue =
+    | string
+    | number
+
+export interface FormOption<
+    TValue extends FormSelectValue = FormSelectValue,
+> {
     value: TValue
     label: string
     disabled?: boolean
@@ -16,11 +45,28 @@ export interface FormOption<TValue extends FormValue = FormValue> {
     [key: string]: unknown
 }
 
-export type FormOptionInput<TValue extends FormValue = FormValue> =
+export type FormOptionInput<
+    TValue extends FormSelectValue = FormSelectValue,
+> =
     | FormOption<TValue>
     | TValue
 
-export type FormErrorBag = Record<string, string | undefined>
+
+/*
+|--------------------------------------------------------------------------
+| Errors
+|--------------------------------------------------------------------------
+*/
+
+export type FormErrorBag =
+    Record<string, string | undefined>
+
+
+/*
+|--------------------------------------------------------------------------
+| Gallery Upload
+|--------------------------------------------------------------------------
+*/
 
 export interface GalleryUploadItem {
     id?: string | number | null
@@ -30,6 +76,13 @@ export interface GalleryUploadItem {
     isNew?: boolean
     [key: string]: unknown
 }
+
+
+/*
+|--------------------------------------------------------------------------
+| File Preview
+|--------------------------------------------------------------------------
+*/
 
 export interface FilePreviewItem {
     file: File

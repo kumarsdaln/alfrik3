@@ -1,5 +1,24 @@
 import type { TableRow } from '@/types/table'
 
+export interface Country {
+    id: number
+    name: string
+    code: string
+}
+
+export interface Language {
+    id: number
+    code: string
+    name: string
+    native: string
+    rtl: boolean
+}
+
+export interface Industry {
+    id: number
+    name: string
+}
+
 export interface Role extends TableRow {
     id: number,
     name: string,
@@ -17,8 +36,9 @@ export interface Permission extends TableRow {
 export interface User extends TableRow {
     id: number
     name: string
+    username: string
     email: string
-    status: string
+    is_active: boolean
     roles: Role[]
     created_at: string
     updated_at: string

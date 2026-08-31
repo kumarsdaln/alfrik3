@@ -94,6 +94,11 @@ import AppToggle from '@/components/ui/AppToggle.vue'
             sortable: true,
         },
         {
+            key: 'username',
+            label: 'Username',
+            sortable: true,
+        },
+        {
             key: 'email',
             label: 'Email',
             sortable: true,
@@ -135,6 +140,10 @@ import AppToggle from '@/components/ui/AppToggle.vue'
             slot: 'name',
         },
         {
+            key: 'username',
+            slot: 'username',
+        },
+        {
             key: 'email',
             slot: 'email',
         },
@@ -165,11 +174,11 @@ import AppToggle from '@/components/ui/AppToggle.vue'
 
     const statusOptions: UserStatusOption[] = [
         {
-            value: 1,
+            value: true,
             label: 'Active',
         },
         {
-            value: 0,
+            value: false,
             label: 'Inactive',
         },
     ]
@@ -407,10 +416,16 @@ import AppToggle from '@/components/ui/AppToggle.vue'
 
 
         <!-- Name -->
-
         <template #name="{ data }">
             <Link :href="routes.show(data.id)" class="font-medium text-brand hover:underline">
                 {{ data.name }}
+            </Link>
+        </template>
+
+        <!-- Username -->
+        <template #username="{ data }">
+            <Link :href="routes.show(data.id)" class="text-muted-foreground hover:text-brand hover:underline">
+                @{{ data.username }}
             </Link>
         </template>
 

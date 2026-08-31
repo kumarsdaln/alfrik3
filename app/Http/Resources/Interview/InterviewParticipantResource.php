@@ -19,7 +19,7 @@ class InterviewParticipantResource extends JsonResource
             'role' => $this->role,
             'user' => [
                 'id' => $this->user?->id,
-                'external_id' => $this->user?->external_id,
+                'username' => $this->user?->username,
                 'name' => $this->user?->name,
                 'avatar' => $this->user?->avatar,
             ],

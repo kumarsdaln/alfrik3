@@ -9,66 +9,247 @@ interface Media {
     thumbnail?: string | null
 }
 
-const props = defineProps<{ media: Media | null | undefined }>()
+interface Props {
+    media?: Media | null
+}
 
-/** Normalize common providers (YouTube / Vimeo) to an embeddable iframe src. */
+const props = defineProps<Props>()
+
+
+/*
+|--------------------------------------------------------------------------
+| Media
+|--------------------------------------------------------------------------
+*/
+
+const media = computed(() => props.media)
+
+const isVideo = computed(
+    () => media.value?.media_type === 'video',
+)
+
+const isAudio = computed(
+    () => media.value?.media_type === 'audio',
+)
+
+const isExternal = computed(
+    () => media.value?.source_type === 'external',
+)
+
+const hasFile = computed(
+    () => !!media.value?.file_url,
+)
+
+
+/*
+|--------------------------------------------------------------------------
+| External Embed
+|--------------------------------------------------------------------------
+*/
+
 const embedSrc = computed(() => {
-    const url = props.media?.embed_url
-    if (!url) return null
+    const url = media.value?.embed_url?.trim()
 
-    const yt = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([\w-]{11})/)
-    if (yt) return `https://www.youtube.com/embed/${yt[1]}`
+    if (!url) {
+        return null
+    }
 
-    const vm = url.match(/vimeo\.com\/(?:video\/)?(\d+)/)
-    if (vm) return `https://player.vimeo.com/video/${vm[1]}`
+    /*
+    |--------------------------------------------------------------------------
+    | YouTube
+    |--------------------------------------------------------------------------
+    */
+
+    const youtube = url.match(
+        /(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([\w-]{11})/,
+    )
+
+    if (youtube?.[1]) {
+        return `https://www.youtube.com/embed/${youtube[1]}`
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Vimeo
+    |--------------------------------------------------------------------------
+    */
+
+    const vimeo = url.match(
+        /(?:vimeo\.com\/(?:video\/)?)(\d+)/,
+    )
+
+    if (vimeo?.[1]) {
+        return `https://player.vimeo.com/video/${vimeo[1]}`
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Custom Embed
+    |--------------------------------------------------------------------------
+    */
 
     return url
 })
 
-const isExternal = computed(() => props.media?.source_type === 'external')
+
+/*
+|--------------------------------------------------------------------------
+| Visibility
+|--------------------------------------------------------------------------
+*/
+
+const hasExternalEmbed = computed(
+    () => isExternal.value && !!embedSrc.value,
+)
+
+const hasMedia = computed(
+    () =>
+        hasExternalEmbed.value ||
+        hasFile.value,
+)
 </script>
 
+
 <template>
-    <div class="relative aspect-video w-full overflow-hidden bg-black">
-        <!-- External video embed -->
+
+    <!-- No media -->
+
+    <div
+        v-if="!media || !hasMedia"
+        class="
+            flex
+            aspect-video
+            w-full
+            items-center
+            justify-center
+            bg-muted
+        "
+    >
+        <span class="text-sm text-muted-foreground">
+            No media available
+        </span>
+    </div>
+
+
+    <!-- Video -->
+
+    <div
+        v-else-if="isVideo"
+        class="
+            relative
+            aspect-video
+            w-full
+            overflow-hidden
+            bg-black
+        "
+    >
+
+        <!-- External video -->
+
         <iframe
-            v-if="media?.media_type === 'video' && isExternal && embedSrc"
-            :src="embedSrc"
+            v-if="hasExternalEmbed"
+            :src="embedSrc!"
+            title="Interview video"
             class="h-full w-full"
-            frameborder="0"
             allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
             allowfullscreen
+            loading="lazy"
+            referrerpolicy="strict-origin-when-cross-origin"
         />
+
 
         <!-- Uploaded video -->
+
         <video
-            v-else-if="media?.media_type === 'video' && media?.file_url"
+            v-else-if="media.file_url"
             :src="media.file_url"
             :poster="media.thumbnail || undefined"
-            class="h-full w-full object-contain"
+            class="
+                h-full
+                w-full
+                object-contain
+            "
             controls
             playsinline
+            preload="metadata"
         />
 
-        <!-- Audio (external or uploaded) -->
+    </div>
+
+
+    <!-- Audio -->
+
+    <div
+        v-else-if="isAudio"
+        class="
+            w-full
+            overflow-hidden
+            border
+            border-border
+            bg-muted/30
+        "
+    >
+
         <div
-            v-else-if="media?.media_type === 'audio'"
-            class="flex h-full w-full flex-col items-center justify-center gap-6 bg-zinc-900 p-6"
+            class="
+                flex
+                min-h-48
+                flex-col
+                items-center
+                justify-center
+                gap-6
+                p-6
+                sm:min-h-56
+                sm:p-10
+            "
         >
+
+            <!-- Thumbnail -->
+
             <img
-                v-if="media?.thumbnail"
+                v-if="media.thumbnail"
                 :src="media.thumbnail"
                 alt=""
-                class="h-32 w-32 rounded-2xl object-cover"
+                class="
+                    size-28
+                    rounded-lg
+                    object-cover
+                    sm:size-32
+                "
             />
+
+
+            <!-- External audio -->
+
             <iframe
-                v-if="isExternal && embedSrc"
-                :src="embedSrc"
-                class="h-24 w-full"
-                frameborder="0"
+                v-if="hasExternalEmbed"
+                :src="embedSrc!"
+                title="Interview audio"
+                class="
+                    h-20
+                    w-full
+                    max-w-2xl
+                "
                 allow="autoplay"
+                loading="lazy"
+                referrerpolicy="strict-origin-when-cross-origin"
             />
-            <audio v-else-if="media?.file_url" :src="media.file_url" class="w-full" controls />
+
+
+            <!-- Uploaded audio -->
+
+            <audio
+                v-else-if="media.file_url"
+                :src="media.file_url"
+                class="w-full max-w-2xl"
+                controls
+                preload="metadata"
+            />
+
         </div>
+
     </div>
+
 </template>

@@ -93,23 +93,23 @@
             <div>
                 <AppText tag="label" size="xs" weight="bold" tracking="wide" uppercase color="muted" class="block mb-1">Title</AppText>
                 <input v-model="meta.title" type="text" placeholder="Survey title"
-                    class="w-full rounded-lg border-border-light dark:border-border-dark bg-canvas-light dark:bg-white/5 text-content-light dark:text-content-dark focus:border-brand focus:ring focus:ring-brand/20" />
+                    class="w-full rounded-lg border-border-light dark:border-border-dark bg-canvas-light dark:bg-white/5 text-content-light dark:text-content-dark focus:border-primary focus:ring focus:ring-primary/20" />
             </div>
             <div>
                 <AppText tag="label" size="xs" weight="bold" tracking="wide" uppercase color="muted" class="block mb-1">Description</AppText>
                 <textarea v-model="meta.description" rows="2"
-                    class="w-full rounded-lg border-border-light dark:border-border-dark bg-canvas-light dark:bg-white/5 text-content-light dark:text-content-dark focus:border-brand focus:ring focus:ring-brand/20"></textarea>
+                    class="w-full rounded-lg border-border-light dark:border-border-dark bg-canvas-light dark:bg-white/5 text-content-light dark:text-content-dark focus:border-primary focus:ring focus:ring-primary/20"></textarea>
             </div>
             <div class="grid sm:grid-cols-2 gap-4">
                 <div>
                     <AppText tag="label" size="xs" weight="bold" tracking="wide" uppercase color="muted" class="block mb-1">Publish date (optional)</AppText>
                     <input v-model="meta.published_at" type="datetime-local"
-                        class="w-full rounded-lg border-border-light dark:border-border-dark bg-canvas-light dark:bg-white/5 text-content-light dark:text-content-dark focus:border-brand focus:ring focus:ring-brand/20" />
+                        class="w-full rounded-lg border-border-light dark:border-border-dark bg-canvas-light dark:bg-white/5 text-content-light dark:text-content-dark focus:border-primary focus:ring focus:ring-primary/20" />
                 </div>
                 <div>
                     <AppText tag="label" size="xs" weight="bold" tracking="wide" uppercase color="muted" class="block mb-1">Closes at (optional)</AppText>
                     <input v-model="meta.closes_at" type="datetime-local"
-                        class="w-full rounded-lg border-border-light dark:border-border-dark bg-canvas-light dark:bg-white/5 text-content-light dark:text-content-dark focus:border-brand focus:ring focus:ring-brand/20" />
+                        class="w-full rounded-lg border-border-light dark:border-border-dark bg-canvas-light dark:bg-white/5 text-content-light dark:text-content-dark focus:border-primary focus:ring focus:ring-primary/20" />
                 </div>
             </div>
             <div class="flex flex-wrap gap-x-8 gap-y-3 pt-2">
@@ -124,7 +124,7 @@
             <div class="flex items-start justify-between gap-3">
                 <AppText tag="span" size="sm" weight="bold" color="muted" class="mt-2.5">Q{{ qi + 1 }}</AppText>
                 <input v-model="q.question" type="text" placeholder="Question text"
-                    class="flex-1 rounded-lg border-border-light dark:border-border-dark bg-canvas-light dark:bg-white/5 text-content-light dark:text-content-dark focus:border-brand focus:ring focus:ring-brand/20" />
+                    class="flex-1 rounded-lg border-border-light dark:border-border-dark bg-canvas-light dark:bg-white/5 text-content-light dark:text-content-dark focus:border-primary focus:ring focus:ring-primary/20" />
                 <div class="flex items-center gap-1">
                     <button type="button" @click="move(qi, -1)" class="p-1.5 text-content-lightMuted dark:text-content-darkMuted hover:text-content-light dark:hover:text-content-dark" title="Move up">↑</button>
                     <button type="button" @click="move(qi, 1)" class="p-1.5 text-content-lightMuted dark:text-content-darkMuted hover:text-content-light dark:hover:text-content-dark" title="Move down">↓</button>
@@ -136,14 +136,14 @@
 
             <div class="flex flex-wrap items-center gap-4">
                 <select v-model="q.type"
-                    class="rounded-lg border-border-light dark:border-border-dark bg-canvas-light dark:bg-white/5 text-content-light dark:text-content-dark text-sm focus:border-brand focus:ring focus:ring-brand/20">
+                    class="rounded-lg border-border-light dark:border-border-dark bg-canvas-light dark:bg-white/5 text-content-light dark:text-content-dark text-sm focus:border-primary focus:ring focus:ring-primary/20">
                     <option v-for="t in TYPES" :key="t.value" :value="t.value">{{ t.label }}</option>
                 </select>
                 <AppToggle v-model="q.required" true-label="Required" false-label="Optional" />
                 <div v-if="q.type === 'rating'" class="flex items-center gap-2">
                     <AppText tag="span" size="sm" color="muted">Max</AppText>
                     <input v-model.number="q.settings.max" type="number" min="2" max="10"
-                        class="w-16 rounded-lg border-border-light dark:border-border-dark bg-canvas-light dark:bg-white/5 text-content-light dark:text-content-dark focus:border-brand focus:ring focus:ring-brand/20" />
+                        class="w-16 rounded-lg border-border-light dark:border-border-dark bg-canvas-light dark:bg-white/5 text-content-light dark:text-content-dark focus:border-primary focus:ring focus:ring-primary/20" />
                 </div>
             </div>
 
@@ -152,7 +152,7 @@
                 <div v-for="(opt, oi) in q.options" :key="oi" class="flex items-center gap-2">
                     <AppText tag="span" size="sm" color="muted">{{ oi + 1 }}.</AppText>
                     <input v-model="opt.label" type="text" placeholder="Option label"
-                        class="flex-1 rounded-lg border-border-light dark:border-border-dark bg-canvas-light dark:bg-white/5 text-content-light dark:text-content-dark text-sm focus:border-brand focus:ring focus:ring-brand/20" />
+                        class="flex-1 rounded-lg border-border-light dark:border-border-dark bg-canvas-light dark:bg-white/5 text-content-light dark:text-content-dark text-sm focus:border-primary focus:ring focus:ring-primary/20" />
                     <AppButton type="button" variant="delete" size="xs" @click="removeOption(q, oi)">✕</AppButton>
                 </div>
                 <AppButton type="button" variant="add" size="sm" @click="addOption(q)">Add option</AppButton>

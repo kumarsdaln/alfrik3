@@ -1,83 +1,114 @@
-<!-- Components/Interview/InterviewSpeakerCard.vue -->
-<script setup>
-import { Link } from '@inertiajs/vue3';
-import Avatar from '../profile/Avatar.vue';
+<script setup lang="ts">
+import { computed } from 'vue'
+import { Link } from '@inertiajs/vue3'
+import { ArrowUpRight } from '@lucide/vue'
 
-const props = defineProps({
-    name: String,
-    avatar: String | null,
-    role: { type: String, default: 'Speaker' },
-    variant: { type: String, default: 'default' },
-    href: { type: String, default: '#' }
-});
+import Avatar from '@/components/profile/Avatar.vue'
 
-const isAnswer = props.variant === 'answer';
+interface Props {
+    name?: string | null
+    avatar?: string | null
+    role?: string
+    variant?: 'default' | 'answer'
+    href?: string
+}
+
+const props = withDefaults(defineProps<Props>(), {
+    name: null,
+    avatar: null,
+    role: 'Speaker',
+    variant: 'default',
+    href: '#',
+})
+
+const isAnswer = computed(() => props.variant === 'answer')
+
+const displayName = computed(() => props.name?.trim() || 'Unknown User')
 </script>
 
 <template>
-    <Link :href="href" class="group relative flex items-center gap-5 py-2 pl-2 pr-6 transition-all duration-700">
-        
-        <!-- Hover Background: Not a box, but a soft "bleed" -->
-        <div class="absolute inset-0 -z-10 scale-95 opacity-0 transition-all duration-500 ease-out 
-                    group-hover:scale-100 group-hover:opacity-100
-                    rounded-full bg-gradient-to-r from-zinc-100/50 to-transparent 
-                    dark:from-white/5 dark:to-transparent"></div>
+    <Link
+        :href="href"
+        class="
+            group
+            inline-flex
+            min-w-0
+            items-center
+            gap-3
+            rounded-lg
+            py-2
+            pr-3
+            transition-colors
+            duration-200
+            hover:bg-muted/50
+            focus-visible:outline-none
+            focus-visible:ring-2
+            focus-visible:ring-ring
+            focus-visible:ring-offset-2
+        "
+    >
+        <!-- Avatar -->
 
-        <!-- Avatar Section -->
-        <div class="relative shrink-0">
-            <!-- Glow Effect for 'Answer' variant (The only "box" is a circle) -->
-            <div v-if="isAnswer" 
-                 class="absolute inset-0 -z-10 rounded-full bg-brand/20 blur-xl 
-                        transition-transform duration-700 group-hover:scale-150"></div>
-            
-            <div class="relative transition-transform duration-500 group-hover:scale-110">
-                <Avatar 
-                    :image="avatar" 
-                    :name="name" 
-                    size="w-12 h-12"
-                    class="ring-offset-2 ring-offset-white dark:ring-offset-zinc-950 transition-all duration-500 group-hover:ring-2 group-hover:ring-brand/30"
-                >
-                    {{ name?.charAt(0) || 'U' }}
-                </Avatar>
-                
-                <!-- Status Indicator (Instead of a border-variant) -->
-                <div v-if="isAnswer" 
-                     class="absolute -right-1 -bottom-1 w-4 h-4 rounded-full bg-brand border-4 border-white dark:border-zinc-950">
-                </div>
-            </div>
-        </div>
+        <Avatar
+            :image="avatar"
+            :name="displayName"
+            size="size-11"
+            text-size="text-sm"
+            class="
+                shrink-0
+                transition-transform
+                duration-200
+                group-hover:scale-[1.03]
+            "
+        />
 
-        <!-- Content Section -->
-        <div class="flex flex-col min-w-0">
-            <span :class="[
-                'text-[9px] font-black uppercase tracking-[0.4em] transition-colors duration-500',
-                isAnswer ? 'text-brand dark:text-brand' : 'text-zinc-400 dark:text-zinc-600'
-            ]">
+
+        <!-- Information -->
+
+        <div class="min-w-0">
+            <div
+                class="
+                    text-[10px]
+                    font-medium
+                    uppercase
+                    tracking-[0.16em]
+                    text-muted-foreground
+                "
+            >
                 {{ role }}
-            </span>
-
-            <div class="flex items-center gap-3">
-                <h4 class="text-base sm:text-lg font-redhat text-zinc-900 dark:text-zinc-100 truncate transition-all duration-500 group-hover:text-brand dark:group-hover:text-brand">
-                    {{ name || 'Unknown User' }}
-                </h4>
-                
-                <!-- Minimal Arrow -->
-                <div class="overflow-hidden w-0 opacity-0 transition-all duration-500 group-hover:w-5 group-hover:opacity-100">
-                    <svg class="w-5 h-5 text-brand" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                    </svg>
-                </div>
             </div>
-            
-            <!-- Underline Accent: Only visible on hover, very thin -->
-            <div class="h-px w-0 bg-gradient-to-r from-brand/50 to-transparent transition-all duration-700 group-hover:w-full mt-1"></div>
+
+            <div class="mt-0.5 flex min-w-0 items-center gap-1.5">
+                <span
+                    class="
+                        truncate
+                        text-sm
+                        font-medium
+                        text-foreground
+                        transition-colors
+                        duration-200
+                        group-hover:text-primary
+                    "
+                >
+                    {{ displayName }}
+                </span>
+
+                <ArrowUpRight
+                    class="
+                        size-3.5
+                        shrink-0
+                        text-muted-foreground
+                        opacity-0
+                        transition-all
+                        duration-200
+                        group-hover:translate-x-0.5
+                        group-hover:-translate-y-0.5
+                        group-hover:text-foreground
+                        group-hover:opacity-100
+                    "
+                    :stroke-width="1.75"
+                />
+            </div>
         </div>
     </Link>
 </template>
-
-<style scoped>
-/* Optional: Adding a soft reveal animation for the text */
-.group:hover h4 {
-    letter-spacing: 0.01em;
-}
-</style>

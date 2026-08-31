@@ -3,54 +3,128 @@
 namespace App\Http\Controllers\Public\Report;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\Report\ReportResource;
 use App\Support\Breadcrumbs\BreadcrumbBuilder;
 use App\Models\Report\Report;
 use App\Models\Report\ReportCategory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
+use Inertia\Response;
 
 class ReportController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request): Response
     {
-        $activeCategory = $request->query('category');
+        $activeCategory = trim((string) $request->query('category', ''));
         $search = trim((string) $request->query('search', ''));
 
-        $columns = [
-            'id', 'title', 'slug', 'summary', 'cover_image', 'category_id', 'author_id',
-            'report_year', 'published_at', 'featured', 'gated', 'download_count', 'created_at',
-        ];
+        /*
+        |--------------------------------------------------------------------------
+        | Reports
+        |--------------------------------------------------------------------------
+        */
 
         $query = Report::query()
             ->published()
-            ->with(['category:id,name,slug', 'author:id,name,username'])
-            ->when($activeCategory, fn ($q) => $q->whereHas('category', fn ($c) => $c->where('slug', $activeCategory)))
-            ->when($search !== '', fn ($q) => $q->where(function ($w) use ($search) {
-                $w->where('title', 'ilike', "%{$search}%")->orWhere('summary', 'ilike', "%{$search}%");
-            }))
+            ->with([
+                'category:id,name,slug',
+                'author:id,name,username',
+            ])
+            ->when(
+                $activeCategory !== '',
+                fn($query) => $query->whereHas(
+                    'category',
+                    fn($category) => $category->where(
+                        'slug',
+                        $activeCategory
+                    )
+                )
+            )
+            ->when(
+                $search !== '',
+                fn($query) => $query->where(function ($query) use ($search) {
+                    $query
+                        ->where('title', 'ilike', "%{$search}%")
+                        ->orWhere('summary', 'ilike', "%{$search}%");
+                })
+            )
             ->orderByDesc('published_at')
             ->orderByDesc('created_at');
 
+        /*
+        |--------------------------------------------------------------------------
+        | Featured Report
+        |--------------------------------------------------------------------------
+        */
+
         $featured = null;
-        if (! $activeCategory && $search === '') {
-            $featured = Report::published()
+
+        if ($activeCategory === '' && $search === '') {
+            $featured = Report::query()
+                ->published()
                 ->featured()
-                ->with(['category:id,name,slug', 'author:id,name,username'])
+                ->with([
+                    'category:id,name,slug',
+                    'author:id,name,username',
+                ])
                 ->orderByDesc('published_at')
-                ->first($columns)
-                ?? (clone $query)->first($columns);
+                ->orderByDesc('created_at')
+                ->first();
+
+            // Fallback to latest published report.
+            if (! $featured) {
+                $featured = Report::query()
+                    ->published()
+                    ->with([
+                        'category:id,name,slug',
+                        'author:id,name,username',
+                    ])
+                    ->orderByDesc('published_at')
+                    ->orderByDesc('created_at')
+                    ->first();
+            }
         }
 
+        /*
+        |--------------------------------------------------------------------------
+        | Response
+        |--------------------------------------------------------------------------
+        */
+
         return Inertia::render('reports/Index', [
-            'reports' => Inertia::scroll(fn () => $query->paginate(12, $columns)->withQueryString()),
-            'featured' => $featured,
+            'reports' => Inertia::scroll(
+                fn() => ReportResource::collection(
+                    $query
+                        ->paginate(12)
+                        ->withQueryString()
+                )
+            ),
+
+            'featured' => $featured
+                ? new ReportResource($featured)
+                : null,
+
             'categories' => ReportCategory::query()
-                ->withCount(['reports as published_count' => fn ($q) => $q->where('status', true)])
+                ->withCount([
+                    'reports as published_count' => fn($query) => $query->published(),
+                ])
                 ->orderBy('name')
-                ->get(['id', 'name', 'slug']),
-            'qfilters' => ['category' => $activeCategory, 'search' => $search],
-            'breadcrumbs' => BreadcrumbBuilder::make()->home()->add('Reports')->toArray(),
+                ->get([
+                    'id',
+                    'name',
+                    'slug',
+                ]),
+
+            'qfilters' => [
+                'category' => $activeCategory,
+                'search' => $search,
+            ],
+
+            'breadcrumbs' => BreadcrumbBuilder::make()
+                ->home()
+                ->add('Reports')
+                ->toArray(),
         ]);
     }
 
@@ -64,7 +138,7 @@ class ReportController extends Controller
             ->published()
             ->with('category:id,name,slug')
             ->where('id', '!=', $report->id)
-            ->when($report->category_id, fn ($q) => $q->where('category_id', $report->category_id))
+            ->when($report->category_id, fn($q) => $q->where('category_id', $report->category_id))
             ->latest('published_at')
             ->take(3)
             ->get(['id', 'title', 'slug', 'summary', 'cover_image', 'category_id', 'published_at']);
@@ -74,7 +148,7 @@ class ReportController extends Controller
             'related' => $related,
             'canDownload' => ! $report->gated || auth()->check(),
             'breadcrumbs' => BreadcrumbBuilder::make()->home()
-                ->add('reports', route('reports.index'))
+                ->add('Reports', route('reports.index'))
                 ->add($report->title)
                 ->toArray(),
             'meta_data' => [
@@ -100,7 +174,7 @@ class ReportController extends Controller
 
         $report->increment('download_count');
 
-        $downloadName = \Illuminate\Support\Str::slug($report->title).'.'.($report->file_type ?: 'pdf');
+        $downloadName = \Illuminate\Support\Str::slug($report->title) . '.' . ($report->file_type ?: 'pdf');
 
         return Storage::disk('public')->download($relative, $downloadName);
     }

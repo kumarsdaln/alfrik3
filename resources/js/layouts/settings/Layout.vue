@@ -8,12 +8,42 @@ import { toUrl } from '@/lib/utils';
 import { edit as editAppearance } from '@/routes/appearance';
 import { edit as editProfile } from '@/routes/profile';
 import { edit as editSecurity } from '@/routes/security';
+import { edit as editCountry } from '@/routes/settings/country';
+import { edit as editLanguages } from '@/routes/settings/languages';
+import { edit as editIndustries } from '@/routes/settings/industries';
+import { edit as editPosition } from '@/routes/settings/position';
+import { edit as editUsername } from '@/routes/settings/username';
+import { edit as editHeadline } from '@/routes/settings/headline';
 import type { NavItem } from '@/types';
 
 const sidebarNavItems: NavItem[] = [
     {
         title: 'Profile',
         href: editProfile(),
+    },
+    {
+        title: 'Username',
+        href: editUsername(),
+    },
+    {
+        title: 'Headline',
+        href: editHeadline(),
+    },
+    {
+        title: 'Position',
+        href: editPosition(),
+    },
+    {
+        title: 'Country',
+        href: editCountry(),
+    },
+    {
+        title: 'Languages',
+        href: editLanguages(),
+    },
+    {
+        title: 'Industries',
+        href: editIndustries(),
     },
     {
         title: 'Security',

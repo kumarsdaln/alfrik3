@@ -1,58 +1,181 @@
 <script setup lang="ts">
     import { Head, Link } from '@inertiajs/vue3'
+    import { ArrowUpRight, ClipboardList } from '@lucide/vue'
+
     import AppHeading from '@/components/ui/AppHeading.vue'
     import AppText from '@/components/ui/AppText.vue'
+
     import { show as surveyShow } from '@/routes/surveys'
     import type { Survey } from '@/types'
 
-    defineProps<{ surveys: (Survey & { questions_count?: number; responses_count?: number })[] }>()
+    interface SurveyItem extends Survey {
+        questions_count?: number
+        responses_count?: number
+    }
 
-    const closesLabel = (d?: string | null) =>
-        d ? `Closes ${new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}` : ''
+    const props = defineProps<{
+        surveys: SurveyItem[]
+    }>()
+
+    const closesLabel = (date?: string | null) => {
+        if (!date) {
+            return ''
+        }
+
+        return `Closes ${new Date(date).toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+        })}`
+    }
+
+    console.log(props.surveys)
 </script>
 
 <template>
 
     <Head title="Surveys — Alfrik">
-        <meta name="description" content="Share your voice — take part in Alfrik community surveys." />
+        <meta name="description" content="Share your voice and take part in Alfrik community surveys." />
     </Head>
-    <div class="container mx-auto px-4 pt-10 pb-4 text-center">
-        <AppText tag="p" font="redhat" size="xs" weight="bold" tracking="wide" uppercase color="brand" align="center"
-            class="mb-4">
-            Your Voice
-        </AppText>
-        <AppHeading tag="h1" font="prata" size="5xl" weight="bold" align="center" class="mb-4">Surveys</AppHeading>
-        <AppText tag="p" font="lora" color="muted" align="center" class="max-w-2xl mx-auto">
-            Help shape the community — take part in our open surveys.
-        </AppText>
-    </div>
 
-    <section class="container mx-auto px-4 py-10 pb-20 max-w-3xl">
-        <div v-if="surveys.length" class="space-y-4">
-            <Link v-for="s in surveys" :key="s.id" :href="surveyShow(s.slug).url"
-                class="group flex items-center justify-between gap-4 rounded-2xl border border-border-light dark:border-border-dark bg-surface-light dark:bg-surface-dark p-6 hover:border-brand transition-colors">
-                <div class="min-w-0">
-                    <AppHeading tag="h2" font="prata" size="lg" weight="semibold" hover-brand>{{ s.title }}</AppHeading>
-                    <AppText v-if="s.description" tag="p" font="lora" size="sm" color="muted" :clamp="2" class="mt-1">{{
-                        s.description }}</AppText>
-                    <div class="mt-2 flex items-center gap-3">
-                        <AppText tag="span" size="xs" color="muted">{{ s.questions_count ?? 0 }} questions</AppText>
-                        <AppText tag="span" size="xs" color="muted">· {{ s.responses_count ?? 0 }} responses</AppText>
-                        <AppText v-if="s.closes_at" tag="span" size="xs" color="muted">· {{ closesLabel(s.closes_at) }}
+    <!-- Header -->
+    <section class="border-b border-border-light dark:border-border-dark">
+        <div class="container mx-auto px-4 pb-10 pt-10 sm:pb-14 sm:pt-14 lg:pb-16">
+            <div class="max-w-3xl">
+                <AppText tag="p" font="redhat" size="xs" weight="bold" tracking="wide" uppercase class="mb-5">
+                    Your Voice
+                </AppText>
+
+                <AppHeading tag="h1" font="prata" size="5xl" weight="normal" leading="tight">
+                    Surveys
+                </AppHeading>
+
+                <AppText tag="p" font="lora" size="lg" color="muted" leading="relaxed" class="mt-5 max-w-2xl">
+                    Share your perspective and help shape the conversations,
+                    research, and ideas that matter.
+                </AppText>
+            </div>
+        </div>
+    </section>
+
+    <!-- Surveys -->
+    <section class="container mx-auto px-4 py-10 pb-20 sm:py-14">
+        <div v-if="surveys.data.length" class="divide-y divide-border-light dark:divide-border-dark">
+            <Link v-for="survey in surveys.data" :key="survey.id" :href="surveyShow(survey.slug).url"
+                class="group block py-7 first:pt-0 last:pb-0">
+                <article class="
+                        grid
+                        gap-6
+                        lg:grid-cols-[1fr_auto]
+                        lg:items-center
+                    ">
+                    <!-- Main content -->
+                    <div class="min-w-0">
+                        <div class="mb-3 flex items-center gap-2">
+                            <ClipboardList :size="14" :stroke-width="1.7" />
+
+                            <AppText tag="span" size="xs" weight="semibold" tracking="wide" uppercase>
+                                Open Survey
+                            </AppText>
+                        </div>
+
+                        <AppHeading tag="h2" font="prata" size="2xl" weight="normal" leading="tight">
+                            {{ survey.title }}
+                        </AppHeading>
+
+                        <AppText v-if="survey.description" tag="p" font="lora" size="sm" color="muted" leading="relaxed"
+                            :clamp="2" class="mt-3 max-w-2xl">
+                            {{ survey.description }}
                         </AppText>
+
+                        <!-- Meta -->
+                        <div class="
+                                mt-4
+                                flex
+                                flex-wrap
+                                items-center
+                                gap-x-4
+                                gap-y-2
+                            ">
+                            <AppText tag="span" size="xs" color="muted">
+                                {{ survey.questions_count ?? 0 }}
+                                {{
+                                    (survey.questions_count ?? 0) === 1
+                                        ? 'question'
+                                        : 'questions'
+                                }}
+                            </AppText>
+
+                            <span class="text-border-light dark:text-border-dark" aria-hidden="true">
+                                /
+                            </span>
+
+                            <AppText tag="span" size="xs" color="muted">
+                                {{ survey.responses_count ?? 0 }}
+                                {{
+                                    (survey.responses_count ?? 0) === 1
+                                        ? 'response'
+                                        : 'responses'
+                                }}
+                            </AppText>
+
+                            <template v-if="survey.closes_at">
+                                <span class="text-border-light dark:text-border-dark" aria-hidden="true">
+                                    /
+                                </span>
+
+                                <AppText tag="span" size="xs" color="muted">
+                                    {{ closesLabel(survey.closes_at) }}
+                                </AppText>
+                            </template>
+                        </div>
                     </div>
-                </div>
-                <span
-                    class="shrink-0 inline-flex items-center rounded-full bg-brand px-5 py-2.5 transition-colors group-hover:bg-brand-hover">
-                    <AppText tag="span" font="redhat" size="sm" weight="bold" class="text-white">Take survey</AppText>
-                </span>
+
+                    <!-- CTA -->
+                    <div class="
+                            inline-flex
+                            items-center
+                            gap-2
+                            self-start
+                            border-b
+                            border-content-light
+                            pb-1.5
+                            text-content-light
+                            transition-colors
+                            duration-300
+                            dark:border-content-dark
+                            dark:text-content-dark
+                            lg:self-center
+                        ">
+                        <AppText tag="span" size="sm" weight="medium">
+                            Take survey
+                        </AppText>
+
+                        <ArrowUpRight :size="15" :stroke-width="1.8" class="
+                                transition-transform
+                                duration-300
+                                group-hover:-translate-y-0.5
+                                group-hover:translate-x-0.5
+                            " />
+                    </div>
+                </article>
             </Link>
         </div>
-        <div v-else
-            class="py-28 text-center border border-dashed border-border-light dark:border-border-dark rounded-3xl">
-            <AppText tag="p" font="lora" size="xl" color="muted" align="center" class="italic mb-3">No open surveys
-                right now.</AppText>
-            <AppText tag="p" size="sm" color="muted" align="center">Check back soon.</AppText>
+
+        <!-- Empty -->
+        <div v-else class="
+                border-y
+                border-border-light
+                py-24
+                text-center
+                dark:border-border-dark
+            ">
+            <AppText tag="p" font="lora" size="xl" color="muted" align="center" class="italic">
+                No open surveys right now.
+            </AppText>
+
+            <AppText tag="p" size="sm" color="muted" align="center" class="mt-2">
+                Check back soon for new surveys.
+            </AppText>
         </div>
     </section>
 </template>

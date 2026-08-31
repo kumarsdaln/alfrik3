@@ -3,100 +3,153 @@
 namespace App\Http\Controllers\Public\Magazine;
 
 use App\Http\Controllers\Controller;
-use App\Support\Breadcrumbs\BreadcrumbBuilder;
 use App\Models\Magazine\Magazine;
-use App\Models\Magazine\MagazineCategory;
+use App\Support\Breadcrumbs\BreadcrumbBuilder;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Inertia\Response;
 
 class MagazineController extends Controller
 {
-    public function index(Request $request)
+    /**
+     * Display the magazine landing page.
+     */
+    public function index(Request $request): Response
     {
-        $activeCategory = $request->query('category');
-        $search = trim((string) $request->query('search', ''));
-
-        $columns = [
-            'id', 'title', 'subtitle', 'cover_image', 'slug', 'category_id',
-            'author_id', 'published_at', 'created_at',
-        ];
-
-        $query = Magazine::query()
+        $magazines = Magazine::query()
             ->published()
-            ->with(['category:id,name,slug', 'author:id,name,username'])
-            ->when($activeCategory, fn ($q) => $q->whereHas(
-                'category',
-                fn ($c) => $c->where('slug', $activeCategory)
-            ))
-            ->when($search !== '', fn ($q) => $q->where(function ($w) use ($search) {
-                $w->where('title', 'ilike', "%{$search}%")
-                    ->orWhere('subtitle', 'ilike', "%{$search}%");
-            }))
-            ->orderByDesc('published_at')
-            ->orderByDesc('created_at');
+            ->with([
+                'category:id,name,slug',
+            ])
+            ->withCount([
+                'issues as published_issues_count' => fn ($query) => $query
+                    ->published(),
+            ])
+            ->when(
+                $request->filled('search'),
+                fn ($query) => $query->where(function ($query) use ($request) {
+                    $search = $request->string('search');
 
-        // Featured = newest published issue (only on the unfiltered landing view).
-        $featured = null;
-        if (! $activeCategory && $search === '') {
-            $featured = Magazine::published()
-                ->with(['category:id,name,slug', 'author:id,name,username'])
-                ->orderByDesc('published_at')
-                ->orderByDesc('created_at')
-                ->first($columns);
-        }
+                    $query
+                        ->where('title', 'ilike', "%{$search}%")
+                        ->orWhere('subtitle', 'ilike', "%{$search}%");
+                })
+            )
+            ->when(
+                $request->filled('category'),
+                fn ($query) => $query->whereHas(
+                    'category',
+                    fn ($query) => $query->where(
+                        'slug',
+                        $request->string('category')
+                    )
+                )
+            )
+            ->latest('published_at')
+            ->paginate(12)
+            ->withQueryString();
 
-        $categories = MagazineCategory::query()
-            ->withCount(['magazines as published_count' => fn ($q) => $q->where('status', true)])
+        /*
+        |--------------------------------------------------------------------------
+        | Featured Magazine
+        |--------------------------------------------------------------------------
+        */
+
+        $featured = Magazine::query()
+            ->published()
+            ->featured()
+            ->with([
+                'category:id,name,slug',
+            ])
+            ->withCount([
+                'issues as published_issues_count' => fn ($query) => $query
+                    ->published(),
+            ])
+            ->latest('published_at')
+            ->first();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Categories
+        |--------------------------------------------------------------------------
+        */
+
+        $categories = \App\Models\Magazine\MagazineCategory::query()
+            ->active()
+            ->orderBy('position')
             ->orderBy('name')
-            ->get(['id', 'name', 'slug', 'icon']);
+            ->get([
+                'id',
+                'name',
+                'slug',
+                'icon',
+            ]);
 
-        return Inertia::render('Magazine/Index', [
-            'magazines' => Inertia::scroll(fn () => $query->paginate(12, $columns)->withQueryString()),
+        return Inertia::render('magazine/Index', [
+            'magazines' => $magazines,
+
             'featured' => $featured,
+
             'categories' => $categories,
+
             'qfilters' => [
-                'category' => $activeCategory,
-                'search' => $search,
+                'search' => $request->input('search'),
+                'category' => $request->input('category'),
             ],
-            'breadcrumbs' => BreadcrumbBuilder::make()->home()->add('Magazine')->toArray(),
+
+            'breadcrumbs' => BreadcrumbBuilder::make()
+                ->home()
+                ->add('Magazine')
+                ->toArray(),
         ]);
     }
 
-    public function view(string $category, string $slug)
+    /**
+     * Display a magazine.
+     */
+    public function show(Magazine $magazine): Response
     {
-        $magazine = Magazine::query()
-            ->published()
-            ->with(['category:id,name,slug', 'author:id,name,username'])
-            ->where('slug', $slug)
-            ->firstOrFail();
+        abort_unless(
+            $magazine->status &&
+            (
+                ! $magazine->published_at ||
+                $magazine->published_at->isPast()
+            ),
+            404
+        );
 
-        // Related issues from the same category (fallback to latest others).
-        $related = Magazine::query()
-            ->published()
-            ->with('category:id,name,slug')
-            ->where('id', '!=', $magazine->id)
-            ->when(
-                $magazine->category_id,
-                fn ($q) => $q->where('category_id', $magazine->category_id),
-                fn ($q) => $q->orderByDesc('created_at'),
-            )
-            ->latest('created_at')
-            ->take(4)
-            ->get(['id', 'title', 'subtitle', 'cover_image', 'slug', 'category_id']);
+        $magazine->load([
+            'category:id,name,slug',
 
-        return Inertia::render('Magazine/Show', [
+            'issues' => fn ($query) => $query
+                ->published()
+                ->withCount([
+                    'articles as published_articles_count' => fn ($query) => $query
+                        ->published(),
+                ])
+                ->latest('published_at'),
+        ]);
+
+        return Inertia::render('magazine/Show', [
             'magazine' => $magazine,
-            'related' => $related,
-            'breadcrumbs' => BreadcrumbBuilder::make()->home()
-                ->add('Magazine', route('magazine.index'))
+
+            'breadcrumbs' => BreadcrumbBuilder::make()
+                ->home()
+                ->add(
+                    'Magazine',
+                    route('magazine.index')
+                )
                 ->add($magazine->title)
                 ->toArray(),
+
             'meta_data' => [
-                'meta_title' => $magazine->meta_title,
-                'meta_description' => $magazine->meta_description,
+                'meta_title' => $magazine->meta_title
+                    ?: $magazine->title . ' — Alfrik',
+
+                'meta_description' => $magazine->meta_description
+                    ?: $magazine->subtitle,
+
                 'meta_keywords' => $magazine->meta_keywords,
-                'image_path' => $magazine->cover_image,
-                'type' => 'Article',
             ],
         ]);
     }

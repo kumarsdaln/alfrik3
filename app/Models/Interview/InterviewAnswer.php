@@ -3,15 +3,30 @@
 namespace App\Models\Interview;
 
 use App\Models\User;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+#[Fillable([
+    'question_id',
+    'answered_by',
+    'answer',
+])]
 class InterviewAnswer extends Model
 {
-    protected $fillable = [
-        'question_id','answered_by','answer'
-    ];
+    public function question(): BelongsTo
+    {
+        return $this->belongsTo(
+            InterviewQuestion::class,
+            'question_id',
+        );
+    }
 
-    public function answeredBy() {
-        return $this->belongsTo(User::class, 'answered_by');
+    public function answeredBy(): BelongsTo
+    {
+        return $this->belongsTo(
+            User::class,
+            'answered_by',
+        );
     }
 }

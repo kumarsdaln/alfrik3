@@ -2,54 +2,61 @@
 
 namespace App\Models\Magazine;
 
+use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Str;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
+#[Fillable([
+    'name',
+    'slug',
+    'icon',
+    'description',
+    'status',
+    'position',
+    'meta_title',
+    'meta_description',
+    'meta_keywords',
+])]
 class MagazineCategory extends Model
 {
     use HasFactory;
 
-    protected $table = 'magazine_categories';
-
-    protected $primaryKey = 'id';
-
-    public $timestamps = false;
-
-    protected $fillable = [
-        'name',
-        'slug',
-        'icon',
-        'description',
-        'meta_title',
-        'meta_description',
-        'meta_keywords',
+    protected $casts = [
+        'status' => 'boolean',
+        'position' => 'integer',
     ];
 
-    public function magazines()
+    /*
+    |--------------------------------------------------------------------------
+    | Relationships
+    |--------------------------------------------------------------------------
+    */
+
+    public function magazines(): HasMany
     {
-        return $this->hasMany(Magazine::class, 'category_id', 'id');
+        return $this->hasMany(Magazine::class, 'category_id');
     }
 
-    public function publishedMagazines()
+    /*
+    |--------------------------------------------------------------------------
+    | Scopes
+    |--------------------------------------------------------------------------
+    */
+
+    public function scopeActive($query)
     {
-        return $this->magazines()->where('status', true);
+        return $query->where('status', true);
     }
 
-    public static function uniqueSlug(string $name, ?int $ignoreId = null): string
+    /*
+    |--------------------------------------------------------------------------
+    | Route Key
+    |--------------------------------------------------------------------------
+    */
+
+    public function getRouteKeyName(): string
     {
-        $base = Str::slug($name) ?: 'category';
-        $slug = $base;
-        $i = 1;
-
-        while (
-            static::where('slug', $slug)
-                ->when($ignoreId, fn ($q) => $q->where('id', '!=', $ignoreId))
-                ->exists()
-        ) {
-            $slug = $base.'-'.$i++;
-        }
-
-        return $slug;
+        return 'slug';
     }
 }

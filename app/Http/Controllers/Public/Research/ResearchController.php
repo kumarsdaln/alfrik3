@@ -15,43 +15,136 @@ class ResearchController extends Controller
 {
     public function index(Request $request)
     {
-        $activeArea = $request->query('area');
+        $activeArea = trim((string) $request->query('area', ''));
         $search = trim((string) $request->query('search', ''));
 
         $columns = [
-            'id', 'title', 'slug', 'abstract', 'authors', 'author_id', 'area_id',
-            'institution', 'cover_image', 'published_at', 'featured', 'download_count', 'created_at',
+            'id',
+            'title',
+            'slug',
+            'abstract',
+            'authors',
+            'author_id',
+            'area_id',
+            'institution',
+            'cover_image',
+            'published_at',
+            'featured',
+            'download_count',
+            'created_at',
         ];
+
+        /*
+    |--------------------------------------------------------------------------
+    | Research Papers Query
+    |--------------------------------------------------------------------------
+    */
 
         $query = ResearchPaper::query()
             ->published()
-            ->with(['area:id,name,slug', 'author:id,name,username'])
-            ->when($activeArea, fn ($q) => $q->whereHas('area', fn ($a) => $a->where('slug', $activeArea)))
-            ->when($search !== '', fn ($q) => $q->where(function ($w) use ($search) {
-                $w->where('title', 'ilike', "%{$search}%")
-                    ->orWhere('abstract', 'ilike', "%{$search}%")
-                    ->orWhere('authors', 'ilike', "%{$search}%");
-            }))
+            ->with([
+                'area:id,name,slug',
+                'author:id,name,username',
+            ])
+            ->when(
+                $activeArea !== '',
+                fn($q) => $q->whereHas(
+                    'area',
+                    fn($area) => $area->where('slug', $activeArea)
+                )
+            )
+            ->when(
+                $search !== '',
+                fn($q) => $q->where(function ($searchQuery) use ($search) {
+                    $searchQuery
+                        ->where('title', 'ilike', "%{$search}%")
+                        ->orWhere('abstract', 'ilike', "%{$search}%")
+                        ->orWhere('authors', 'ilike', "%{$search}%")
+                        ->orWhere('institution', 'ilike', "%{$search}%");
+                })
+            )
             ->orderByDesc('published_at')
             ->orderByDesc('created_at');
 
+
+        /*
+    |--------------------------------------------------------------------------
+    | Featured Research Paper
+    |--------------------------------------------------------------------------
+    |
+    | Only show the featured section when the user is browsing the main
+    | research page, not when filtering/searching.
+    |
+    */
+
         $featured = null;
-        if (! $activeArea && $search === '') {
-            $featured = ResearchPaper::published()->featured()
-                ->with(['area:id,name,slug', 'author:id,name,username'])
+
+        if ($activeArea === '' && $search === '') {
+            $featured = ResearchPaper::query()
+                ->published()
+                ->featured()
+                ->with([
+                    'area:id,name,slug',
+                    'author:id,name,username',
+                ])
                 ->orderByDesc('published_at')
+                ->orderByDesc('created_at')
                 ->first($columns);
+
+            /*
+         * If there is no explicitly featured paper, use the newest
+         * published paper as the featured paper.
+         */
+            if (! $featured) {
+                $featured = (clone $query)->first($columns);
+            }
         }
 
+
+        /*
+    |--------------------------------------------------------------------------
+    | Research Areas
+    |--------------------------------------------------------------------------
+    */
+
+        $areas = ResearchArea::query()
+            ->withCount([
+                'papers as published_count' => fn($q) => $q->published(),
+            ])
+            ->orderBy('name')
+            ->get([
+                'id',
+                'name',
+                'slug',
+            ]);
+
+
+        /*
+    |--------------------------------------------------------------------------
+    | Response
+    |--------------------------------------------------------------------------
+    */
+
         return Inertia::render('research/Index', [
-            'papers' => Inertia::scroll(fn () => $query->paginate(12, $columns)->withQueryString()),
+            'papers' => Inertia::scroll(
+                fn() => $query
+                    ->paginate(12, $columns)
+                    ->withQueryString()
+            ),
+
             'featured' => $featured,
-            'areas' => ResearchArea::query()
-                ->withCount(['papers as published_count' => fn ($q) => $q->where('status', true)])
-                ->orderBy('name')
-                ->get(['id', 'name', 'slug']),
-            'qfilters' => ['area' => $activeArea, 'search' => $search],
-            'breadcrumbs' => BreadcrumbBuilder::make()->home()->add('Research')->toArray(),
+
+            'areas' => $areas,
+
+            'qfilters' => [
+                'area' => $activeArea,
+                'search' => $search,
+            ],
+
+            'breadcrumbs' => BreadcrumbBuilder::make()
+                ->home()
+                ->add('Research')
+                ->toArray(),
         ]);
     }
 
@@ -59,28 +152,50 @@ class ResearchController extends Controller
     {
         abort_unless($this->isLive($paper), 404);
 
-        $paper->load(['area:id,name,slug', 'author:id,name,username']);
+        // Main paper
+        $paper->load([
+            'area:id,name,slug',
+            'author:id,name,username',
+        ]);
 
+        // Related research
         $related = ResearchPaper::query()
             ->published()
-            ->with('area:id,name,slug')
-            ->where('id', '!=', $paper->id)
-            ->when($paper->area_id, fn ($q) => $q->where('area_id', $paper->area_id))
-            ->latest('published_at')
-            ->take(3)
-            ->get(['id', 'title', 'slug', 'authors', 'cover_image', 'area_id', 'published_at']);
+            ->whereKeyNot($paper->id)
+            ->when(
+                $paper->area_id,
+                fn($query) => $query->where('area_id', $paper->area_id)
+            )
+            ->with([
+                'area:id,name,slug',
+            ])
+            ->orderByDesc('published_at')
+            ->orderByDesc('created_at')
+            ->limit(3)
+            ->get([
+                'id',
+                'title',
+                'slug',
+                'authors',
+                'cover_image',
+                'area_id',
+                'published_at',
+            ]);
 
         return Inertia::render('research/Show', [
             'paper' => $paper,
             'related' => $related,
-            'breadcrumbs' => BreadcrumbBuilder::make()->home()
+
+            'breadcrumbs' => BreadcrumbBuilder::make()
+                ->home()
                 ->add('Research', route('research.index'))
                 ->add($paper->title)
                 ->toArray(),
+
             'meta_data' => [
-                'meta_title' => $paper->meta_title,
-                'meta_description' => $paper->meta_description,
-                'meta_keywords' => $paper->meta_keywords,
+                'meta_title' => $paper->meta_title ?: $paper->title,
+                'meta_description' => $paper->meta_description ?: $paper->abstract,
+                'meta_keywords' => $paper->meta_keywords ?: $paper->keywords,
             ],
         ]);
     }
@@ -95,7 +210,7 @@ class ResearchController extends Controller
 
         $paper->increment('download_count');
 
-        return Storage::disk('public')->download($relative, Str::slug($paper->title).'.'.($paper->file_type ?: 'pdf'));
+        return Storage::disk('public')->download($relative, Str::slug($paper->title) . '.' . ($paper->file_type ?: 'pdf'));
     }
 
     private function isLive(ResearchPaper $paper): bool

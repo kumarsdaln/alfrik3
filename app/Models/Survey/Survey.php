@@ -3,24 +3,26 @@
 namespace App\Models\Survey;
 
 use App\Models\User;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 
+#[Fillable([
+    'title',
+    'slug',
+    'description',
+    'status',
+    'published_at',
+    'closes_at',
+    'allow_anonymous',
+    'one_response_per_user',
+    'show_results',
+    'author_id',
+])]
 class Survey extends Model
 {
-    protected $fillable = [
-        'title',
-        'slug',
-        'description',
-        'status',
-        'published_at',
-        'closes_at',
-        'allow_anonymous',
-        'one_response_per_user',
-        'show_results',
-        'author_id',
-    ];
 
     protected $casts = [
         'status' => 'boolean',
@@ -33,7 +35,8 @@ class Survey extends Model
 
     public function questions()
     {
-        return $this->hasMany(SurveyQuestion::class)->orderBy('position');
+        return $this->hasMany(SurveyQuestion::class)
+            ->orderBy('position');
     }
 
     public function responses()
@@ -45,43 +48,63 @@ class Survey extends Model
     {
         return $this->belongsTo(User::class, 'author_id');
     }
-
+    
+    #[Scope]
     public function scopePublished(Builder $query): Builder
     {
-        return $query->where('status', true)
+        return $query
+            ->where('status', true)
             ->where(function (Builder $q) {
-                $q->whereNull('published_at')->orWhere('published_at', '<=', now());
+                $q->whereNull('published_at')
+                    ->orWhere('published_at', '<=', now());
             });
     }
 
-    /** Published and not past its close date. */
-    public function scopeOpen(Builder $query): Builder
+    #[Scope]
+    public function open(Builder $query): Builder
     {
-        return $query->published()
+        return $query
+            ->published()
             ->where(function (Builder $q) {
-                $q->whereNull('closes_at')->orWhere('closes_at', '>', now());
+                $q->whereNull('closes_at')
+                    ->orWhere('closes_at', '>', now());
             });
     }
 
     public function isOpen(): bool
     {
-        $live = $this->status && (is_null($this->published_at) || $this->published_at->lte(now()));
+        if (! $this->status) {
+            return false;
+        }
 
-        return $live && (is_null($this->closes_at) || $this->closes_at->gt(now()));
+        if ($this->published_at && $this->published_at->isFuture()) {
+            return false;
+        }
+
+        if ($this->closes_at && $this->closes_at->isPast()) {
+            return false;
+        }
+
+        return true;
     }
 
-    public static function uniqueSlug(string $title, ?int $ignoreId = null): string
-    {
+    public static function uniqueSlug(
+        string $title,
+        ?int $ignoreId = null
+    ): string {
         $base = Str::slug($title) ?: 'survey';
         $slug = $base;
         $i = 1;
 
         while (
             static::where('slug', $slug)
-                ->when($ignoreId, fn ($q) => $q->where('id', '!=', $ignoreId))
+                ->when(
+                    $ignoreId,
+                    fn ($q) => $q->where('id', '!=', $ignoreId)
+                )
                 ->exists()
         ) {
-            $slug = $base.'-'.$i++;
+            $slug = $base . '-' . $i++;
         }
 
         return $slug;

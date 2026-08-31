@@ -21,7 +21,7 @@ class InterviewQuestionResource extends JsonResource
 
             'asked_by' => [
                 'id' => $this->interviewer?->id,
-                'external_id' => $this->interviewer?->external_id,
+                'username' => $this->interviewer?->username,
                 'name' => $this->interviewer?->name,
                 'avatar' => $this->interviewer?->avatar,
             ],

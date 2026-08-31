@@ -1,0 +1,5 @@
+export { default as Stat } from './Stat.vue'
+export { default as StatDescription } from './StatDescription.vue'
+export { default as StatIcon } from './StatIcon.vue'
+export { default as StatLabel } from './StatLabel.vue'
+export { default as StatValue } from './StatValue.vue'

@@ -1,249 +1,190 @@
 <script setup lang="ts">
-    import { computed, ref } from 'vue'
-    import { Link } from '@inertiajs/vue3'
-    import { ArrowRight } from '@lucide/vue'
-
-    import { formatDate } from '@/utils/dateUtils'
-
-    import AppBadge from '@/Components/Ui/AppBadge.vue'
-    import AppHeading from '@/Components/Ui/AppHeading.vue'
-    import AppText from '@/Components/Ui/AppText.vue'
-    import Avatar from '@/components/profile/Avatar.vue'
-
+    import { Link } from '@inertiajs/vue3';
     import {
-        show,
-    } from '@/actions/App/Domains/Interview/Http/Controllers/InterviewController'
+        ArrowUpRight,
+        FileText,
+        Headphones,
+        Play,
+    } from '@lucide/vue';
+    import { computed, ref } from 'vue';
 
+    import { formatDate } from '@/utils/dateUtils';
+    import Avatar from '@/components/profile/Avatar.vue';
+import Badge from '../ui/badge/Badge.vue';
 
-    /*
-    |--------------------------------------------------------------------------
-    | Types
-    |--------------------------------------------------------------------------
-    */
-
-    interface User {
-        id: number
-        name: string
-        avatar?: string | null
-        external_id?: string | null
-    }
+    type InterviewFormat = 'written' | 'video' | 'audio';
 
     interface Participant {
-        id: number
-        user?: User | null
+        id: number | string;
+        user?: {
+            name?: string;
+            avatar?: string;
+        };
     }
 
     interface Interview {
-        id: number
-        slug: string
-        title: string
-        description?: string | null
-        thumbnail?: string | null
-        interview_type: string
-        duration: string | number
-        action_label: string
-        published_at: string
-        participants?: Participant[]
+        id?: number | string;
+        href: string;
+        title: string;
+        format: InterviewFormat;
+        image?: string;
+        created_at?: string;
+        participants?: Participant[];
     }
 
-    interface Props {
-        interview: Interview
-    }
+    const props = defineProps<{
+        interview: Interview;
+    }>();
 
-    const props = defineProps<Props>()
+    const FALLBACK_IMAGE = '/frontend/images/placeholder.jpg';
+    const MAX_VISIBLE_PARTICIPANTS = 3;
 
+    const imageFailed = ref(false);
 
-    /*
-    |--------------------------------------------------------------------------
-    | Thumbnail
-    |--------------------------------------------------------------------------
-    */
+    const imageSrc = computed(() => {
+        const src = String(props.interview.image || '').trim();
 
-    // A thumbnail path can be present but point at a file that no longer exists,
-    // so a v-if on the value alone still leaves a broken image. Track load
-    // failures and fall back to the placeholder.
-    const thumbFailed = ref(false)
+        if (!src || imageFailed.value) {
+            return FALLBACK_IMAGE;
+        }
 
-    const hasThumbnail = computed(
-        () => Boolean(props.interview.thumbnail) && !thumbFailed.value,
-    )
+        if (/^(https?:)?\/\//i.test(src)) {
+            return src;
+        }
 
+        return src.startsWith('/') ? src : `/${src}`;
+    });
 
-    /*
-    |--------------------------------------------------------------------------
-    | Participants
-    |--------------------------------------------------------------------------
-    */
+    const formatConfig = computed(() => {
+        switch (props.interview.format) {
+            case 'video':
+                return {
+                    label: 'Video Interview',
+                    action: 'Watch interview',
+                    icon: Play,
+                };
 
-    const visibleParticipants = computed(() =>
-        props.interview.participants?.slice(0, 3) ?? [],
-    )
+            case 'audio':
+                return {
+                    label: 'Audio Interview',
+                    action: 'Listen to interview',
+                    icon: Headphones,
+                };
 
-    const participantNames = computed(() =>
-        props.interview.participants
-            ?.map(participant => participant.user?.name)
+            default:
+                return {
+                    label: 'Written Interview',
+                    action: 'Read interview',
+                    icon: FileText,
+                };
+        }
+    });
+
+    const participants = computed(() => {
+        return (props.interview.participants ?? []).filter(
+            (participant) => participant.user?.name,
+        );
+    });
+
+    const visibleParticipants = computed(() => {
+        return participants.value.slice(0, MAX_VISIBLE_PARTICIPANTS);
+    });
+
+    const remainingParticipants = computed(() => {
+        return Math.max(
+            participants.value.length - MAX_VISIBLE_PARTICIPANTS,
+            0,
+        );
+    });
+
+    const participantNames = computed(() => {
+        return participants.value
+            .map((participant) => participant.user?.name)
             .filter(Boolean)
-            .join(', ') ?? '',
-    )
+            .join(', ');
+    });
+
+    const handleImageError = () => {
+        imageFailed.value = true;
+    };
 </script>
 
-
 <template>
-    <article class="
-            group relative flex h-full flex-col
-            overflow-hidden
-        ">
-        <!-- Hero -->
+    <article class="group w-full">
+        <Link :href="interview.href" :aria-label="interview.title" class="block">
+            <!-- Image -->
+            <div class="relative aspect-[4/3] w-full overflow-hidden bg-neutral-100">
+                <img :src="imageSrc" :alt="interview.title" loading="lazy" decoding="async"
+                    class="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.025]"
+                    @error="handleImageError" />
 
-        <div class="
-                relative aspect-[16/10]
-                overflow-hidden
-            ">
-            <!-- Thumbnail -->
+                <!-- Format -->
+                <div class="absolute left-3 top-3">
+                    <Badge variant="secondary">
+                        <component :is="formatConfig.icon" :size="13" :stroke-width="1.8"
+                        :class="interview.format === 'video' ? 'fill-current' : ''" />
+                        {{ formatConfig.label }}
+                    </Badge>
+                </div>
 
-            <img v-if="hasThumbnail" :src="interview.thumbnail" :alt="interview.title"
-                @error="thumbFailed = true" class="
-                    h-full w-full
-                    object-cover
+                <!-- Video / Audio action -->
+                <div v-if="interview.format !== 'written'"
+                    class="absolute bottom-3 right-3 flex h-10 w-10 items-center justify-center bg-white text-neutral-950 transition-transform duration-200 group-hover:scale-105">
+                    <Play v-if="interview.format === 'video'" :size="15" :stroke-width="1.8"
+                        class="ml-0.5 fill-current" />
 
-                    transition-transform
-                    duration-500
-
-                    group-hover:scale-[1.03]
-                ">
-
-
-            <!-- Thumbnail Placeholder -->
-
-            <img v-else src="/frontend/images/placeholder.jpg" :alt="interview.title" class="
-                    h-full w-full
-                    object-cover
-                ">
-
-
-            <!-- Image Overlay -->
-
-            <div class="
-                    pointer-events-none
-                    absolute inset-0
-
-                    bg-gradient-to-t
-                    from-black/60
-                    via-black/10
-                    to-transparent
-                " />
-
-
-            <!-- Type -->
-
-            <div class="absolute left-4 top-4 sm:left-5 sm:top-5">
-                <AppBadge>
-                    {{ interview.interview_type }}
-                </AppBadge>
-            </div>
-
-
-            <!-- Duration -->
-
-            <div class="absolute bottom-4 right-4 sm:bottom-5 sm:right-5">
-                <div class="
-                        rounded-full
-                        bg-black/60
-
-                        px-3 py-1.5
-
-                        backdrop-blur-md
-                    ">
-                    <AppText size="xs" weight="medium" class="text-white">
-                        {{ interview.duration }}
-                        {{ interview.action_label }}
-                    </AppText>
+                    <Headphones v-else :size="16" :stroke-width="1.8" />
                 </div>
             </div>
-        </div>
 
-
-        <!-- Content -->
-        <div class="flex flex-1 flex-col py-5 sm:py-6">
-
-            <!-- Meta -->
-            <div class="mb-3 flex items-center gap-2 sm:mb-4">
-                <AppText size="xs" weight="medium" color="muted">
-                    {{ formatDate(interview.published_at) }}
-                </AppText>
-            </div>
-
-
-            <!-- Main Interview Link -->
-
-            <Link :href="show(interview.slug)" class="
-                    after:absolute
-                    after:inset-0
-                    after:z-0
-
-                    focus:outline-none
-                ">
-                <AppHeading tag="h3" font="prata" weight="normal" size="lg" leading="tight" :clamp="2" hover-brand>
-                    {{ interview.title }}
-                </AppHeading>
-            </Link>
-
-
-            <!-- Spacer -->
-            <div class="flex-1" />
-
-
-            <!-- Footer -->
-            <div class="
-                    relative z-10
-                    mt-6
-                    flex items-center
-                    justify-between
-                    gap-4
-                    border-t
-                    border-zinc-100
-                    pt-5
-                    dark:border-white/10
-                ">
+            <!-- Content -->
+            <div class="pt-4">
                 <!-- Participants -->
-                <div class="flex min-w-0 items-center gap-3">
+                <div v-if="participants.length" class="flex min-w-0 items-center gap-3">
+                    <!-- Avatar stack -->
+                    <div class="flex shrink-0 -space-x-2">
+                        <Avatar v-for="participant in visibleParticipants" :key="participant.id"
+                            :name="participant.user?.name" 
+                            :image="participant.user?.avatar" 
+                            size="size-7"
+                            text-size="text-[10px]" 
+                            rounded="full" 
+                            class="ring-2 ring-white" />
 
-                    <!-- Avatars -->
-                    <div v-if="visibleParticipants.length" class="flex shrink-0 -space-x-2">
-                        <template v-for="participant in visibleParticipants" :key="participant.id">
-                            <div class="relative rounded-full border-2
-                                    border-white
-                                    dark:border-[#080808]
-                                ">
-                                <Avatar 
-                                    :name="participant.user?.name" 
-                                    :image="participant.user?.avatar"
-                                    size="h-9 w-9" />
-                            </div>
-                        </template>
+                        <div v-if="remainingParticipants"
+                            class="flex size-7 shrink-0 items-center justify-center rounded-full bg-neutral-100 text-[9px] font-medium text-neutral-600 ring-2 ring-white">
+                            +{{ remainingParticipants }}
+                        </div>
                     </div>
 
-
-                    <!-- Expert Information -->
-                    <div v-if="participantNames" class="hidden min-w-0 max-w-[180px] flex-col gap-1 sm:flex">
-                        <AppText size="xs" color="muted">
-                            Featured Experts
-                        </AppText>
-                        <AppText size="sm" weight="medium" truncate>
-                            {{ participantNames }}
-                        </AppText>
-                    </div>
+                    <!-- Names -->
+                    <p class="min-w-0 truncate text-[11px] leading-5 text-neutral-500" :title="participantNames">
+                        {{ participantNames }}
+                    </p>
                 </div>
 
+                <!-- Title -->
+                <h2
+                    class="mt-3 max-w-[580px] text-[21px] font-medium leading-[1.2] tracking-[-0.025em] text-neutral-950 transition-colors duration-200 group-hover:text-neutral-600 sm:text-[23px]">
+                    {{ interview.title }}
+                </h2>
 
-                <!-- CTA -->
-                <div class="flex shrink-0 items-center gap-2 text-brand">
-                    <AppText size="sm" weight="semibold" class="text-brand">
-                        View
-                    </AppText>
-                    <ArrowRight class="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" />
+                <!-- Bottom metadata -->
+                <div class="mt-4 flex items-center justify-between gap-4">
+                    <span
+                        class="inline-flex items-center gap-2 border-b border-neutral-300 pb-1 text-[10px] font-semibold uppercase tracking-[0.15em] text-neutral-700 transition-colors group-hover:border-neutral-900 group-hover:text-neutral-950">
+                        {{ formatConfig.action }}
+
+                        <ArrowUpRight :size="13" :stroke-width="1.8"
+                            class="transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+                    </span>
+
+                    <span v-if="interview.created_at"
+                        class="shrink-0 text-[10px] uppercase tracking-[0.1em] text-neutral-400">
+                        {{ formatDate(interview.created_at) }}
+                    </span>
                 </div>
             </div>
-        </div>
+        </Link>
     </article>
 </template>

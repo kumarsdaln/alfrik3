@@ -3,38 +3,39 @@
 namespace App\Models\Research;
 
 use App\Models\User;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Str;
 
+#[Fillable([
+    'title',
+    'slug',
+    'abstract',
+    'authors',
+    'author_id',
+    'area_id',
+    'institution',
+    'methodology',
+    'doi',
+    'citation',
+    'keywords',
+    'cover_image',
+    'file_path',
+    'file_size',
+    'file_type',
+    'published_at',
+    'status',
+    'featured',
+    'download_count',
+    'meta_title',
+    'meta_description',
+    'meta_keywords',
+])]
 class ResearchPaper extends Model
 {
     protected $table = 'research_papers';
-
-    protected $fillable = [
-        'title',
-        'slug',
-        'abstract',
-        'authors',
-        'author_id',
-        'area_id',
-        'institution',
-        'methodology',
-        'doi',
-        'citation',
-        'keywords',
-        'cover_image',
-        'file_path',
-        'file_size',
-        'file_type',
-        'published_at',
-        'status',
-        'featured',
-        'download_count',
-        'meta_title',
-        'meta_description',
-        'meta_keywords',
-    ];
 
     protected $casts = [
         'status' => 'boolean',
@@ -44,23 +45,34 @@ class ResearchPaper extends Model
         'download_count' => 'integer',
     ];
 
-    protected $appends = ['file_size_label'];
+    protected $appends = [
+        'file_size_label',
+    ];
 
-    public function area()
+    public function area(): BelongsTo
     {
-        return $this->belongsTo(ResearchArea::class, 'area_id');
+        return $this->belongsTo(
+            ResearchArea::class,
+            'area_id'
+        );
     }
 
-    public function author()
+    public function author(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'author_id');
+        return $this->belongsTo(
+            User::class,
+            'author_id'
+        );
     }
 
     public function scopePublished(Builder $query): Builder
     {
-        return $query->where('status', true)
-            ->where(function (Builder $q) {
-                $q->whereNull('published_at')->orWhere('published_at', '<=', now());
+        return $query
+            ->where('status', true)
+            ->where(function (Builder $query) {
+                $query
+                    ->whereNull('published_at')
+                    ->orWhere('published_at', '<=', now());
             });
     }
 
@@ -78,22 +90,32 @@ class ResearchPaper extends Model
         $mb = $this->file_size / (1024 * 1024);
 
         return $mb >= 1
-            ? round($mb, 1).' MB'
-            : max(1, (int) round($this->file_size / 1024)).' KB';
+            ? round($mb, 1) . ' MB'
+            : max(
+                1,
+                (int) round($this->file_size / 1024)
+            ) . ' KB';
     }
 
-    public static function uniqueSlug(string $title, ?int $ignoreId = null): string
-    {
+    public static function uniqueSlug(
+        string $title,
+        ?int $ignoreId = null
+    ): string {
         $base = Str::slug($title) ?: 'research';
         $slug = $base;
         $i = 1;
 
         while (
-            static::where('slug', $slug)
-                ->when($ignoreId, fn ($q) => $q->where('id', '!=', $ignoreId))
-                ->exists()
+            static::query()
+            ->where('slug', $slug)
+            ->when(
+                $ignoreId,
+                fn($query) => $query->where('id', '!=', $ignoreId)
+            )
+            ->exists()
         ) {
-            $slug = $base.'-'.$i++;
+            $slug = "{$base}-{$i}";
+            $i++;
         }
 
         return $slug;

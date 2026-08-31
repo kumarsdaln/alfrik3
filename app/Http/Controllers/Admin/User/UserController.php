@@ -8,6 +8,7 @@ use App\Models\Role;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -176,15 +177,25 @@ class UserController extends Controller
     public function edit(User $user): Response
     {
         $user->load('roles');
-
+        $roles = Role::query()
+            ->orderBy('name')
+            ->get([
+                'id',
+                'slug',
+                'name',
+            ]);
         return Inertia::render('Admin/Users/Edit', [
             'user' => $user,
+            'roles' => $roles,
         ]);
     }
+
+
 
     /**
      * Update the specified user.
      */
+
     public function update(
         Request $request,
         User $user,
@@ -196,12 +207,22 @@ class UserController extends Controller
                 'max:255',
             ],
 
+            'username' => [
+                'required',
+                'string',
+                'max:50',
+                'alpha_dash',
+                Rule::unique('users', 'username')
+                    ->ignore($user->id),
+            ],
+
             'email' => [
                 'required',
                 'string',
                 'email',
                 'max:255',
-                'unique:users,email,' . $user->id,
+                Rule::unique('users', 'email')
+                    ->ignore($user->id),
             ],
 
             'is_active' => [
@@ -218,6 +239,7 @@ class UserController extends Controller
 
         $user->update([
             'name' => $validated['name'],
+            'username' => $validated['username'],
             'email' => $validated['email'],
             'is_active' => $validated['is_active'],
         ]);
@@ -233,7 +255,7 @@ class UserController extends Controller
 
         return to_route(
             'admin.users.show',
-            $user
+            $user,
         );
     }
 

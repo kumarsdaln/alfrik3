@@ -1,104 +1,214 @@
 <script setup lang="ts">
-    import ContentCard from '@/components/cards/ContentCard.vue';
-    import Avatar from '@/components/profile/Avatar.vue';
-    import AppText from '@/components/ui/AppText.vue';
-    import { show as interviewShow } from '@/actions/App/Http/Controllers/Public/Interview/InterviewController';
-    import { InfiniteScroll } from '@inertiajs/vue3';
-    import LoadingSpinner from '@/components/ui/LoadingSpinner.vue';
-    import AppPageHeader from '@/components/ui/AppPageHeader.vue';
-    import AppFilterLayout from '@/components/filters/layout/AppFilterLayout.vue';
-    import FilterInput from '@/components/filters/fields/FilterInput.vue';
-    import FilterSelect from '@/components/filters/fields/FilterSelect.vue';
-    import { useInfiniteFilters } from '@/composables/useInfiniteFilters';
+import { computed } from 'vue'
+import { InfiniteScroll } from '@inertiajs/vue3'
 
-    const props = defineProps({
-        interviews: {
-            type: Object,
-            required: true,
-        },
-        qfilters: {
-            type: Object,
-            default: () => ({}),
-        },
-        types: {
-            type: Array,
-            required: true
-        }
-    })
+import InterviewCard from '@/components/interview/InterviewCard.vue'
+import InterviewHero from '@/components/interview/InterviewHero.vue'
+import FilterControl from '@/components/filters/FilterControl.vue'
+import AppSelect from '@/components/form/AppSelect.vue'
 
-    const {
-        filters,
-        applyFilters,
-        resetFilters,
-    } = useInfiniteFilters({
-        route: 'interviews.index',
-        dataKey: 'interviews',
-        initialFilters: {
-            search: props.qfilters.search ?? '',
-            type: props.qfilters.type ?? '',
-        },
-    })
+import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
+
+import {
+    show as interviewShow,
+} from '@/actions/App/Http/Controllers/Public/Interview/InterviewController'
+
+import { useFilters } from '@/composables/useFilters'
+
+
+/*
+|--------------------------------------------------------------------------
+| Types
+|--------------------------------------------------------------------------
+*/
+
+interface User {
+    id: number
+    username: string
+    name: string
+    avatar?: string | null
+}
+
+interface Participant {
+    id: number
+    role: string
+    user?: User | null
+}
+
+interface Interview {
+    id: number
+    slug: string
+    title: string
+    description?: string | null
+    thumbnail?: string | null
+    interview_type?: string | null
+    published_at?: string | null
+    duration?: string | number | null
+    action_label?: string | null
+    participants?: Participant[]
+}
+
+interface PaginatedInterviews {
+    data: Interview[]
+    current_page: number
+    last_page: number
+    total: number
+}
+
+interface FilterOption {
+    label: string
+    value: string
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Props
+|--------------------------------------------------------------------------
+*/
+
+interface Props {
+    featured?: Interview | null
+    interviews: PaginatedInterviews
+
+    qfilters?: {
+        search?: string
+        type?: string
+    }
+
+    types: Array<{
+        label: string
+        value: string
+    }>
+}
+
+const props = defineProps<Props>()
+
+
+/*
+|--------------------------------------------------------------------------
+| Filters
+|--------------------------------------------------------------------------
+*/
+
+const {
+    filters,
+    applyFilters,
+    clearFilters,
+    filterCount,
+} = useFilters({
+    search: props.qfilters?.search ?? '',
+    type: props.qfilters?.type ?? '',
+})
+
+
+/*
+|--------------------------------------------------------------------------
+| Interview Cards
+|--------------------------------------------------------------------------
+*/
+
+const interviewCards = computed(() =>
+    props.interviews.data.map(interview => ({
+        id: interview.id,
+
+        href: interviewShow(interview.slug).url,
+
+        title: interview.title,
+
+        format: normalizeFormat(interview.interview_type),
+
+        image: interview.thumbnail ?? '',
+
+        participants: interview.participants ?? [],
+
+        created_at: interview.published_at ?? undefined,
+    })),
+)
+
+
+/*
+|--------------------------------------------------------------------------
+| Helpers
+|--------------------------------------------------------------------------
+*/
+
+function normalizeFormat(
+    type?: string | null,
+): 'written' | 'video' | 'audio' {
+    if (!type) {
+        return 'written'
+    }
+
+    const value = type.toLowerCase().trim()
+
+    if (value.includes('video')) {
+        return 'video'
+    }
+
+    if (value.includes('audio')) {
+        return 'audio'
+    }
+
+    return 'written'
+}
 </script>
 
+
 <template>
-    <AppPageHeader 
-        class="hidden sm:block" 
-        kicker="The Network" 
-        title="Interviews" 
-        description="Real conversations with founders, creators, and people doing meaningful 
-                         work — sharing their journey, lessons, struggles, and ideas." />
+    <InterviewHero :interview="featured.data" />
 
-    <!-- Sticky Filter Section with improved "Elevated" look -->
+
+    <!-- ================================================================
+         FILTERS
+    ================================================================= -->
+
     <div class="sticky top-4 z-40 mb-16 sm:top-20">
-        <AppFilterLayout :filters="filters" @apply="applyFilters" @reset="resetFilters">
-            <template #search>
-                <FilterInput v-model="filters.search" 
-                :field="{
-                    placeholder: 'Search the archive...'
-                }" />
-            </template>
-
-            <template #inline-filters>
-                <FilterSelect v-model="filters.type" :field="{
-                    placeholder: 'All Formats'
-                }" :options="types" />
-            </template>
-        </AppFilterLayout>
+        <FilterControl
+            v-model:search="filters.search"
+            search-placeholder="Search interviews..."
+            :filter-count="filterCount"
+            @clear="clearFilters"
+            @apply="applyFilters"
+        >
+            <AppSelect
+                v-model="filters.type"
+                name="type"
+                label="Format"
+                placeholder="All formats"
+                :options="types"
+            />
+        </FilterControl>
     </div>
 
-    <!-- The Grid -->
+
+    <!-- ================================================================
+         INTERVIEWS
+    ================================================================= -->
+
     <div class="relative">
-        <InfiniteScroll 
-            data="interviews" 
-            :key="[filters.search, filters.type].join('-')"
-            class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-10 gap-y-20 relative z-10">
-            <ContentCard v-for="interview in interviews.data" :key="interview.id"
-                :href="interviewShow(interview.slug).url" :image="interview.thumbnail ?? ''" :title="interview.title"
-                :subtitle="interview.description ?? ''"
-                :category="interview.interview_type ? { name: interview.interview_type } : null"
-                :created_at="interview.published_at ?? ''">
-                <!-- Interview-specific detail the shared card has no concept of. -->
-                <template #meta>
-                    <div v-if="interview.participants?.length" class="mb-2 flex items-center gap-3">
-                        <div class="flex -space-x-2">
-                            <Avatar v-for="participant in interview.participants.slice(0, 3)" 
-                                :key="participant.id"
-                                :name="participant.user?.name" 
-                                :image="participant.user?.avatar" 
-                                size="w-7 h-7"
-                                class="ring-2 ring-surface-light dark:ring-surface-dark" />
-                        </div>
-                        <AppText 
-                            tag="span" 
-                            font="redhat" 
-                            size="xs" 
-                            color="muted" 
-                            truncate>
-                            {{interview.participants.map((p) => p.user?.name).filter(Boolean).join(', ')}}
-                        </AppText>
-                    </div>
-                </template>
-            </ContentCard>
+        <InfiniteScroll
+            data="interviews"
+            :key="`${filters.search}-${filters.type}`"
+            class="
+                relative
+                z-10
+                grid
+                grid-cols-1
+                gap-x-8
+                gap-y-14
+                sm:grid-cols-2
+                lg:grid-cols-3
+                lg:gap-x-10
+                lg:gap-y-20
+            "
+        >
+            <InterviewCard
+                v-for="interview in interviewCards"
+                :key="interview.id"
+                :interview="interview"
+            />
+
             <template #loading>
                 <div class="col-span-full flex justify-center py-20">
                     <LoadingSpinner :loading="true" />
