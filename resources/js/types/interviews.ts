@@ -1,4 +1,4 @@
-import { Option } from "./forms"
+import type { Option } from './forms'
 
 export enum InterviewType {
     VIDEO = 'video',
@@ -19,10 +19,16 @@ export interface Interview {
     title: string
     slug: string
     description: string | null
+
     interview_type: InterviewTypeOption
     status: InterviewStatusOption
+
     thumbnail: string | null
     duration: string
-    published_at: string
+    published_at: string | null
     created_at: string
+
+    createdBy: {
+        name: string
+    } | null
 }

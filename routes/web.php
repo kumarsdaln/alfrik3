@@ -11,7 +11,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
 require __DIR__.'/settings.php';
 
-
+//Public Routes
 require __DIR__.'/public/event.php';
 require __DIR__.'/public/interview.php';
 require __DIR__.'/public/report.php';
@@ -20,7 +20,6 @@ require __DIR__.'/public/survey.php';
 require __DIR__.'/public/magazine.php';
 require __DIR__.'/public/expert.php';
 require __DIR__.'/public/profile.php';
-
 
 //Admin Routes
 require __DIR__.'/admin/user.php';

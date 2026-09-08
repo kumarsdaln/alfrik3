@@ -2,8 +2,8 @@
 
 namespace Database\Seeders;
 
-use App\Enums\Interview\Status;
-use App\Enums\Interview\Type;
+use App\Enums\Interview\InterviewStatus;
+use App\Enums\Interview\InterviewType;
 use App\Models\Interview\Interview;
 use App\Models\Interview\InterviewAnswer;
 use App\Models\Interview\InterviewMedia;
@@ -45,7 +45,7 @@ class InterviewSeeder extends Seeder
                 'title' => 'Building Technology for the Next Generation',
                 'slug' => 'building-technology-for-the-next-generation',
                 'description' => 'A conversation about technology, innovation, leadership, and building products that create meaningful impact.',
-                'type' => Type::VIDEO,
+                'type' => InterviewType::VIDEO,
                 'duration' => 1840,
                 'thumbnail' => 'https://images.unsplash.com/photo-1556761175-b413da4baf72?auto=format&fit=crop&w=1600&q=80',
                 'embed_url' => 'https://www.youtube.com/embed/dQw4w9WgXcQ',
@@ -54,7 +54,7 @@ class InterviewSeeder extends Seeder
                 'title' => 'The Future of Entrepreneurship',
                 'slug' => 'the-future-of-entrepreneurship',
                 'description' => 'An in-depth conversation about entrepreneurship, business growth, creativity, and the changing world of work.',
-                'type' => Type::AUDIO,
+                'type' => InterviewType::AUDIO,
                 'duration' => 2460,
                 'thumbnail' => 'https://images.unsplash.com/photo-1551836022-d5d88e9218df?auto=format&fit=crop&w=1600&q=80',
                 'embed_url' => 'https://www.youtube.com/embed/dQw4w9WgXcQ',
@@ -63,7 +63,7 @@ class InterviewSeeder extends Seeder
                 'title' => 'From Ideas to Impact',
                 'slug' => 'from-ideas-to-impact',
                 'description' => 'How ambitious ideas become real products, companies, and movements.',
-                'type' => Type::WRITTEN,
+                'type' => InterviewType::WRITTEN,
                 'duration' => null,
                 'thumbnail' => 'https://images.unsplash.com/photo-1499750310107-5fef28a66643?auto=format&fit=crop&w=1600&q=80',
                 'embed_url' => null,
@@ -85,7 +85,7 @@ class InterviewSeeder extends Seeder
                     'title' => $data['title'],
                     'description' => $data['description'],
                     'interview_type' => $data['type'],
-                    'status' => Status::PUBLISHED,
+                    'status' => InterviewStatus::PUBLISHED,
                     'thumbnail' => $data['thumbnail'],
                     'duration' => $data['duration'],
                     'published_at' => Carbon::now()->subDays(
@@ -125,7 +125,7 @@ class InterviewSeeder extends Seeder
 
             $interview->media()->delete();
 
-            if ($data['type'] === Type::VIDEO) {
+            if ($data['type'] === InterviewType::VIDEO) {
                 InterviewMedia::create([
                     'interview_id' => $interview->id,
                     'media_type' => 'video',
@@ -137,7 +137,7 @@ class InterviewSeeder extends Seeder
                 ]);
             }
 
-            if ($data['type'] === Type::AUDIO) {
+            if ($data['type'] === InterviewType::AUDIO) {
                 InterviewMedia::create([
                     'interview_id' => $interview->id,
                     'media_type' => 'audio',

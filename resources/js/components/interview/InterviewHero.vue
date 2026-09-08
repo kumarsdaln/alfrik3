@@ -55,7 +55,7 @@ function getFormat(
         return 'written'
     }
 
-    const value = type.toLowerCase()
+    const value = type.value.toLowerCase()
 
     if (value.includes('video')) {
         return 'video'

@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Public\Interview;
 
-use App\Enums\Interview\Type;
+use App\Enums\Interview\InterviewType;
 use App\Filters\SearchFilter;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Interview\InterviewResource;
@@ -85,7 +85,7 @@ class InterviewController extends Controller
                 'type' => $request->input('type', ''),
             ],
 
-            'types' => Type::dropdown(),
+            'types' => InterviewType::dropdown(),
 
             'breadcrumbs' => BreadcrumbBuilder::make()
                 ->home()

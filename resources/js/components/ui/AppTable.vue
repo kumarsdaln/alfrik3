@@ -1,69 +1,104 @@
-<script setup lang="ts" generic="T extends Record<string, any>">
-    import {
-        Table,
-        TableHeader,
-        TableBody,
-        TableRow,
-        TableHead,
-        TableCell,
-    } from '@/components/ui/table'
+<script setup lang="ts" generic="T extends object">
+import {
+    Table,
+    TableHeader,
+    TableBody,
+    TableRow,
+    TableHead,
+    TableCell,
+} from '@/components/ui/table'
 
-    export interface AppTableColumn {
-        key: string
-        label: string
-        align?: 'left' | 'center' | 'right'
-        width?: string
-        class?: string
-    }
+import type { TableColumn } from '@/types/table'
 
-    interface Props {
-        columns: AppTableColumn[]
-        data: T[]
-        rowKey?: keyof T | string
-        emptyText?: string
-        loading?: boolean
-    }
+interface Props {
+    columns: TableColumn<T>[]
+    data: T[]
 
-    const props = withDefaults(defineProps<Props>(), {
+    rowKey?: keyof T | string
+
+    emptyText?: string
+
+    loading?: boolean
+}
+
+const props = withDefaults(
+    defineProps<Props>(),
+    {
         rowKey: 'id',
         emptyText: 'No records found.',
         loading: false,
-    })
+    },
+)
 
-    const getValue = (
-        row: T,
-        key: string,
-    ): unknown => {
-        return key
-            .split('.')
-            .reduce<unknown>((value, property) => {
+/**
+ * Resolve a value from an object using dot notation.
+ *
+ * Examples:
+ *
+ * getValue(row, 'name')
+ * getValue(row, 'createdBy.name')
+ */
+const getValue = (
+    row: T,
+    key: string,
+): unknown => {
+    return key
+        .split('.')
+        .reduce<unknown>(
+            (value, property) => {
                 if (
                     value !== null &&
                     typeof value === 'object'
                 ) {
-                    return (value as Record<string, unknown>)[property]
+                    return (
+                        value as Record<string, unknown>
+                    )[property]
                 }
 
                 return undefined
-            }, row)
+            },
+            row,
+        )
+}
+
+/**
+ * Get the unique key for a row.
+ */
+const getRowKey = (
+    row: T,
+    index: number,
+): string | number => {
+    const key = String(props.rowKey)
+
+    const value = getValue(row, key)
+
+    if (
+        typeof value === 'string' ||
+        typeof value === 'number'
+    ) {
+        return value
     }
 
-    const getRowKey = (
-        row: T,
-        index: number,
-    ) => {
-        const key = props.rowKey as string
+    return index
+}
 
-        if (
-            row !== null &&
-            typeof row === 'object' &&
-            key in row
-        ) {
-            return (row as Record<string, unknown>)[key] ?? index
-        }
+/**
+ * Generate alignment class.
+ */
+const getAlignClass = (
+    column: TableColumn<T>,
+): string | undefined => {
+    switch (column.align) {
+        case 'center':
+            return 'text-center'
 
-        return index
+        case 'right':
+            return 'text-right'
+
+        default:
+            return undefined
     }
+}
 </script>
 
 <template>
@@ -72,19 +107,21 @@
             <!-- Header -->
             <TableHeader>
                 <TableRow>
-                    <TableHead v-for="column in columns" :key="column.key" :class="[
-                        column.class,
-                        {
-                            'text-center':
-                                column.align === 'center',
-
-                            'text-right':
-                                column.align === 'right',
-                        },
-                    ]" :style="{
+                    <TableHead
+                        v-for="column in props.columns"
+                        :key="column.key"
+                        :class="[
+                            column.class,
+                            getAlignClass(column),
+                        ]"
+                        :style="{
                             width: column.width,
-                        }">
-                        <slot :name="`header-${column.key}`" :column="column">
+                        }"
+                    >
+                        <slot
+                            :name="`header-${column.key}`"
+                            :column="column"
+                        >
                             {{ column.label }}
                         </slot>
                     </TableHead>
@@ -94,39 +131,62 @@
             <!-- Body -->
             <TableBody>
                 <!-- Loading -->
-                <TableRow v-if="loading">
-                    <TableCell :colspan="columns.length" class="py-16 text-center">
+                <TableRow v-if="props.loading">
+                    <TableCell
+                        :colspan="props.columns.length"
+                        class="py-16 text-center"
+                    >
                         <slot name="loading">
-                            <div class="
+                            <span
+                                class="
                                     font-redhat
                                     text-xs
                                     uppercase
                                     tracking-wide
                                     text-content-light-muted
                                     dark:text-content-dark-muted
-                                ">
+                                "
+                            >
                                 Loading...
-                            </div>
+                            </span>
                         </slot>
                     </TableCell>
                 </TableRow>
 
-                <!-- Rows -->
-                <template v-else-if="data.length">
-                    <TableRow v-for="(row, index) in data" :key="getRowKey(row, index)">
-                        <TableCell v-for="column in columns" :key="column.key" :class="[
-                            column.class,
-                            {
-                                'text-center':
-                                    column.align === 'center',
-
-                                'text-right':
-                                    column.align === 'right',
-                            },
-                        ]">
-                            <slot :name="`cell-${column.key}`" :row="row" :value="getValue(row, column.key)"
-                                :column="column" :index="index">
-                                {{ getValue(row, column.key) ?? '—' }}
+                <!-- Data -->
+                <template
+                    v-else-if="props.data.length > 0"
+                >
+                    <TableRow
+                        v-for="(row, index) in props.data"
+                        :key="getRowKey(row, index)"
+                    >
+                        <TableCell
+                            v-for="column in props.columns"
+                            :key="column.key"
+                            :class="[
+                                column.class,
+                                getAlignClass(column),
+                            ]"
+                        >
+                            <slot
+                                :name="`cell-${column.key}`"
+                                :row="row"
+                                :value="
+                                    getValue(
+                                        row,
+                                        column.key,
+                                    )
+                                "
+                                :column="column"
+                                :index="index"
+                            >
+                                {{
+                                    getValue(
+                                        row,
+                                        column.key,
+                                    ) ?? '—'
+                                }}
                             </slot>
                         </TableCell>
                     </TableRow>
@@ -134,16 +194,21 @@
 
                 <!-- Empty -->
                 <TableRow v-else>
-                    <TableCell :colspan="columns.length" class="py-16 text-center">
+                    <TableCell
+                        :colspan="props.columns.length"
+                        class="py-16 text-center"
+                    >
                         <slot name="empty">
-                            <span class="
+                            <span
+                                class="
                                     font-lora
                                     text-sm
                                     italic
                                     text-content-light-muted
                                     dark:text-content-dark-muted
-                                ">
-                                {{ emptyText }}
+                                "
+                            >
+                                {{ props.emptyText }}
                             </span>
                         </slot>
                     </TableCell>

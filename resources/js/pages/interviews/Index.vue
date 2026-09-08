@@ -140,7 +140,7 @@ function normalizeFormat(
         return 'written'
     }
 
-    const value = type.toLowerCase().trim()
+    const value = type.value.toLowerCase().trim()
 
     if (value.includes('video')) {
         return 'video'
