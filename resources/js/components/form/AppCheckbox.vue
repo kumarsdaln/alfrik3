@@ -1,34 +1,62 @@
 <script setup lang="ts">
-    import AppFormField from '@/components/ui/AppFormField.vue'
+import { useId } from 'vue'
 
-    interface Props {
-        modelValue?: boolean
-        label?: string
-        error?: string
-        disabled?: boolean
+import { Checkbox } from '../ui/checkbox'
+
+interface Props {
+    modelValue?: boolean
+    defaultChecked?: boolean
+    disabled?: boolean
+    required?: boolean
+    name?: string
+    id?: string
+    label?: string
+}
+
+const props = withDefaults(defineProps<Props>(), {
+    modelValue: undefined,
+    defaultChecked: false,
+    disabled: false,
+    required: false,
+    name: undefined,
+    id: undefined,
+    label: undefined,
+})
+
+const emit = defineEmits<{
+    'update:modelValue': [value: boolean]
+}>()
+
+const generatedId = useId()
+const checkboxId = props.id ?? generatedId
+
+function updateValue(value: boolean | 'indeterminate') {
+    if (value === 'indeterminate') {
+        return
     }
 
-    withDefaults(
-        defineProps<Props>(),
-        {
-            modelValue: false,
-            disabled: false,
-        }
-    )
-
-    defineEmits<{
-        (e: 'update:modelValue', value: boolean): void
-    }>()
+    emit('update:modelValue', value)
+}
 </script>
 
 <template>
-    <AppFormField :error="error">
-        <label class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
-            <input type="checkbox" :checked="modelValue" :disabled="disabled"
-                @change="$emit('update:modelValue', ($event.target as HTMLInputElement).checked)"
-                class="rounded border-gray-300 dark:border-gray-600
-               text-brand focus:ring-brand" />
-            {{ label }}
+    <div class="flex items-center gap-2">
+        <Checkbox
+            :id="checkboxId"
+            :name="props.name"
+            :model-value="props.modelValue"
+            :default-value="props.defaultChecked"
+            :disabled="props.disabled"
+            :required="props.required"
+            @update:model-value="updateValue"
+        />
+
+        <label
+            v-if="props.label"
+            :for="checkboxId"
+            class="cursor-pointer text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+        >
+            {{ props.label }}
         </label>
-    </AppFormField>
+    </div>
 </template>

@@ -1,122 +1,200 @@
-<script setup>
-    import { Head, useForm } from '@inertiajs/vue3'
-
-    import AppHeading from '@/components/ui/AppHeading.vue'
-    import AppText from '@/components/ui/AppText.vue'
-    import AppButton from '@/components/ui/AppButton.vue'
+<script setup lang="ts">
+    import AppFormControl from '@/components/form/AppFormControl.vue'
     import AppInput from '@/components/form/AppInput.vue'
     import AppSelect from '@/components/form/AppSelect.vue'
-    import AppTextarea from '@/components/form/AppTextarea.vue'
+    import AppTextArea from '@/components/form/AppTextArea.vue'
+    import { Button } from '@/components/ui/button'
+    import { Form } from '@inertiajs/vue3'
+    import { store } from '@/actions/App/Http/Controllers/Admin/Event/EventController'
+    import AppMultiSelect from '@/components/form/AppMultiSelect.vue'
+    import { EventCategory, EventStatus, EventType, EventVisibility } from '@/types/event'
+    import Heading from '@/components/Heading.vue'
+    import AppHeading from '@/components/ui/AppHeading.vue'
+    import AppText from '@/Components/Ui/AppText.vue'
 
-    const props = defineProps({
-        types: {
-            type: Array,
-            default: () => [],
-        },
-        visibilities: {
-            type: Array,
-            default: () => [],
-        },
-        statuses: {
-            type: Array,
-            default: () => [],
-        },
-    })
-
-    function toOptions(values) {
-        return (values ?? []).map((value) => ({ label: value, value }))
+    interface Props {
+        categories: EventCategory[]
+        statusOptions: EventStatus[]
+        typeOptions: EventType[]
+        visibilityOptions: EventVisibility[]
     }
 
-    const form = useForm({
-        title: '',
-        description: '',
-        event_type: props.types?.[0] ?? '',
-        visibility: 'public',
-        status: 'draft',
-        start_date: '',
-        end_date: '',
-        location_name: '',
-        address: '',
-        city: '',
-        state: '',
-        country: '',
-        meeting_url: '',
-        max_attendees: null,
-    })
-
-    function submit() {
-        form.post(route('admin.events.store'))
-    }
+    defineProps<Props>()
 </script>
 
 <template>
+    <div class="mx-auto max-w-6xl px-6 py-10 lg:px-8">
 
-    <Head title="Create event" />
-
-    <form class="mx-auto max-w-4xl space-y-6 p-4 sm:p-6" @submit.prevent="submit">
-        <!-- HEADER -->
-        <div>
-            <AppHeading font="redhat" weight="bold" size="lg">
-                Create event
-            </AppHeading>
-            <AppText color="muted" size="sm" class="mt-1">
-                Add a new event with schedule and location details.
-            </AppText>
+        <!-- Header -->
+        <div class="mb-10">
+            <p class="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-primary">
+                Events
+            </p>
+            
+            <AppHeading tag="h1">Create Event</AppHeading>
+            <AppText>Create the core event information. Sessions, participants,
+                tickets and media can be configured after the event is created.</AppText>
         </div>
 
-        <!-- DETAILS -->
-        <div
-            class="space-y-5 rounded-2xl border border-border-light bg-surface-light p-6 shadow-sm dark:border-border-dark dark:bg-surface-dark">
-            <AppInput v-model="form.title" name="title" label="Title" placeholder="Event title" required
-                :error="form.errors.title" />
+        <Form v-bind="store.form()" enctype="multipart/form-data" class="space-y-10" v-slot="{ errors, processing }">
 
-            <AppTextarea v-model="form.description" name="description" label="Description"
-                placeholder="What this event is about…" :error="form.errors.description" />
+            <!-- ===================================================== -->
+            <!-- BASIC INFORMATION -->
+            <!-- ===================================================== -->
+            <section class="space-y-6">
 
-            <div class="grid gap-4 sm:grid-cols-2">
-                <AppSelect v-model="form.event_type" name="event_type" label="Event type" :options="toOptions(types)"
-                    :error="form.errors.event_type" />
-                <AppSelect v-model="form.visibility" name="visibility" label="Visibility"
-                    :options="toOptions(visibilities)" :error="form.errors.visibility" />
-                <AppSelect v-model="form.status" name="status" label="Status" :options="toOptions(statuses)"
-                    :error="form.errors.status" />
-                <AppInput v-model="form.max_attendees" name="max_attendees" type="number" label="Max attendees"
-                    placeholder="Leave empty for unlimited" :error="form.errors.max_attendees" />
-                <AppInput v-model="form.start_date" name="start_date" type="datetime-local" label="Start date"
-                    :error="form.errors.start_date" />
-                <AppInput v-model="form.end_date" name="end_date" type="datetime-local" label="End date"
-                    :error="form.errors.end_date" />
+                <Heading title="Basic Information" description="The essential information about the event." />
+
+                <AppFormControl label="Title" required :error="errors.title">
+                    <AppInput name="title" placeholder="Enter event title" />
+                </AppFormControl>
+
+                <AppFormControl label="Slug" :error="errors.slug">
+                    <AppInput name="slug" placeholder="event-slug" />
+                </AppFormControl>
+
+                <AppFormControl label="Description" :error="errors.description">
+                    <AppTextArea name="description" :rows="7" placeholder="Describe the event..." />
+                </AppFormControl>
+
+                <div class="grid gap-6 md:grid-cols-2">
+                    <AppFormControl label="Event Type" required :error="errors.event_type">
+                        <AppSelect name="event_type" :options="typeOptions" />
+                    </AppFormControl>
+
+                    <AppFormControl label="Visibility" required :error="errors.visibility">
+                        <AppSelect name="visibility" :options="visibilityOptions" />
+                    </AppFormControl>
+                </div>
+
+            </section>
+
+
+            <!-- ===================================================== -->
+            <!-- CATEGORIES -->
+            <!-- ===================================================== -->
+
+            <section class="space-y-6">
+                <Heading title="Categories" description="Associate the event with one or more categories." />
+
+                <AppMultiSelect name="category_ids" :options="categories.map(category => ({
+                    value: category.id,
+                    label: category.name,
+                }))
+                    " placeholder="Select categories" />
+            </section>
+
+
+            <!-- ===================================================== -->
+            <!-- SCHEDULE -->
+            <!-- ===================================================== -->
+
+            <section class="space-y-6">
+                <Heading title="Schedule" />
+                <div class="grid gap-6 md:grid-cols-2">
+                    <AppFormControl label="Start Date" required :error="errors.start_date">
+                        <AppInput name="start_date" type="datetime-local" />
+                    </AppFormControl>
+
+                    <AppFormControl label="End Date" :error="errors.end_date">
+                        <AppInput name="end_date" type="datetime-local" />
+                    </AppFormControl>
+                </div>
+            </section>
+
+
+            <!-- ===================================================== -->
+            <!-- LOCATION -->
+            <!-- ===================================================== -->
+
+            <section class="space-y-6">
+                <Heading title="Location" />
+
+                <div class="grid gap-6 md:grid-cols-2">
+
+                    <AppFormControl label="Location Name" :error="errors.location_name">
+                        <AppInput name="location_name" placeholder="Conference venue" />
+                    </AppFormControl>
+
+                    <AppFormControl label="Address" :error="errors.address">
+                        <AppInput name="address" placeholder="Full address" />
+                    </AppFormControl>
+
+                    <AppFormControl label="City" :error="errors.city">
+                        <AppInput name="city" />
+                    </AppFormControl>
+
+                    <AppFormControl label="State" :error="errors.state">
+                        <AppInput name="state" />
+                    </AppFormControl>
+
+                    <AppFormControl label="Country" :error="errors.country">
+                        <AppInput name="country" />
+                    </AppFormControl>
+
+                    <AppFormControl label="Meeting URL" :error="errors.meeting_url">
+                        <AppInput name="meeting_url" type="url" placeholder="https://..." />
+                    </AppFormControl>
+                </div>
+            </section>
+
+
+            <!-- ===================================================== -->
+            <!-- CAPACITY -->
+            <!-- ===================================================== -->
+
+            <section class="space-y-6">
+                <Heading title="Capacity" />
+                <AppFormControl label="Maximum Attendees" :error="errors.max_attendees">
+                    <AppInput name="max_attendees" type="number" min="1" placeholder="Leave empty for unlimited" />
+                </AppFormControl>
+            </section>
+
+
+            <!-- ===================================================== -->
+            <!-- MEDIA -->
+            <!-- ===================================================== -->
+
+            <section class="space-y-6">
+                <Heading title="Media" />
+
+                <AppFormControl label="Banner" :error="errors.banner">
+                    <AppInput name="banner" type="file" accept="image/jpeg,image/png,image/webp" />
+                </AppFormControl>
+
+            </section>
+
+
+            <!-- ===================================================== -->
+            <!-- PUBLISHING -->
+            <!-- ===================================================== -->
+
+            <section class="space-y-6">
+                <Heading title="Publishing" />
+
+                <AppFormControl label="Status" required :error="errors.status">
+                    <AppSelect name="status" :options="statusOptions" />
+                </AppFormControl>
+
+            </section>
+
+
+            <!-- ===================================================== -->
+            <!-- ACTIONS -->
+            <!-- ===================================================== -->
+
+            <div class="flex justify-end gap-3 border-t border-border-light pt-6 dark:border-border-dark">
+                <Button type="button" variant="outline" as-child>
+                    <a href="/admin/events">
+                        Cancel
+                    </a>
+                </Button>
+
+                <Button type="submit" :disabled="processing">
+                    {{ processing ? 'Creating...' : 'Create Event' }}
+                </Button>
             </div>
-        </div>
 
-        <!-- LOCATION -->
-        <div
-            class="space-y-5 rounded-2xl border border-border-light bg-surface-light p-6 shadow-sm dark:border-border-dark dark:bg-surface-dark">
-            <AppHeading font="redhat" weight="bold" size="sm" tag="h3">
-                Location
-            </AppHeading>
-
-            <AppInput v-model="form.location_name" name="location_name" label="Location name" placeholder="Venue name"
-                :error="form.errors.location_name" />
-            <AppInput v-model="form.address" name="address" label="Address" placeholder="Street address"
-                :error="form.errors.address" />
-
-            <div class="grid gap-4 sm:grid-cols-3">
-                <AppInput v-model="form.city" name="city" label="City" :error="form.errors.city" />
-                <AppInput v-model="form.state" name="state" label="State" :error="form.errors.state" />
-                <AppInput v-model="form.country" name="country" label="Country" :error="form.errors.country" />
-            </div>
-
-            <AppInput v-model="form.meeting_url" name="meeting_url" type="url" label="Meeting URL"
-                placeholder="https://…" :error="form.errors.meeting_url" />
-        </div>
-
-        <!-- FOOTER -->
-        <div class="flex justify-end gap-3">
-            <AppButton variant="cancel" :href="route('admin.events.index')">Cancel</AppButton>
-            <AppButton type="submit" variant="submit" :loading="form.processing" :disabled="form.processing">
-                Create event
-            </AppButton>
-        </div>
-    </form>
+        </Form>
+    </div>
 </template>

@@ -2,6 +2,9 @@
 
 namespace App\Models\Event;
 
+use App\Enums\Event\EventStatus;
+use App\Enums\Event\EventType;
+use App\Enums\Event\EventVisibility;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
@@ -33,6 +36,10 @@ class Event extends Model
 {
 
     protected $casts = [
+        'event_type' => EventType::class,
+        'visibility' => EventVisibility::class,
+        'status' => EventStatus::class,
+
         'start_date' => 'datetime',
         'end_date' => 'datetime',
         'max_attendees' => 'integer',

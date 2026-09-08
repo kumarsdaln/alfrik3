@@ -14,14 +14,14 @@
     import { index as profileAchievementsIndex } from '@/routes/profile/achievements'
 
     // Icons
-    import User from "@/Icons/User.vue"
-    import Crown from "@/Icons/Crown.vue"
-    import GraduationCap from "@/Icons/GraduationCap.vue"
-    import Award from "@/Icons/Award.vue"
-    import Briefcase from "@/Icons/Briefcase.vue"
-    import Network from "@/Icons/Network.vue"
-    import Globe from "@/Icons/Globe.vue"
-    import Language from "@/Icons/Language.vue"
+    import User from "@/icons/User.vue"
+    import Crown from "@/icons/Crown.vue"
+    import GraduationCap from "@/icons/GraduationCap.vue"
+    import Award from "@/icons/Award.vue"
+    import Briefcase from "@/icons/Briefcase.vue"
+    import Network from "@/icons/Network.vue"
+    import Globe from "@/icons/Globe.vue"
+    import Language from "@/icons/Language.vue"
 
     const props = defineProps({
         isExpert: {

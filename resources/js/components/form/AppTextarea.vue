@@ -1,55 +1,51 @@
 <script setup lang="ts">
-import { useId } from 'vue'
+    import { Textarea } from '@/components/ui/textarea'
 
-import AppFormField from '@/components/ui/AppFormField.vue'
-import AppTextareaControl from '@/components/ui/AppTextareaControl.vue'
+    interface Props {
+        modelValue?: string
+        name?: string
+        placeholder?: string
+        rows?: number
+        disabled?: boolean
+        required?: boolean
+        readonly?: boolean
+        maxlength?: number
+        minlength?: number
+        autocomplete?: string
+        id?: string
+    }
 
-interface Props {
-    name?: string
-    label?: string
-    placeholder?: string
-    rows?: number
-    error?: string
-    disabled?: boolean
-    required?: boolean
-    defaultValue?: string
-    autocomplete?: string
-}
-
-withDefaults(
-    defineProps<Props>(),
-    {
-        rows: 4,
+    const props = withDefaults(defineProps<Props>(), {
+        modelValue: '',
+        rows: 5,
         disabled: false,
         required: false,
-        defaultValue: '',
-    },
-)
+        readonly: false,
+    })
 
-const model = defineModel<string>()
-
-const id = useId()
+    const emit = defineEmits<{
+        'update:modelValue': [value: string]
+    }>()
 </script>
 
 <template>
-    <AppFormField
-        :id="id"
-        :label="label"
-        :error="error"
+    <Textarea
+        :id="id ?? name"
+        :name="name"
+        :value="modelValue"
+        :placeholder="placeholder"
+        :rows="rows"
+        :disabled="disabled"
         :required="required"
-    >
-        <AppTextareaControl
-            :id="id"
-            v-model="model"
-            :name="name"
-            :default-value="defaultValue"
-            :rows="rows"
-            :placeholder="placeholder"
-            :disabled="disabled"
-            :required="required"
-            :autocomplete="autocomplete"
-            :error="!!error"
-            :aria-describedby="error ? `${id}-error` : undefined"
-        />
-    </AppFormField>
+        :readonly="readonly"
+        :maxlength="maxlength"
+        :minlength="minlength"
+        :autocomplete="autocomplete"
+        @input="
+            emit(
+                'update:modelValue',
+                ($event.target as HTMLTextAreaElement).value,
+            )
+        "
+    />
 </template>

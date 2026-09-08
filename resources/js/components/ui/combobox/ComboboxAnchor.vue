@@ -8,7 +8,9 @@ const props = defineProps<ComboboxAnchorProps>()
 </script>
 
 <template>
-    <ComboboxAnchor v-bind="props">
+   <ComboboxAnchor v-bind="props" class="
+            relative
+            w-full">
         <slot />
     </ComboboxAnchor>
 </template>

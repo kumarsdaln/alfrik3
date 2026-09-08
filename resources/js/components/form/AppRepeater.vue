@@ -3,7 +3,7 @@ import { ref } from 'vue'
 import AppInput from '@/components/form/AppInput.vue'
 import AppTextarea from '@/components/form/AppTextarea.vue'
 import TextEditor from '@/Components/Editor/TextEditor.vue'
-import X from '@/Icons/X.vue'
+import X from '@/icons/X.vue'
 
 interface FieldDef {
     label: string

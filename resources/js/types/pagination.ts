@@ -1,9 +1,30 @@
+export interface PaginationLink {
+    url: string | null
+    label: string
+    active: boolean
+    page?: number | null
+}
+
+export interface PaginationMeta {
+    current_page: number
+    from: number | null
+    last_page: number
+    links: PaginationLink[]
+    path: string
+    per_page: number
+    to: number | null
+    total: number
+}
+
 export interface Pagination<T> {
     data: T[]
-    total: number
-    current_page: number
-    last_page: number
-    per_page: number
-    prev_page_url: string | null
-    next_page_url: string | null
+
+    links: {
+        first: string | null
+        last: string | null
+        prev: string | null
+        next: string | null
+    }
+
+    meta: PaginationMeta
 }

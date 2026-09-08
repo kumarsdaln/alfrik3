@@ -1,7 +1,7 @@
 <script setup lang="ts">
   import { BadgeCheck, Check } from '@lucide/vue'
 
-  import GraduationCap from '@/Icons/GraduationCap.vue'
+  import GraduationCap from '@/icons/GraduationCap.vue'
 
   import AppHeading from '@/Components/Ui/AppHeading.vue'
   import AppText from '@/Components/Ui/AppText.vue'

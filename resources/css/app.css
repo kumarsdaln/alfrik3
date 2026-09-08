@@ -21,6 +21,14 @@
     --color-background: var(--background);
     --color-foreground: var(--foreground);
 
+    --color-surface: var(--background);
+    --color-surface-light: var(--background);
+    --color-surface-dark: var(--background);
+
+    --color-content: var(--foreground);
+    --color-content-light: var(--foreground);
+    --color-content-dark: var(--foreground);
+
     --color-card: var(--card);
     --color-card-foreground: var(--card-foreground);
 

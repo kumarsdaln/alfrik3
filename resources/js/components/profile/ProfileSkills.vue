@@ -2,7 +2,7 @@
     import { computed } from 'vue'
     import { BadgeCheck } from '@lucide/vue'
 
-    import Skills from '@/Icons/skills.vue'
+    import Skills from '@/icons/skills.vue'
 
     import AppHeading from '@/Components/Ui/AppHeading.vue'
     import AppText from '@/Components/Ui/AppText.vue'

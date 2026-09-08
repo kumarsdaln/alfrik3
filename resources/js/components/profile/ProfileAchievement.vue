@@ -7,7 +7,7 @@
 
     import { X } from '@lucide/vue'
 
-    import Award from '@/Icons/Award.vue'
+    import Award from '@/icons/Award.vue'
 
     import AppHeading from '@/Components/Ui/AppHeading.vue'
     import AppText from '@/Components/Ui/AppText.vue'

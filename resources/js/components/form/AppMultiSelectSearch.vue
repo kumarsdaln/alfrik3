@@ -7,8 +7,8 @@
         onBeforeUnmount,
     } from 'vue'
 
-    import X from '@/Icons/X.vue'
-    import DownAngle from '@/Icons/DownAngle.vue'
+    import X from '@/icons/X.vue'
+    import DownAngle from '@/icons/DownAngle.vue'
     type OptionRecord = Record<string, unknown>
 
     interface Props {

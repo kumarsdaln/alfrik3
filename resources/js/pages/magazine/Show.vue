@@ -70,48 +70,12 @@ const issueHref = (issue: MagazineIssue) =>
     </Head>
 
     <!-- ================================================================
-         Breadcrumb
-    ================================================================= -->
-
-    <div
-        class="container mx-auto px-4 pt-8 sm:pt-10"
-    >
-        <nav
-            aria-label="Breadcrumb"
-            class="flex flex-wrap items-center gap-2"
-        >
-            <Link
-                :href="magazineIndex().url"
-                class="font-redhat text-xs text-muted transition-colors hover:text-primary"
-            >
-                Magazine
-            </Link>
-
-            <span
-                class="text-muted"
-                aria-hidden="true"
-            >
-                /
-            </span>
-
-            <AppText
-                tag="span"
-                font="redhat"
-                size="xs"
-                color="muted"
-            >
-                {{ magazine.title }}
-            </AppText>
-        </nav>
-    </div>
-
-    <!-- ================================================================
          Magazine Header
     ================================================================= -->
 
     <section>
         <div
-            class="container mx-auto px-4 py-12 sm:py-16 lg:py-20"
+            class="py-12 sm:py-16 lg:py-20"
         >
             <div
                 class="grid gap-10 lg:grid-cols-[400px_1fr] lg:items-center lg:gap-16"

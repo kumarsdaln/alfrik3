@@ -2,8 +2,8 @@
 
 namespace App\Models\Interview;
 
-use App\Enums\Interview\Status;
-use App\Enums\Interview\Type;
+use App\Enums\Interview\InterviewStatus;
+use App\Enums\Interview\InterviewType;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -38,8 +38,8 @@ class Interview extends Model
     protected $casts = [
         'duration' => 'integer',
         'published_at' => 'date',
-        'status' => Status::class,
-        'interview_type' => Type::class,
+        'status' => InterviewStatus::class,
+        'interview_type' => InterviewType::class,
     ];
 
     /*
@@ -61,9 +61,9 @@ class Interview extends Model
     {
         return Attribute::make(
             get: fn (): string => match ($this->interview_type) {
-                Type::WRITTEN => 'Read',
-                Type::AUDIO => 'Listen',
-                Type::VIDEO => 'Watch',
+                InterviewType::WRITTEN => 'Read',
+                InterviewType::AUDIO => 'Listen',
+                InterviewType::VIDEO => 'Watch',
             },
         );
     }

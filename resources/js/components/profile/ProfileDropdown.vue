@@ -1,9 +1,9 @@
 <script setup>
     import { ref, onMounted, onBeforeUnmount } from 'vue'
     import { Link, router } from '@inertiajs/vue3'
-    import Setting from '@/Icons/Setting.vue';
-    import Logout from '@/Icons/Logout.vue';
-    import User from '@/Icons/User.vue';
+    import Setting from '@/icons/Setting.vue';
+    import Logout from '@/icons/Logout.vue';
+    import User from '@/icons/User.vue';
     import { LayoutGrid } from '@lucide/vue'
     import { logout as logoutRoute } from '@/routes'
     import { view as profileView } from '@/routes/profile'

@@ -1,11 +1,11 @@
-<script setup lang="ts">
+<script setup lang="ts" generic="T extends Record<string, any>">
     import {
         Table,
         TableHeader,
         TableBody,
         TableRow,
         TableHead,
-        TableCell
+        TableCell,
     } from '@/components/ui/table'
 
     export interface AppTableColumn {
@@ -16,47 +16,60 @@
         class?: string
     }
 
-    const props = withDefaults(
-        defineProps<{
-            columns: AppTableColumn[]
-            data: Record<string, any>[]
-            rowKey?: string
-            emptyText?: string
-            loading?: boolean
-        }>(),
-        {
-            rowKey: 'id',
-            emptyText: 'No records found.',
-            loading: false,
-        },
-    )
+    interface Props {
+        columns: AppTableColumn[]
+        data: T[]
+        rowKey?: keyof T | string
+        emptyText?: string
+        loading?: boolean
+    }
+
+    const props = withDefaults(defineProps<Props>(), {
+        rowKey: 'id',
+        emptyText: 'No records found.',
+        loading: false,
+    })
 
     const getValue = (
-        row: Record<string, any>,
+        row: T,
         key: string,
-    ) => {
+    ): unknown => {
         return key
             .split('.')
-            .reduce(
-                (value, property) => value?.[property],
-                row,
-            )
+            .reduce<unknown>((value, property) => {
+                if (
+                    value !== null &&
+                    typeof value === 'object'
+                ) {
+                    return (value as Record<string, unknown>)[property]
+                }
+
+                return undefined
+            }, row)
     }
 
     const getRowKey = (
-        row: Record<string, any>,
+        row: T,
         index: number,
     ) => {
-        return row[props.rowKey] ?? index
+        const key = props.rowKey as string
+
+        if (
+            row !== null &&
+            typeof row === 'object' &&
+            key in row
+        ) {
+            return (row as Record<string, unknown>)[key] ?? index
+        }
+
+        return index
     }
 </script>
 
 <template>
     <div class="w-full overflow-x-auto">
         <Table>
-
             <!-- Header -->
-
             <TableHeader>
                 <TableRow>
                     <TableHead v-for="column in columns" :key="column.key" :class="[
@@ -69,8 +82,8 @@
                                 column.align === 'right',
                         },
                     ]" :style="{
-                        width: column.width,
-                    }">
+                            width: column.width,
+                        }">
                         <slot :name="`header-${column.key}`" :column="column">
                             {{ column.label }}
                         </slot>
@@ -79,11 +92,8 @@
             </TableHeader>
 
             <!-- Body -->
-
             <TableBody>
-
                 <!-- Loading -->
-
                 <TableRow v-if="loading">
                     <TableCell :colspan="columns.length" class="py-16 text-center">
                         <slot name="loading">
@@ -102,7 +112,6 @@
                 </TableRow>
 
                 <!-- Rows -->
-
                 <template v-else-if="data.length">
                     <TableRow v-for="(row, index) in data" :key="getRowKey(row, index)">
                         <TableCell v-for="column in columns" :key="column.key" :class="[
@@ -124,7 +133,6 @@
                 </template>
 
                 <!-- Empty -->
-
                 <TableRow v-else>
                     <TableCell :colspan="columns.length" class="py-16 text-center">
                         <slot name="empty">
@@ -140,7 +148,6 @@
                         </slot>
                     </TableCell>
                 </TableRow>
-
             </TableBody>
         </Table>
     </div>

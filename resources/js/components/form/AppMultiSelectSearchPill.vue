@@ -7,7 +7,7 @@ import {
 } from 'vue'
 
 import { X } from '@lucide/vue'
-import DownAngle from '@/Icons/DownAngle.vue'
+import DownAngle from '@/icons/DownAngle.vue'
 import type { FormValue } from '@/types/forms'
 
 type OptionRecord = Record<string, unknown>

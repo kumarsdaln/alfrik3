@@ -10,23 +10,11 @@ import AppFormControl from '@/components/form/AppFormControl.vue'
 import AppInput from '@/components/form/AppInput.vue'
 
 import { Button } from '@/components/ui/button'
-
-import { edit } from '@/routes/profile'
 import { send } from '@/routes/verification'
 
-defineOptions({
-    layout: {
-        breadcrumbs: [
-            {
-                title: 'Profile settings',
-                href: edit(),
-            },
-        ],
-    },
-})
+
 
 const page = usePage()
-
 const user = computed(() => page.props.auth.user)
 
 /*

@@ -15,7 +15,7 @@ import {
 import { login } from '@/routes'
 import { follow as expertsFollow } from '@/routes/experts'
 
-import Organization from '@/Icons/Organization.vue'
+import Organization from '@/icons/Organization.vue'
 
 import AppBadge from '@/Components/Ui/AppBadge.vue'
 import AppContainer from '@/Components/Ui/AppContainer.vue'

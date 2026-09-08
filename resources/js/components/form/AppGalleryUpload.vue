@@ -2,7 +2,7 @@
 import { ref, watch, onBeforeUnmount } from 'vue'
 
 import AppInput from './AppInput.vue'
-import X from '@/Icons/X.vue'
+import X from '@/icons/X.vue'
 import type {
     FormErrorBag,
     GalleryUploadItem,

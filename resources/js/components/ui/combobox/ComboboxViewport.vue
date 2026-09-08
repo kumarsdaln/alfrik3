@@ -8,7 +8,12 @@ const props = defineProps<ComboboxViewportProps>()
 </script>
 
 <template>
-    <ComboboxViewport v-bind="props">
+    <ComboboxViewport v-bind="props" class="
+            max-h-64
+            overflow-y-auto
+            bg-surface
+            p-1
+        ">
         <slot />
     </ComboboxViewport>
 </template>

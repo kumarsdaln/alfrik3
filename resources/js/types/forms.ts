@@ -1,5 +1,11 @@
 import type { Component } from 'vue'
 
+export interface Option<T = string> {
+    value: T
+    label: string
+    color?: string
+}
+
 /*
 |--------------------------------------------------------------------------
 | Form Values

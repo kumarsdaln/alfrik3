@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { X, ChevronDown, Check } from '@lucide/vue'
+import { ref, watch, computed } from 'vue'
+import { ChevronDown, X } from '@lucide/vue'
 
 import {
     Combobox,
@@ -24,30 +24,46 @@ interface Props {
     modelValue?: Array<string | number>
     options?: Option[]
     placeholder?: string
+    name?: string
+    disabled?: boolean
+    required?: boolean
 }
 
-const props = withDefaults(
-    defineProps<Props>(),
-    {
-        modelValue: () => [],
-        options: () => [],
-        placeholder: 'Select options',
-    },
-)
+const props = withDefaults(defineProps<Props>(), {
+    modelValue: () => [],
+    options: () => [],
+    placeholder: 'Select options',
+    name: undefined,
+    disabled: false,
+    required: false,
+})
 
 const emit = defineEmits<{
     'update:modelValue': [value: Array<string | number>]
 }>()
 
-const model = computed({
-    get: () => props.modelValue,
-    set: value => emit('update:modelValue', value),
-})
+const model = ref<Array<string | number>>([...props.modelValue])
+
+watch(
+    () => props.modelValue,
+    value => {
+        model.value = [...(value ?? [])]
+    },
+    { deep: true },
+)
+
+watch(
+    model,
+    value => {
+        emit('update:modelValue', [...value])
+    },
+    { deep: true },
+)
 
 const selectedOptions = computed(() =>
     props.options.filter(option =>
-        model.value.includes(option.value)
-    )
+        model.value.includes(option.value),
+    ),
 )
 
 function removeOption(value: string | number) {
@@ -58,143 +74,128 @@ function removeOption(value: string | number) {
 <template>
     <Combobox
         v-model="model"
+        :name="name"
+        :disabled="disabled"
+        :required="required"
         multiple
     >
         <ComboboxAnchor class="w-full">
             <div
                 class="
-                    flex
-                    min-h-10
-                    w-full
-                    items-center
-                    rounded-md
-                    border
-                    bg-background
-                    px-2
-                    py-1
+                    flex min-h-10 w-full items-center
+                    border border-border
+                    bg-surface
+                    px-3 py-1.5
 
-                    focus-within:ring-2
-                    focus-within:ring-ring/20
+                    transition-colors
+
+                    focus-within:border-primary
                 "
             >
-                <!-- Selected values -->
                 <div
-                    v-if="selectedOptions.length"
                     class="
-                        flex
-                        min-w-0
-                        flex-1
+                        flex min-w-0 flex-1
                         flex-wrap
                         items-center
-                        gap-1
+                        gap-x-1.5
+                        gap-y-1
                     "
                 >
                     <span
                         v-for="option in selectedOptions"
-                        :key="option.value"
+                        :key="String(option.value)"
                         class="
                             inline-flex
                             max-w-full
                             items-center
                             gap-1
-                            rounded-md
-                            bg-muted
+                            border
+                            border-border
+                            bg-secondary/10
                             px-2
                             py-1
                             text-xs
                             font-medium
-                            text-foreground
+                            text-content
                         "
                     >
-                        <span class="max-w-[160px] truncate">
+                        <span class="max-w-[180px] truncate">
                             {{ option.label }}
                         </span>
 
                         <button
                             type="button"
                             class="
+                                flex
+                                size-4
                                 shrink-0
-                                rounded-sm
-                                text-muted-foreground
+                                items-center
+                                justify-center
+                                text-content/50
                                 transition-colors
-                                hover:text-foreground
+
+                                hover:text-content
+
+                                focus:outline-none
+                                focus-visible:text-primary
                             "
+                            :disabled="disabled"
                             :aria-label="`Remove ${option.label}`"
                             @click.stop="removeOption(option.value)"
                         >
-                            <X
-                                :size="13"
-                                :stroke-width="2"
-                            />
+                            <X :size="13" />
                         </button>
                     </span>
 
-                    <!-- Search -->
                     <ComboboxInput
                         class="
                             h-7
-                            min-w-[80px]
+                            min-w-[120px]
                             flex-1
                             border-0
                             bg-transparent
-                            px-1
-                            py-1
+                            px-0
                             text-sm
+                            text-content
                             outline-none
+
+                            placeholder:text-content/50
+
+                            focus:outline-none
                             focus:ring-0
                         "
-                        :placeholder="selectedOptions.length ? '' : placeholder"
+                        :placeholder="
+                            selectedOptions.length
+                                ? ''
+                                : placeholder
+                        "
                     />
                 </div>
 
-                <!-- Empty -->
-                <ComboboxInput
-                    v-else
-                    class="
-                        h-8
-                        min-w-0
-                        flex-1
-                        border-0
-                        bg-transparent
-                        px-1
-                        text-sm
-                        outline-none
-                        placeholder:text-muted-foreground
-                        focus:ring-0
-                    "
-                    :placeholder="placeholder"
-                />
-
-                <!-- Trigger -->
                 <ComboboxTrigger
                     class="
-                        group
-                        ml-1
+                        ml-2
                         flex
                         size-7
                         shrink-0
                         items-center
                         justify-center
-                        rounded-md
-                        text-muted-foreground
+                        text-content/50
+
                         transition-colors
-                        hover:bg-muted
-                        hover:text-foreground
-                        focus-visible:outline-none
-                        focus-visible:ring-2
-                        focus-visible:ring-ring/30
+
+                        hover:text-content
+
+                        focus:outline-none
+                        focus-visible:text-primary
+
+                        disabled:pointer-events-none
+                        disabled:opacity-40
                     "
+                    :disabled="disabled"
                     aria-label="Open options"
                 >
-                    <ChevronDown
-                        :size="16"
-                        :stroke-width="1.8"
-                        class="
-                            transition-transform
-                            duration-200
-                            group-data-[state=open]:rotate-180
-                        "
-                    />
+                    <ChevronDown :size="16" />
                 </ComboboxTrigger>
             </div>
         </ComboboxAnchor>
@@ -207,26 +208,37 @@ function removeOption(value: string | number) {
                     mt-1
                     w-[var(--reka-combobox-trigger-width)]
                     overflow-hidden
-                    rounded-md
                     border
-                    bg-popover
-                    shadow-md
+                    border-border
+                    bg-surface
+                    text-content
+                    shadow-sm
                 "
             >
-                <ComboboxViewport class="max-h-60 overflow-y-auto p-1">
-                    <ComboboxEmpty>
+                <ComboboxViewport class="
+                        max-h-64
+                        overflow-y-auto
+                        p-1
+                    ">
+                    <ComboboxEmpty
+                        class="
+                            px-3
+                            py-7
+                            text-center
+                            text-sm
+                            text-content/50
+                        "
+                    >
                         No options found.
                     </ComboboxEmpty>
 
                     <ComboboxItem
-                        v-for="option in props.options"
-                        :key="option.value"
+                        v-for="option in options"
+                        :key="String(option.value)"
                         :value="option.value"
                         :disabled="option.disabled"
                     >
-                        <span class="truncate">
-                            {{ option.label }}
-                        </span>
+                        {{ option.label }}
                     </ComboboxItem>
                 </ComboboxViewport>
             </ComboboxContent>

@@ -7,14 +7,19 @@ trait HasDropdown
     public static function dropdown(): array
     {
         return collect(self::cases())
-            ->map(fn ($case) => [
-                'value' => $case->value,
-                'label' => $case->label(),
-                'color' => method_exists($case, 'color')
-                    ? $case->color()
-                    : null,
-            ])
+            ->map(fn ($case) => $case->option())
             ->values()
             ->toArray();
+    }
+
+    public function option(): array
+    {
+        return [
+            'value' => $this->value,
+            'label' => $this->label(),
+            'color' => method_exists($this, 'color')
+                ? $this->color()
+                : null,
+        ];
     }
 }

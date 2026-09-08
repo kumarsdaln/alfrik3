@@ -60,12 +60,7 @@ const issueCount = (magazine: Magazine) =>
         <div class="container mx-auto px-4 py-16 sm:py-20 lg:py-24">
             <div class="grid gap-8 lg:grid-cols-[1fr_auto] lg:items-end">
                 <div>
-                    <div class="mb-6 flex items-center gap-3">
-                        <span
-                            class="h-px w-10 bg-border-light dark:bg-border-dark"
-                            aria-hidden="true"
-                        />
-
+                    <div class="mb-6">
                         <AppText
                             tag="span"
                             font="redhat"

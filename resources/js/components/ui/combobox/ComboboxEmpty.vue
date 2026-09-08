@@ -10,7 +10,13 @@ const props = defineProps<ComboboxEmptyProps>()
 <template>
     <ComboboxEmpty
         v-bind="props"
-        class="px-3 py-6 text-center text-sm text-muted-foreground"
+        class="
+            px-3
+            py-6
+            text-center
+            text-sm
+            text-content/50
+        "
     >
         <slot />
     </ComboboxEmpty>

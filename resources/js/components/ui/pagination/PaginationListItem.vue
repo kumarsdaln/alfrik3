@@ -1,45 +1,34 @@
 <script setup lang="ts">
-    import {
-        PaginationListItem
-    } from 'reka-ui'
+import { Link } from '@inertiajs/vue3'
 
-    interface Props {
-        value: number
-    }
+interface Props {
+    page: number
+    url: string | null
+    active?: boolean
+}
 
-    defineProps<Props>()
+defineProps<Props>()
 </script>
 
 <template>
-    <PaginationListItem :value="value" class="
-            inline-flex
-            h-9
-            min-w-9
-            items-center
-            justify-center
-            border
-            border-border-light
-            px-2
-            font-redhat
-            text-xs
-            font-semibold
-            text-content-light
-            transition-colors
+    <Link
+        v-if="url"
+        :href="url"
+        preserve-scroll
+        preserve-state
+        :aria-current="active ? 'page' : undefined"
+        class="inline-flex h-9 min-w-9 items-center justify-center border px-3 text-sm transition hover:bg-muted"
+        :class="{
+            'bg-primary text-primary-foreground hover:bg-primary/90': active,
+        }"
+    >
+        {{ page }}
+    </Link>
 
-            hover:border-brand
-            hover:text-brand
-
-            data-[selected]:border-brand
-            data-[selected]:bg-brand
-            data-[selected]:text-white
-
-            dark:border-border-dark
-            dark:text-content-dark
-
-            dark:data-[selected]:text-white
-        ">
-        <slot>
-            {{ value }}
-        </slot>
-    </PaginationListItem>
+    <span
+        v-else
+        class="inline-flex h-9 min-w-9 items-center justify-center border px-3 text-sm text-muted-foreground"
+    >
+        {{ page }}
+    </span>
 </template>

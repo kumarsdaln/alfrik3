@@ -2,9 +2,15 @@
 
 namespace App\Http\Controllers\Admin\Event;
 
+use App\Enums\Event\EventStatus;
+use App\Enums\Event\EventType;
+use App\Enums\Event\EventVisibility;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\Event\StoreEventRequest;
+use App\Http\Requests\Admin\Event\UpdateEventRequest;
 use App\Models\Event\Event;
 use App\Models\Event\EventCategory;
+use App\Support\Breadcrumbs\BreadcrumbBuilder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -79,7 +85,7 @@ class EventController extends Controller
 
     $events = $query
         ->orderBy('start_date')
-        ->paginate(1)
+        ->paginate(10)
         ->withQueryString();
 
     /*
@@ -126,7 +132,7 @@ class EventController extends Controller
     |--------------------------------------------------------------------------
     */
 
-    return Inertia::render('Admin/Event/Index', [
+    return Inertia::render('admin/event/Index', [
         'events' => $events,
 
         'categories' => $categories,
@@ -154,131 +160,35 @@ class EventController extends Controller
                 'slug',
             ]);
 
-        return Inertia::render('Admin/Event/Create', [
+        return Inertia::render('admin/event/Create', [
+            'breadcrumbs' => BreadcrumbBuilder::make()
+                ->add('Events', route('admin.events.index'))
+                ->add('Create Event')
+                ->toArray(),
             'categories' => $categories,
+            'statusOptions' => EventStatus::dropdown(),
+            'typeOptions' => EventType::dropdown(),
+            'visibilityOptions' => EventVisibility::dropdown(),
         ]);
     }
 
     /**
      * Store a new event.
      */
-    public function store(Request $request): RedirectResponse
+    public function store(StoreEventRequest $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'title' => [
-                'required',
-                'string',
-                'max:255',
-            ],
+        $data = $request->validated();
 
-            'slug' => [
-                'required',
-                'string',
-                'max:255',
-                'unique:events,slug',
-            ],
+        $categoryIds = $data['category_ids'] ?? [];
 
-            'description' => [
-                'nullable',
-                'string',
-            ],
+        unset($data['category_ids']);
 
-            'event_type' => [
-                'required',
-                'in:in_person,online,hybrid',
-            ],
-
-            'status' => [
-                'required',
-                'in:draft,published,cancelled',
-            ],
-
-            'visibility' => [
-                'required',
-                'in:public,private',
-            ],
-
-            'start_date' => [
-                'required',
-                'date',
-            ],
-
-            'end_date' => [
-                'nullable',
-                'date',
-                'after_or_equal:start_date',
-            ],
-
-            'location_name' => [
-                'nullable',
-                'string',
-                'max:255',
-            ],
-
-            'venue' => [
-                'nullable',
-                'string',
-                'max:255',
-            ],
-
-            'city' => [
-                'nullable',
-                'string',
-                'max:255',
-            ],
-
-            'country' => [
-                'nullable',
-                'string',
-                'max:255',
-            ],
-
-            'online_url' => [
-                'nullable',
-                'url',
-                'max:2048',
-            ],
-
-            'max_attendees' => [
-                'nullable',
-                'integer',
-                'min:1',
-            ],
-
-            'cover_image' => [
-                'nullable',
-                'string',
-                'max:2048',
-            ],
-
-            'banner' => [
-                'nullable',
-                'string',
-                'max:2048',
-            ],
-
-            'category_ids' => [
-                'nullable',
-                'array',
-            ],
-
-            'category_ids.*' => [
-                'integer',
-                'exists:event_categories,id',
-            ],
-        ]);
-
-        $categoryIds = $validated['category_ids'] ?? [];
-
-        unset($validated['category_ids']);
-
-        $event = Event::create($validated);
+        $event = Event::create($data);
 
         $event->categories()->sync($categoryIds);
 
-        return redirect()
-            ->route('admin.events.show', $event)
-            ->with('success', 'Event created successfully.');
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Event Created.')]);
+        return to_route('admin.events.show', $event);
     }
 
     /**
@@ -288,24 +198,46 @@ class EventController extends Controller
     {
         $event->load([
             'categories',
-
-            'sessions' => fn ($query) => $query
-                ->orderBy('position')
-                ->orderBy('start_time'),
-
+            'participants.user',
             'sessions.speakers',
-
-            'tickets' => fn ($query) => $query
-                ->orderBy('position'),
-
-            'media' => fn ($query) => $query
-                ->orderBy('position'),
+            'tickets',
+            'media',
         ]);
 
-        $event->loadCount('registrations');
+        $registrationStats = [
+            'total' => $event->registrations()->count(),
 
-        return Inertia::render('Admin/Event/Show', [
-            'event' => $event,
+            'confirmed' => $event->registrations()
+                ->where('status', 'confirmed')
+                ->count(),
+
+            'pending' => $event->registrations()
+                ->where('status', 'pending')
+                ->count(),
+
+            'cancelled' => $event->registrations()
+                ->where('status', 'cancelled')
+                ->count(),
+
+            'checked_in' => $event->registrations()
+                ->whereHas('checkins', function ($query) {
+                    $query->where('successful', true);
+                })
+                ->count(),
+        ];
+
+        return Inertia::render('admin/event/Show', [
+            'breadcrumbs' => BreadcrumbBuilder::make()
+                ->home()
+                ->add('Events', route('admin.events.index'))
+                ->add($event->title)
+                ->toArray(),
+            'event' => array_merge(
+                $event->toArray(),
+                [
+                    'registration_stats' => $registrationStats,
+                ],
+            ),
         ]);
     }
 
@@ -316,17 +248,20 @@ class EventController extends Controller
     {
         $event->load('categories');
 
-        $categories = EventCategory::query()
-            ->orderBy('name')
-            ->get([
-                'id',
-                'name',
-                'slug',
-            ]);
-
-        return Inertia::render('Admin/Event/Edit', [
+        return Inertia::render('admin/event/Edit', [
+            'breadcrumbs' => BreadcrumbBuilder::make()
+                ->home()
+                ->add('Events', route('admin.events.index'))
+                ->add($event->title, route('admin.events.show', $event->id))
+                ->add('Edit')
+                ->toArray(),
             'event' => $event,
-            'categories' => $categories,
+            'categories' => EventCategory::query()
+                ->orderBy('name')
+                ->get(['id', 'name', 'slug']),
+            'statusOptions' => EventStatus::dropdown(),
+            'typeOptions' => EventType::dropdown(),
+            'visibilityOptions' => EventVisibility::dropdown(),
         ]);
     }
 
@@ -334,124 +269,27 @@ class EventController extends Controller
      * Update an event.
      */
     public function update(
-        Request $request,
+        UpdateEventRequest $request,
         Event $event
     ): RedirectResponse {
-        $validated = $request->validate([
-            'title' => [
-                'required',
-                'string',
-                'max:255',
-            ],
+        $data = $request->validated();
 
-            'slug' => [
-                'required',
-                'string',
-                'max:255',
-                'unique:events,slug,' . $event->id,
-            ],
+        $categoryIds = $data['category_ids'] ?? [];
 
-            'description' => [
-                'nullable',
-                'string',
-            ],
+        unset($data['category_ids']);
 
-            'event_type' => [
-                'required',
-                'in:in_person,online,hybrid',
-            ],
+        if ($request->hasFile('banner')) {
+            $data['banner'] = $request
+                ->file('banner')
+                ->store('events', 'public');
+        }
 
-            'status' => [
-                'required',
-                'in:draft,published,cancelled',
-            ],
-
-            'visibility' => [
-                'required',
-                'in:public,private',
-            ],
-
-            'start_date' => [
-                'required',
-                'date',
-            ],
-
-            'end_date' => [
-                'nullable',
-                'date',
-                'after_or_equal:start_date',
-            ],
-
-            'location_name' => [
-                'nullable',
-                'string',
-                'max:255',
-            ],
-
-            'venue' => [
-                'nullable',
-                'string',
-                'max:255',
-            ],
-
-            'city' => [
-                'nullable',
-                'string',
-                'max:255',
-            ],
-
-            'country' => [
-                'nullable',
-                'string',
-                'max:255',
-            ],
-
-            'online_url' => [
-                'nullable',
-                'url',
-                'max:2048',
-            ],
-
-            'max_attendees' => [
-                'nullable',
-                'integer',
-                'min:1',
-            ],
-
-            'cover_image' => [
-                'nullable',
-                'string',
-                'max:2048',
-            ],
-
-            'banner' => [
-                'nullable',
-                'string',
-                'max:2048',
-            ],
-
-            'category_ids' => [
-                'nullable',
-                'array',
-            ],
-
-            'category_ids.*' => [
-                'integer',
-                'exists:event_categories,id',
-            ],
-        ]);
-
-        $categoryIds = $validated['category_ids'] ?? [];
-
-        unset($validated['category_ids']);
-
-        $event->update($validated);
+        $event->update($data);
 
         $event->categories()->sync($categoryIds);
 
-        return redirect()
-            ->route('admin.events.show', $event)
-            ->with('success', 'Event updated successfully.');
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Event Updated.')]);
+        return to_route('admin.events.show', $event);
     }
 
     /**

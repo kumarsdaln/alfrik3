@@ -10,54 +10,48 @@
 </script>
 
 <template>
-    <ComboboxItem v-bind="props" class="
+    <ComboboxItem v-bind="props" 
+         class="
             group
-            relative
             flex
             w-full
             cursor-default
             select-none
             items-center
-            rounded-md
             px-3
             py-2
             text-sm
+            text-content
             outline-none
-
             transition-colors
-            duration-100
 
-            data-highlighted:bg-muted
-            data-highlighted:text-foreground
+            data-[highlighted]:bg-secondary/10
+            data-[highlighted]:text-content
 
-            data-disabled:pointer-events-none
-            data-disabled:opacity-50
+            data-[disabled]:pointer-events-none
+            data-[disabled]:opacity-40
         ">
         <!-- Checkbox -->
         <span class="
                 mr-3
                 flex
-                size-[17px]
+                size-4
                 shrink-0
                 items-center
                 justify-center
-                rounded-[4px]
                 border
                 border-border
-                bg-background
+                bg-surface
+                text-foreground
 
-                transition-all
-                duration-150
+                group-data-[state=checked]:
+                    border-primary
 
-                group-data-[state=checked]:border-foreground
-                group-data-[state=checked]:bg-foreground
-                group-data-[state=checked]:text-background
+                group-data-[state=checked]:
+                    bg-primary
             ">
-            <Check :size="11" :stroke-width="2.5" class="
+            <Check :size="11" :stroke-width="2.5"  class="
                     opacity-0
-                    transition-opacity
-                    duration-150
-
                     group-data-[state=checked]:opacity-100
                 " />
         </span>

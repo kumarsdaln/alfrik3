@@ -1,7 +1,7 @@
 <script setup lang="ts">
     import { BadgeCheck } from '@lucide/vue'
 
-    import Briefcase from '@/Icons/Briefcase.vue'
+    import Briefcase from '@/icons/Briefcase.vue'
 
     import AppHeading from '@/Components/Ui/AppHeading.vue'
     import AppText from '@/Components/Ui/AppText.vue'

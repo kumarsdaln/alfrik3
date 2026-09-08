@@ -8,7 +8,7 @@
   } from 'vue'
 
   import AppFormField from '@/components/ui/AppFormField.vue'
-  import DownAngle from '@/Icons/DownAngle.vue'
+  import DownAngle from '@/icons/DownAngle.vue'
   import type {
     FormOption,
     FormOptionInput,

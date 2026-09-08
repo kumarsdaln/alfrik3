@@ -1,6 +1,6 @@
 <script setup lang="ts">
     import { Link } from '@inertiajs/vue3';
-    import PlusIcon from '@/Icons/PlusIcon.vue';
+    import PlusIcon from '@/icons/PlusIcon.vue';
     import AppSelect from './AppSelect.vue';
     import type {
         FormOptionInput,

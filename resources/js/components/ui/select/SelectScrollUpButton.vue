@@ -1,26 +1,57 @@
 <script setup lang="ts">
-import type { SelectScrollUpButtonProps } from "reka-ui"
-import type { HTMLAttributes } from "vue"
-import { ChevronUp } from "@lucide/vue"
-import { reactiveOmit } from "@vueuse/core"
-import { SelectScrollUpButton, useForwardProps } from "reka-ui"
-import { cn } from "@/lib/utils"
+    import type { SelectScrollUpButtonProps } from 'reka-ui'
+    import type { HTMLAttributes } from 'vue'
 
-const props = defineProps<SelectScrollUpButtonProps & { class?: HTMLAttributes["class"] }>()
+    import { ChevronUp } from '@lucide/vue'
+    import { reactiveOmit } from '@vueuse/core'
 
-const delegatedProps = reactiveOmit(props, "class")
+    import {
+        SelectScrollUpButton,
+        useForwardProps,
+    } from 'reka-ui'
 
-const forwardedProps = useForwardProps(delegatedProps)
+    import { cn } from '@/lib/utils'
+
+    const props = defineProps<
+        SelectScrollUpButtonProps & {
+            class?: HTMLAttributes['class']
+        }
+    >()
+
+    const delegatedProps = reactiveOmit(
+        props,
+        'class',
+    )
+
+    const forwardedProps =
+        useForwardProps(delegatedProps)
 </script>
 
 <template>
-  <SelectScrollUpButton
-    data-slot="select-scroll-up-button"
-    v-bind="forwardedProps"
-    :class="cn('flex cursor-default items-center justify-center py-1', props.class)"
-  >
-    <slot>
-      <ChevronUp class="size-4" />
-    </slot>
-  </SelectScrollUpButton>
+    <SelectScrollUpButton
+        data-slot="select-scroll-up-button"
+        v-bind="forwardedProps"
+        :class="
+            cn(
+                `
+                flex
+                cursor-default
+                items-center
+                justify-center
+                border-b
+                border-border-light
+                py-1.5
+                text-content-light/50
+
+                dark:border-border-dark
+                dark:text-content-dark/50
+                `,
+                props.class,
+            )
+        "
+    >
+        <slot>
+            <ChevronUp class="size-4" />
+        </slot>
+    </SelectScrollUpButton>
 </template>

@@ -9,7 +9,7 @@ import {
     watch,
 } from 'vue'
 
-import X from '@/Icons/X.vue'
+import X from '@/icons/X.vue'
 
 type ModalPosition = 'center' | 'bottom' | 'right' | 'left'
 

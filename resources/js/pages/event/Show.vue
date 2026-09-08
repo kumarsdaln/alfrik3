@@ -14,18 +14,15 @@
         Video,
     } from '@lucide/vue'
 
-    import AppContainer from '@/components/ui/AppContainer.vue'
     import AppHeading from '@/components/ui/AppHeading.vue'
     import AppText from '@/components/ui/AppText.vue'
-    import AppBadge from '@/components/ui/AppBadge.vue'
     import Avatar from '@/components/profile/Avatar.vue'
-    import EventCard from '@/Components/Cards/EventCard.vue'
+    import EventCard from '@/components/events/EventCard.vue'
 
     import { register as registerRoute } from '@/routes/events'
     import { login } from '@/routes'
 
-    import type { BreadcrumbItem } from '@/types'
-import { Button } from '@/components/ui/button'
+    import { Button } from '@/components/ui/button'
 
     interface Category {
         id: number
@@ -121,7 +118,6 @@ import { Button } from '@/components/ui/button'
             count: number
         }
         related: EventItem[]
-        breadcrumbs?: BreadcrumbItem[]
     }
 
     const props = defineProps<Props>()
@@ -1005,7 +1001,8 @@ import { Button } from '@/components/ui/button'
 
                         <!-- CTA -->
 
-                        <Button variant="primary" class="mt-4 w-full" type="button" :disabled="pending" @click="toggleRegister">
+                        <Button variant="primary" class="mt-4 w-full" type="button" :disabled="pending"
+                            @click="toggleRegister">
                             <Check v-if="registered" class="h-4 w-4" />
 
                             {{ registerLabel }}

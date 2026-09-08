@@ -28,7 +28,7 @@
                 min-w-0
 
                 border
-                border-black/20
+                border-border-light
                 bg-white
 
                 px-3.5

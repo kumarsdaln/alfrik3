@@ -1,153 +1,58 @@
 <script setup lang="ts">
-import {
-    PaginationRoot,
-    PaginationList,
-    PaginationListItem,
-    PaginationPrev,
-    PaginationNext,
-    PaginationFirst,
-    PaginationLast,
-    PaginationEllipsis,
-} from '@/components/ui/pagination'
+    import { computed } from 'vue'
+    import { Link } from '@inertiajs/vue3'
+    import type { PaginationMeta, PaginationLink } from '@/types/pagination'
+    import { PaginationPrev, PaginationNext, PaginationList } from './pagination'
 
-interface PaginationMeta {
-    current_page: number
-    last_page: number
-    from: number | null
-    to: number | null
-    total: number
-    per_page: number
-}
-
-const props = withDefaults(
-    defineProps<{
+    interface Props {
         meta: PaginationMeta
-        showEdges?: boolean
-        siblingCount?: number
-        hideSummary?: boolean
-    }>(),
-    {
-        showEdges: false,
-        siblingCount: 1,
-        hideSummary: false,
-    },
-)
-
-const emit = defineEmits<{
-    pageChange: [page: number]
-}>()
-
-const changePage = (page: number) => {
-    if (
-        page < 1 ||
-        page > props.meta.last_page ||
-        page === props.meta.current_page
-    ) {
-        return
     }
 
-    emit('pageChange', page)
-}
+    const props = defineProps<Props>()
+
+    const previousLink = computed(() =>
+        props.meta.links.find(link =>
+            link.label.toLowerCase().includes('previous')
+        )
+    )
+
+    const nextLink = computed(() =>
+        props.meta.links.find(link =>
+            link.label.toLowerCase().includes('next')
+        )
+    )
 </script>
 
 <template>
-    <div
-        v-if="meta.last_page > 1"
-        class="
-            flex
-            flex-col
-            gap-5
-            border-t
-            border-border-light
-            pt-5
-            dark:border-border-dark
-            sm:flex-row
-            sm:items-center
-            sm:justify-between
-        "
-    >
-        <div
-            v-if="!hideSummary"
-            class="
-                shrink-0
-                font-redhat
-                text-xs
-                text-content-light/60
-                dark:text-content-dark/60
-            "
-        >
-            <template v-if="meta.from !== null && meta.to !== null">
-                Showing
-                <span
-                    class="
-                        font-semibold
-                        text-content-light
-                        dark:text-content-dark
-                    "
-                >
-                    {{ meta.from }}–{{ meta.to }}
-                </span>
-                of
-                <span
-                    class="
-                        font-semibold
-                        text-content-light
-                        dark:text-content-dark
-                    "
-                >
-                    {{ meta.total }}
-                </span>
-            </template>
+    <div v-if="meta.total > 0"
+        class="flex flex-col gap-4 border-t px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+        <!-- Results -->
+        <p class="text-sm text-muted-foreground">
+            Showing
+            <span class="font-medium text-foreground">
+                {{ meta.from }}
+            </span>
+            to
+            <span class="font-medium text-foreground">
+                {{ meta.to }}
+            </span>
+            of
+            <span class="font-medium text-foreground">
+                {{ meta.total }}
+            </span>
+            results
+        </p>
 
-            <template v-else>
-                {{ meta.total }} results
-            </template>
-        </div>
+        <!-- Pagination -->
+        <nav v-if="meta.last_page > 1" class="flex items-center gap-1" aria-label="Pagination">
+            <!-- Previous -->
+            <PaginationPrev :url="previousLink?.url" />
 
-        <PaginationRoot
-            :page="meta.current_page"
-            :total="meta.total"
-            :items-per-page="meta.per_page"
-            :sibling-count="siblingCount"
-            :show-edges="showEdges"
-            @update:page="changePage"
-        >
-            <PaginationList v-slot="{ items }">
-                <PaginationFirst
-                    v-if="showEdges"
-                    aria-label="Go to first page"
-                />
+            <!-- Pages -->
+            <PaginationList :links="meta.links" />
 
-                <PaginationPrev
-                    aria-label="Go to previous page"
-                />
-
-                <template
-                    v-for="(item, index) in items"
-                    :key="index"
-                >
-                    <PaginationListItem
-                        v-if="item.type === 'page'"
-                        :value="item.value"
-                    >
-                        {{ item.value }}
-                    </PaginationListItem>
-
-                    <PaginationEllipsis
-                        v-else
-                        :index="index"
-                    />
-                </template>
-
-                <PaginationNext
-                    aria-label="Go to next page"
-                />
-
-                <PaginationLast
-                    v-if="showEdges"
-                    aria-label="Go to last page"
-                />
-            </PaginationList>
-        </PaginationRoot>
+            <!-- Next -->
+            <PaginationNext :url="nextLink?.url" />
+        </nav>
     </div>
 </template>

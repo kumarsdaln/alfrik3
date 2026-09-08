@@ -2,10 +2,11 @@
 
 namespace App\Http\Controllers\Admin\Interview;
 
-use App\Enums\Interview\Status;
-use App\Enums\Interview\Type;
+use App\Enums\Interview\InterviewStatus;
+use App\Enums\Interview\InterviewType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Interview\StoreInterviewRequest;
+use App\Http\Resources\Interview\InterviewResource;
 use App\Models\Interview\Interview;
 use App\Services\FileUploadService;
 use Illuminate\Http\Request;
@@ -20,9 +21,11 @@ class InterviewController extends Controller
     {
         $this->fileUploadService = $fileUploadService;
     }
+
     public function index(Request $request)
     {
         $sortKey = $request->string('sort')->toString();
+
         $sortDirection = $request->string('direction')->toString() === 'asc'
             ? 'asc'
             : 'desc';
@@ -37,7 +40,17 @@ class InterviewController extends Controller
         ];
 
         $interviews = Interview::query()
-            ->select('id', 'title', 'interview_type', 'created_by', 'status', 'created_at', 'updated_at')
+            ->select([
+                'id',
+                'title',
+                'slug',
+                'thumbnail',
+                'interview_type',
+                'status',
+                'created_by',
+                'created_at',
+                'updated_at',
+            ])
             ->with('createdBy:id,name')
             ->when($request->filled('search'), function ($query) use ($request) {
                 $search = $request->string('search')->toString();
@@ -49,7 +62,10 @@ class InterviewController extends Controller
                 });
             })
             ->when($request->filled('status'), function ($query) use ($request) {
-                $query->where('status', $request->string('status')->toString());
+                $query->where(
+                    'status',
+                    $request->string('status')->toString()
+                );
             })
             ->when(
                 in_array($sortKey, $sortableColumns, true),
@@ -59,19 +75,19 @@ class InterviewController extends Controller
             ->paginate(10)
             ->withQueryString();
 
-        return Inertia::render('Admin/Interviews/Index', [
-            'interviews' => $interviews,
-            'statuses' => Status::dropdown(),
-            'types' => Type::dropdown()
+        return Inertia::render('admin/interview/Index', [
+            'interviews' => InterviewResource::collection($interviews),
+            'statuses' => InterviewStatus::dropdown(),
+            'types' => InterviewType::dropdown(),
         ]);
     }
 
     public function create()
     {
 
-        return Inertia::render('Admin/Interviews/Create', [
-            'statuses' => Status::dropdown(),
-            'types' => Type::dropdown()
+        return Inertia::render('admin/interview/Create', [
+            'statuses' => InterviewStatus::dropdown(),
+            'types' => InterviewType::dropdown()
         ]);
     }
 
@@ -100,7 +116,7 @@ class InterviewController extends Controller
     public function show(Interview $interview)
     {
 
-        return Inertia::render('Admin/Interviews/Show', [
+        return Inertia::render('admin/interview/Show', [
             'interview' => $interview->load([
                 'participants.user',
                 'questions.interviewer',
@@ -112,10 +128,10 @@ class InterviewController extends Controller
 
     public function edit(Interview $interview)
     {
-        return Inertia::render('Admin/Interviews/Edit', [
+        return Inertia::render('admin/interview/Edit', [
             'interview' => $interview,
-            'statuses' => Status::dropdown(),
-            'types' => Type::dropdown()
+            'statuses' => InterviewStatus::dropdown(),
+            'types' => InterviewType::dropdown()
         ]);
     }
 
@@ -124,8 +140,8 @@ class InterviewController extends Controller
         $validated = $request->validate([
             'title' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
-            'interview_type' => ['required', new Enum(Type::class)],
-            'status' => ['required', new Enum(Status::class)],
+            'interview_type' => ['required', new Enum(InterviewType::class)],
+            'status' => ['required', new Enum(InterviewStatus::class)],
             'thumbnail' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
             'duration' => ['nullable', 'integer'],
             'published_at' => ['required']
@@ -152,14 +168,14 @@ class InterviewController extends Controller
 
     public function updateStatus(Request $request, Interview $interview)
     {
-        $request->validate(['status' => ['required', new Enum(Status::class)]]);
+        $request->validate(['status' => ['required', new Enum(InterviewStatus::class)]]);
         $interview->status = $request->status;
         $interview->save();
         return response()->json(['message' => 'Status updated successfully!']);
     }
     public function updateType(Request $request, Interview $interview)
     {
-        $request->validate(['interview_type' => ['required', new Enum(Type::class)]]);
+        $request->validate(['interview_type' => ['required', new Enum(InterviewType::class)]]);
         $interview->interview_type = $request->interview_type;
         $interview->save();
         return response()->json(['message' => 'Type updated successfully!']);
