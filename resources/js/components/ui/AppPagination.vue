@@ -25,7 +25,7 @@
 
 <template>
     <div v-if="meta.total > 0"
-        class="flex flex-col gap-4 border-t px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+        class="flex flex-col gap-4 border-t py-4 sm:flex-row sm:items-center sm:justify-between">
         <!-- Results -->
         <p class="text-sm text-muted-foreground">
             Showing

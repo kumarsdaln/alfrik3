@@ -1,4 +1,3 @@
-```vue
 <script setup lang="ts">
 import AppPagination from '@/components/ui/AppPagination.vue'
 import AppTable from '@/components/ui/AppTable.vue'
@@ -138,4 +137,3 @@ const getDateValue = (value: unknown): string | null => {
         <AppPagination :meta="props.interviews.meta" />
     </div>
 </template>
-```

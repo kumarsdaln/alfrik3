@@ -1,36 +1,21 @@
-import type { Component } from 'vue'
-
-export type FilterPrimitive = string | number | boolean
-
 export type FilterValue =
-    | FilterPrimitive
+    | string
+    | number
+    | boolean
     | null
     | undefined
+    | string[]
+    | number[]
 
-export interface FilterOption<TValue extends FilterValue = FilterValue> {
-    value: TValue
-    label: string
-    disabled?: boolean
-    [key: string]: unknown
+export type FilterValues = Record<string, FilterValue>
+
+export type FilterKey<T> = keyof T
+
+export interface UseFiltersOptions<T extends FilterValues> {
+    url: string
+    searchKey?: FilterKey<T>
+    debounce?: number
+    preserveState?: boolean
+    preserveScroll?: boolean
+    replace?: boolean
 }
-
-export interface FilterField<TValue extends FilterValue = FilterValue> {
-    name?: string
-    label?: string
-    placeholder?: string
-    allLabel?: string
-    options?: FilterOption<TValue>[]
-    min?: number
-    max?: number
-    step?: number
-    unit?: string
-    icon?: Component
-    error?: string
-    required?: boolean
-    fullWidth?: boolean
-    [key: string]: unknown
-}
-
-export type FilterModel =
-    | FilterValue
-    | FilterValue[]

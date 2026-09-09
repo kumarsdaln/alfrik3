@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin\Report;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\Report\ReportResource;
 use App\Models\Report\Report;
 use App\Models\Report\ReportCategory;
 use App\Models\User;
@@ -18,25 +19,62 @@ class ReportController extends Controller
         $category = $request->query('category');
         $status = $request->query('status');
 
-        $reports = Report::query()
-            ->with(['category:id,name,slug', 'author:id,name,username'])
-            ->when($search, fn ($q) => $q->where('title', 'ilike', "%{$search}%"))
-            ->when($category, fn ($q) => $q->where('category_id', $category))
-            ->when($status !== null && $status !== '', fn ($q) => $q->where('status', (bool) (int) $status))
+        $reportsQuery = Report::query()
+            ->when(
+                $search,
+                fn($q) => $q->where('title', 'ilike', "%{$search}%")
+            )
+            ->when(
+                $category,
+                fn($q) => $q->where('category_id', $category)
+            )
+            ->when(
+                $status !== null && $status !== '',
+                fn($q) => $q->where('status', (bool) (int) $status)
+            );
+
+        $reports = (clone $reportsQuery)
+            ->with([
+                'category:id,name,slug',
+                'author:id,name,username',
+            ])
             ->orderByDesc('created_at')
             ->paginate(15)
             ->withQueryString();
 
-        return Inertia::render('Admin/Reports/Index', [
-            'reports' => $reports,
-            'categories' => ReportCategory::orderBy('name')->get(['id', 'name', 'slug']),
-            'filters' => ['search' => $search, 'category' => $category, 'status' => $status],
+        $stats = [
+            'total' => Report::count(),
+
+            'published' => Report::where('status', true)->count(),
+
+            'draft' => Report::where('status', false)->count(),
+
+            'this_month' => Report::whereBetween('created_at', [
+                now()->startOfMonth(),
+                now()->endOfMonth(),
+            ])->count(),
+        ];
+
+        return Inertia::render('admin/report/Index', [
+            'reports' => ReportResource::collection($reports),
+
+            'categories' => ReportCategory::query()
+                ->orderBy('name')
+                ->get(['id', 'name', 'slug']),
+
+            'filters' => [
+                'search' => $search,
+                'category' => $category,
+                'status' => $status,
+            ],
+
+            'stats' => $stats,
         ]);
     }
 
     public function create()
     {
-        return Inertia::render('Admin/Reports/Create', [
+        return Inertia::render('admin/report/Create', [
             'categories' => ReportCategory::orderBy('name')->get(['id', 'name', 'slug']),
             'authors' => $this->authorOptions(),
         ]);
@@ -63,7 +101,7 @@ class ReportController extends Controller
     {
         $report->load(['category:id,name,slug', 'author:id,name,username']);
 
-        return Inertia::render('Admin/Reports/Edit', [
+        return Inertia::render('admin/report/Edit', [
             'report' => $report,
             'categories' => ReportCategory::orderBy('name')->get(['id', 'name', 'slug']),
             'authors' => $this->authorOptions(),

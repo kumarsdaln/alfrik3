@@ -1,6 +1,8 @@
 export * from './auth';
 export * from './navigation';
 export * from './ui';
+export * from './pagination';
+export * from './filters';
 
 export * from './forms';
 export * from './content';
