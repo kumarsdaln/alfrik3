@@ -7,27 +7,28 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 class InterviewQuestionResource extends JsonResource
 {
-    /**
-     * Transform the resource into an array.
-     *
-     * @return array<string, mixed>
-     */
     public function toArray(Request $request): array
     {
         return [
             'id' => $this->id,
             'question' => $this->question,
-            'order' => $this->order,
+            'position' => $this->position,
 
-            'asked_by' => [
-                'id' => $this->interviewer?->id,
-                'username' => $this->interviewer?->username,
-                'name' => $this->interviewer?->name,
-                'avatar' => $this->interviewer?->avatar,
-            ],
+            'interview' => $this->whenLoaded('interview', fn() => [
+                'id' => $this->interview->id,
+                'title' => $this->interview->title,
+            ]),
+
+            'asked_by' => $this->whenLoaded(
+                'asker',
+                fn () => [
+                    'id' => $this->asker?->id,
+                    'name' => $this->asker?->name,
+                ],
+            ),
 
             'answers' => InterviewAnswerResource::collection(
-                $this->whenLoaded('answers')
+                $this->whenLoaded('answers'),
             ),
         ];
     }

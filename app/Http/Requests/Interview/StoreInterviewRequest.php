@@ -2,12 +2,11 @@
 
 namespace App\Http\Requests\Interview;
 
-use App\Enums\Interview\Status;
-use App\Enums\Interview\Type;
+use App\Enums\Interview\InterviewStatus;
+use App\Enums\Interview\InterviewType;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
 class StoreInterviewRequest extends FormRequest
@@ -28,46 +27,40 @@ class StoreInterviewRequest extends FormRequest
     public function rules(): array
     {
          return [
-            'title' => 'required|string|max:255',
-
-            'slug' => [
-                'nullable',
+            'title' => [
+                'required',
                 'string',
                 'max:255',
-                'unique:interviews,slug'
             ],
 
-            'description' => 'nullable|string',
-            'duration' => 'nullable|integer|min:1',
+            'slug' => [
+                'required',
+                'string',
+                'max:255',
+                'unique:interviews,slug',
+            ],
+
+            'description' => [
+                'nullable',
+                'string',
+            ],
 
             'interview_type' => [
                 'required',
-                Rule::enum(Type::class)
+                'string',
+                Rule::enum(InterviewType::class)
             ],
+
             'status' => [
-                'nullable',
-                Rule::enum(Status::class)
+                'required',
+                'string',
+                Rule::enum(InterviewStatus::class)
             ],
-            'thumbnail' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
-            'published_at' => ['required']
-        ];
-    }
 
-     public function prepareForValidation()
-    {
-        if (!$this->slug && $this->title) {
-            $this->merge([
-                'slug' => Str::slug($this->title)
-            ]);
-        }
-    }
-
-    public function messages(): array
-    {
-        return [
-            'title.required' => 'Interview title is required.',
-            'interview_type.required' => 'Select interview type.',
-            'thumbnail.image' => 'Thumbnail must be an image.',
+            'published_at' => [
+                'nullable',
+                'date',
+            ],
         ];
     }
 }

@@ -2,96 +2,150 @@
 
 namespace App\Http\Controllers\Admin\Interview;
 
+use App\Actions\Interview\AddInterviewAnswer;
+use App\Actions\Interview\RemoveInterviewAnswer;
+use App\Actions\Interview\UpdateInterviewAnswer;
+use App\Enums\Interview\InterviewParticipantRole;
 use App\Http\Controllers\Controller;
-use App\Models\Interview\Interview;
+use App\Http\Requests\Interview\StoreInterviewAnswerRequest;
+use App\Http\Requests\Interview\UpdateInterviewAnswerRequest;
+use App\Http\Resources\Interview\InterviewParticipantResource;
 use App\Models\Interview\InterviewAnswer;
 use App\Models\Interview\InterviewQuestion;
-use Illuminate\Http\Request;
+use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class AnswerController extends Controller
 {
-    // CREATE (Answer page)
-    public function create(
-        Interview $interview,
-        InterviewQuestion $question
-    ): Response
+    public function create(InterviewQuestion $question): Response
     {
-        abort_unless(
-            $question->interview_id === $interview->id,
-            404
+        $question->load('interview', 'interview.participants.user');
+
+        return Inertia::render(
+            'admin/interview/answer/Create',
+            [
+                'question' => [
+                    'id' => $question->id,
+                    'question' => $question->question,
+                    'interview' => [
+                        'id' => $question->interview->id,
+                        'title' => $question->interview->title,
+                    ],
+                ],
+                'interviewees' => InterviewParticipantResource::collection(
+                    $question->interview->participants->where(
+                        'role',
+                        InterviewParticipantRole::Interviewee
+                    )
+                ),
+            ]
+        );
+    }
+
+    public function store(
+        StoreInterviewAnswerRequest $request,
+        InterviewQuestion $question,
+        AddInterviewAnswer $action,
+    ): RedirectResponse {
+        $action->handle(
+            $question,
+            $request->validated()
         );
 
-        $interview->load([
-            'participants' => fn($query) => $query
-                ->where('role', 'interviewee')
-                ->with([
-                    'user:id,name,email,avatar',
-                ]),
-        ]);
+        Inertia::flash(
+            'success',
+            'Answer added successfully.'
+        );
 
-        return Inertia::render('Admin/Interviews/Answers/Create', [
-            'interview' => $interview,
-            'question' => $question,
-        ]);
+        return to_route(
+            'admin.interviews.questions.edit',
+            $question
+        );
     }
 
-    // STORE
-    public function store(Request $request, Interview $interview, InterviewQuestion $question)
+    public function edit(InterviewAnswer $answer): Response
     {
-        $validated = $request->validate([
-            'answer' => ['required', 'string'],
-            'answered_by' => ['required', 'exists:users,id'],
+        $answer->load([
+            'question.interview.participants.user',
+            'answerer',
         ]);
 
-        $question->answers()->create([
-            'answered_by' => $validated['answered_by'],
-            'answer' => $validated['answer'],
-        ]);
+        $interview = $answer->question->interview;
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => __('Answer Created Successfully!')]);
-        return to_route('admin.interviews.questions.index', $question->interview_id);
+        return Inertia::render(
+            'admin/interview/answer/Edit',
+            [
+                'answer' => [
+                    'id' => $answer->id,
+                    'answer' => $answer->answer,
+
+                    'answered_by' => $answer->answerer
+                        ? [
+                            'id' => $answer->answerer->id,
+                            'name' => $answer->answerer->name,
+                            'email' => $answer->answerer->email,
+                        ]
+                        : null,
+
+                    'question' => [
+                        'id' => $answer->question->id,
+                        'question' => $answer->question->question,
+                    ],
+
+                    'interview' => [
+                        'id' => $interview->id,
+                        'title' => $interview->title,
+                    ],
+                ],
+
+                'interviewees' => InterviewParticipantResource::collection(
+                    $interview->participants->where(
+                        'role',
+                        InterviewParticipantRole::Interviewee
+                    )
+                ),
+            ]
+        );
     }
 
-    // EDIT
-    public function edit(Interview $interview,InterviewQuestion $question,InterviewAnswer $answer)
-    {
-        $interview->load([
-            'participants' => function ($query) {
-                $query->where('role', 'interviewee')
-                    ->with('user');
-            }
-        ]);
-        return Inertia::render('Admin/Interviews/Answers/Edit', [
-            'interview' => $interview,
-            'question' => $question->load('interviewer'),
-            'answer' => $answer
-        ]);
+    public function update(
+        UpdateInterviewAnswerRequest $request,
+        InterviewAnswer $answer,
+        UpdateInterviewAnswer $action,
+    ): RedirectResponse {
+        $action->handle(
+            $answer,
+            $request->validated()
+        );
+
+        Inertia::flash(
+            'success',
+            'Answer updated successfully.'
+        );
+
+        return to_route(
+            'admin.interviews.questions.edit',
+            $answer->question_id
+        );
     }
 
-    // UPDATE
-    public function update(Request $request, Interview $interview, InterviewQuestion $question,InterviewAnswer $answer)
-    {
-        $validated = $request->validate([
-            'answer' => ['required', 'string'],
-            'answered_by' => ['required', 'exists:users,id'],
-        ]);
+    public function destroy(
+        InterviewAnswer $answer,
+        RemoveInterviewAnswer $action,
+    ): RedirectResponse {
+        $question = $answer->question;
 
-        $answer->update($validated);
+        $action->handle($answer);
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => __('Answer Updated Successfully!')]);
-        return to_route('admin.interviews.questions.index', $interview->id);
-    }
+        Inertia::flash(
+            'success',
+            'Answer deleted successfully.'
+        );
 
-    // DELETE (optional)
-    public function destroy(InterviewAnswer $answer)
-    {
-        $interviewId = $answer->interview_id;
-
-        $answer->delete();
-
-        Inertia::flash('toast', ['type' => 'success', 'message' => __('Answer Deleted Successfully!')]);
-        return to_route('admin.interviews.questions.index', $interviewId);
+        return to_route(
+            'admin.interviews.questions.edit',
+            $question
+        );
     }
 }

@@ -2,125 +2,173 @@
 
 namespace App\Http\Controllers\Admin\Interview;
 
+use App\Actions\Interview\AddInterviewQuestion;
+use App\Actions\Interview\RemoveInterviewQuestion;
+use App\Actions\Interview\ReorderInterviewQuestions;
+use App\Actions\Interview\UpdateInterviewQuestion;
+use App\Enums\Interview\InterviewParticipantRole;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Interview\ReorderInterviewQuestionsRequest;
+use App\Http\Requests\Interview\StoreInterviewQuestionRequest;
+use App\Http\Requests\Interview\UpdateInterviewQuestionRequest;
+use App\Http\Resources\Interview\InterviewParticipantResource;
+use App\Http\Resources\Interview\InterviewQuestionResource;
+use App\Http\Resources\Interview\InterviewResource;
 use App\Models\Interview\Interview;
 use App\Models\Interview\InterviewQuestion;
-use Illuminate\Http\Request;
+use App\Support\Breadcrumbs\BreadcrumbBuilder;
+use Illuminate\Http\RedirectResponse;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class QuestionController extends Controller
 {
-    /* ======================
-       INDEX
-    ====================== */
-    public function index(Interview $interview)
-    {
-        $interview->load('questions.interviewer', 'questions.answers.answeredBy');
-
-        return inertia('Admin/Interviews/Questions/Index', [
-            'interview' => $interview
-        ]);
-    }
-
-    /* ======================
-       CREATE
-    ====================== */
-    public function create(Interview $interview)
+    public function index(Interview $interview): Response
     {
         $interview->load([
-            'participants' => function ($query) {
-                $query->where('role', 'interviewer')
-                    ->with('user');
-            }
+            'questions.asker',
+            'questions.answers.answerer',
         ]);
-        return inertia('Admin/Interviews/Questions/Create', [
-            'interview' => $interview
+
+        return Inertia::render(
+            'admin/interview/question/Index',
+            [
+                'interview' => [
+                    'id' => $interview->id,
+                    'title' => $interview->title,
+                ],
+
+                'questions' => InterviewQuestionResource::collection(
+                    $interview->questions
+                ),
+
+                'breadcrumbs' => BreadcrumbBuilder::make()
+                                 ->admin()
+                                 ->add('Interviews', route('admin.interviews.index'))
+                                 ->add($interview->title, route('admin.interviews.edit',$interview))
+                                 ->add('Questions')
+                                 ->toArray()
+            ]
+        );
+    }
+    public function create(Interview $interview): Response
+    {
+        return Inertia::render('admin/interview/question/Create', [
+            'interview' => new InterviewResource($interview),
+            'interviewers' => InterviewParticipantResource::collection(
+                $interview->participants->where(
+                    'role',
+                    InterviewParticipantRole::Interviewer
+                )
+            ),
+            'breadcrumbs' => BreadcrumbBuilder::make()
+                ->home()
+                ->add('Interviews', route('admin.interviews.index'))
+                ->add(
+                    $interview->title,
+                    route('admin.interviews.edit', $interview)
+                )
+                ->add('Add Question')
+                ->toArray(),
         ]);
     }
 
-    /* ======================
-       STORE
-    ====================== */
-    public function store(Request $request, Interview $interview)
-    {
-        $validated = $request->validate([
-            'question' => ['required', 'string'],
-            'asked_by' => ['required', 'exists:users,id'],
-        ]);
+    public function store(
+        StoreInterviewQuestionRequest $request,
+        Interview $interview,
+        AddInterviewQuestion $action,
+    ): RedirectResponse {
+        $question = $action->handle(
+            $interview,
+            $request->validated(),
+        );
 
-        $order = $interview->questions()->max('order') + 1;
+        Inertia::flash(
+            'success',
+            'Question added successfully.',
+        );
 
-        $interview->questions()->create([
-            'question' => $validated['question'],
-            'asked_by' => $validated['asked_by'],
-            'order' => $order ?? 1,
-        ]);
-
-        return redirect()
-            ->route('admin.interviews.questions.index', $interview->id)
-            ->with('success', 'Question added');
+        return to_route(
+            'admin.interviews.questions.edit',
+            $question,
+        );
     }
 
-    /* ======================
-       EDIT
-    ====================== */
-    public function edit(Interview $interview, InterviewQuestion $question)
+    public function edit(InterviewQuestion $question): Response
     {
-
-        $interview->load([
-            'participants' => function ($query) {
-                $query->where('role', 'interviewer')
-                    ->with('user');
-            }
+        $question->load([
+            'interview',
+            'interview.participants.user',
+            'asker',
+            'answers.answerer',
         ]);
-        return inertia('Admin/Interviews/Questions/Edit', [
-            'interview' => $interview,
-            'question' => $question
+
+        return Inertia::render('admin/interview/question/Edit', [
+            'question' => new InterviewQuestionResource($question),
+            'interviewers' => InterviewParticipantResource::collection(
+                $question->interview->participants->where(
+                    'role',
+                    InterviewParticipantRole::Interviewer
+                )
+            ),
+            'breadcrumbs' => BreadcrumbBuilder::make()
+                ->home()
+                ->add('Interviews', route('admin.interviews.index'))
+                ->add(
+                    $question->interview->title,
+                    route('admin.interviews.edit', $question->interview)
+                )
+                ->add('Edit Question')
+                ->toArray(),
         ]);
     }
 
-    /* ======================
-       UPDATE
-    ====================== */
-    public function update(Request $request, Interview $interview, InterviewQuestion $question)
-    {
-        $validated = $request->validate([
-            'question' => ['required', 'string'],
-            'asked_by' => ['required', 'exists:users,id'],
-        ]);
+    public function update(
+        UpdateInterviewQuestionRequest $request,
+        InterviewQuestion $question,
+        UpdateInterviewQuestion $action,
+    ): RedirectResponse {
+        $action->handle(
+            $question,
+            $request->validated(),
+        );
 
-        $question->update($validated);
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Question updated successfully.')]);
 
-        return redirect()
-            ->route('admin.interviews.questions.index', $interview->id)
-            ->with('success', 'Question updated');
+        return to_route(
+            'admin.interviews.questions.edit',
+            $question,
+        );
     }
 
-    /* ======================
-       DELETE
-    ====================== */
-    public function destroy(Interview $interview, InterviewQuestion $question)
-    {
-        $question->delete();
-        return redirect()->back()
-            ->with('success', 'Question deleted');
+    public function destroy(
+        InterviewQuestion $question,
+        RemoveInterviewQuestion $action,
+    ): RedirectResponse {
+        $interview = $question->interview;
+
+        $action->handle($question);
+
+        Inertia::flash(
+            'success',
+            'Question deleted successfully.',
+        );
+
+        return to_route(
+            'admin.interviews.edit',
+            $interview,
+        );
     }
 
     public function reorder(
-        Request $request,
-        Interview $interview
+        ReorderInterviewQuestionsRequest $request,
+        Interview $interview,
+        ReorderInterviewQuestions $action
     ) {
-        $request->validate([
-            'questions' => ['required', 'array'],
-            'questions.*.id' => ['required', 'exists:interview_questions,id'],
-            'questions.*.order' => ['required', 'integer'],
-        ]);
-
-        foreach ($request->questions as $item) {
-            InterviewQuestion::find($item['id'])
-                ->update([
-                    'order' => $item['order'],
-                ]);
-        }
+        $action->handle(
+            $interview,
+            $request->validated('questions')
+        );
 
         return back();
     }

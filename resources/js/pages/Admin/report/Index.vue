@@ -18,24 +18,20 @@ import Layout from '@/layouts/table/Layout.vue'
 import { useFilters } from '@/composables/useFilters'
 import { create } from '@/routes/admin/reports'
 
-import type { Pagination, Report } from '@/types'
+import type { Option, Pagination, Report, ReportCategory } from '@/types'
 import type { TableAction } from '@/components/ui/AppTableActions.vue'
+import ProfileCell from '@/components/profile/ProfileCell.vue'
+import Badge from '@/components/ui/badge/Badge.vue'
 
 interface Props {
     reports: Pagination<Report>
-
-    categories: {
-        id: number
-        name: string
-        slug: string
-    }[]
-
+    categories: ReportCategory[]
+    statusOptions: Option[]
     filters: {
         search?: string
         category?: string
         status?: string
     }
-
     stats: {
         total: number
         published: number
@@ -69,17 +65,6 @@ const {
         debounce: 500,
     },
 )
-
-const statusOptions = [
-    {
-        label: 'Published',
-        value: 'published',
-    },
-    {
-        label: 'Draft',
-        value: 'draft',
-    },
-]
 
 const categoryOptions = computed(() =>
     props.categories.map(category => ({
@@ -191,16 +176,14 @@ function getReportActions(report: Report): TableAction[] {
 </script>
 
 <template>
-    <Layout>
+    <TableLayout>
         <!-- Header -->
         <template #header>
-            <div
-                class="
+            <div class="
                     flex items-center justify-between
                     gap-4
                     px-6 py-5
-                "
-            >
+                ">
                 <div>
                     <AppHeading tag="h1">
                         Reports
@@ -211,10 +194,7 @@ function getReportActions(report: Report): TableAction[] {
                     </AppText>
                 </div>
 
-                <Button
-                    as-child
-                    class="gap-2"
-                >
+                <Button as-child class="gap-2">
                     <Link :href="create()">
                         <Plus class="size-4" />
                         Create Report
@@ -260,156 +240,27 @@ function getReportActions(report: Report): TableAction[] {
             </section>
 
             <!-- Table -->
-            <AppTable
-                :columns="columns"
-                :data="props.reports.data"
-            >
+            <AppTable :columns="columns" :data="props.reports.data">
                 <!-- Category -->
                 <template #cell-category="{ value }">
-                    <span
-                        v-if="value"
-                        class="truncate"
-                    >
-                        {{ value.name ?? '—' }}
-                    </span>
-
-                    <span
-                        v-else
-                        class="
-                            text-content-light-muted
-                            dark:text-content-dark-muted
-                        "
-                    >
-                        —
-                    </span>
+                    <Badge>
+                        {{ value.name}}
+                    </Badge>
                 </template>
 
                 <!-- Author -->
                 <template #cell-author="{ value }">
-                    <div
-                        v-if="value"
-                        class="flex items-center gap-3"
-                    >
-                        <div
-                            class="
-                                flex size-8 shrink-0
-                                items-center justify-center
-                                rounded-full
-                                bg-content-light-muted/10
-                                text-xs font-medium
-                                text-content-light-muted
-                                dark:bg-content-dark-muted/10
-                                dark:text-content-dark-muted
-                            "
-                        >
-                            {{ value.name?.charAt(0)?.toUpperCase() }}
-                        </div>
-
-                        <span class="truncate">
-                            {{ value.name ?? '—' }}
-                        </span>
-                    </div>
-
-                    <span
-                        v-else
-                        class="
-                            text-content-light-muted
-                            dark:text-content-dark-muted
-                        "
-                    >
-                        —
-                    </span>
+                    <ProfileCell :profile="value" />
                 </template>
 
                 <!-- Published At -->
                 <template #cell-published_at="{ value }">
-                    <Date
-                        v-if="value"
-                        :value="value"
-                    />
-
-                    <span
-                        v-else
-                        class="
-                            text-content-light-muted
-                            dark:text-content-dark-muted
-                        "
-                    >
-                        —
-                    </span>
+                    <Date :value="value"/>
                 </template>
 
                 <!-- Actions -->
                 <template #cell-actions="{ row }">
-                    <AppTableActions
-                        :actions="getReportActions(row)"
-                    />
-                </template>
-
-                <!-- Empty -->
-                <template #empty>
-                    <div
-                        class="
-                            flex flex-col
-                            items-center justify-center
-                            py-16
-                        "
-                    >
-                        <div
-                            class="
-                                mb-4
-                                flex size-12
-                                items-center justify-center
-                                rounded-full
-                                bg-content-light-muted/10
-                                dark:bg-content-dark-muted/10
-                            "
-                        >
-                            <Eye
-                                class="
-                                    size-5
-                                    text-content-light-muted
-                                    dark:text-content-dark-muted
-                                "
-                            />
-                        </div>
-
-                        <p class="font-lora text-base font-medium">
-                            No reports found
-                        </p>
-
-                        <p
-                            class="
-                                mt-1 max-w-sm
-                                text-center text-sm
-                                text-content-light-muted
-                                dark:text-content-dark-muted
-                            "
-                        >
-                            There are no reports matching your
-                            current filters.
-                        </p>
-
-                        <Button
-                            v-if="filterCount > 0"
-                            variant="outline"
-                            class="mt-5"
-                            @click="clearFilters"
-                        >
-                            Clear filters
-                        </Button>
-
-                        <Button
-                            v-else
-                            as-child
-                            class="mt-5 gap-2"
-                        >
-                            <Link :href="create()">
-                                <Plus class="size-4" />
-                                Create Report
-                            </Link>
-                        </Button>
-                    </div>
+                    <AppTableActions :actions="getReportActions(row)" />
                 </template>
             </AppTable>
         </div>
@@ -418,5 +269,5 @@ function getReportActions(report: Report): TableAction[] {
         <template #footer>
             <AppPagination :meta="props.reports.meta" />
         </template>
-    </Layout>
+    </TableLayout>
 </template>

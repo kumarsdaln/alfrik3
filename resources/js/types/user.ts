@@ -1,4 +1,7 @@
-import type { TableRow } from '@/types/table'
+export interface Position {
+    id: number
+    name: string
+}
 
 export interface Country {
     id: number
@@ -19,32 +22,48 @@ export interface Industry {
     name: string
 }
 
-export interface Role extends TableRow {
+export interface Role {
     id: number,
     name: string,
     slug: string,
     description: string,
 }
 
-export interface Permission extends TableRow {
+export interface Permission {
     id: number,
     name: string,
     slug: string,
     description: string,
 }
 
-export interface User extends TableRow {
-    id: number
-    name: string
-    username: string
-    email: string
-    is_active: boolean
-    roles: Role[]
-    created_at: string
-    updated_at: string
-}
+export type User = {
+    id: number;
+    name: string;
+    email: string;
+    avatar?: string;
+    email_verified_at?: string | null;
+    is_active?: boolean
+    roles?: Role[]
+    two_factor_enabled?: boolean;
+    created_at?: string;
+    updated_at?: string;
+    [key: string]: unknown;
+};
 
 export interface UserStatusOption {
     value: boolean
     label: string
+}
+
+export interface Profile {
+    id: number
+    name: string
+    username: string
+    avatar: string | null
+    email?: string
+    headline?: string | null
+    position?: Position | null
+    country?: Country | null
+    languages?: Language[]
+    industries?: Industry[]
 }

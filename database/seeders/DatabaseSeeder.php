@@ -23,21 +23,8 @@ class DatabaseSeeder extends Seeder
             PositionSeeder::class,
             RolePermissionSeeder::class,
             UserSeeder::class,
-            InterviewSeeder::class,
-            ReportCategorySeeder::class,
-            ReportSeeder::class,
-            ResearchAreaSeeder::class,
-            ResearchPaperSeeder::class,
-            SurveySeeder::class,
-            MagazineSeeder::class,
-            EventCategorySeeder::class,
-            EventSeeder::class,
-        ]);
-        // User::factory(10)->create();
-
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
+            CategorySeeder::class,
+            TagSeeder::class
         ]);
     }
 }

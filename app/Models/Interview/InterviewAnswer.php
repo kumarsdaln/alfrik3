@@ -4,6 +4,7 @@ namespace App\Models\Interview;
 
 use App\Models\User;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -14,15 +15,16 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 ])]
 class InterviewAnswer extends Model
 {
+    use HasFactory;
+
     public function question(): BelongsTo
     {
         return $this->belongsTo(
             InterviewQuestion::class,
-            'question_id',
         );
     }
 
-    public function answeredBy(): BelongsTo
+    public function answerer(): BelongsTo
     {
         return $this->belongsTo(
             User::class,

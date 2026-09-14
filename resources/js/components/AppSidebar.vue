@@ -20,7 +20,8 @@ import { dashboard } from '@/routes';
 import { index as users } from '@/routes/admin/users';
 import { index as interviews } from '@/routes/admin/interviews';
 import { index as magazines } from '@/routes/admin/magazine';
-// import { index as events } from '@/routes/admin/events';
+import {index as categories } from '@/actions/App/Http/Controllers/Admin/Category/CategoryController';
+import {index as tags } from '@/actions/App/Http/Controllers/Admin/Tag/TagController';
 import { index as research } from '@/routes/admin/research';
 import { index as reports } from '@/routes/admin/reports';
 import { index as surveys } from '@/routes/admin/surveys';
@@ -30,6 +31,16 @@ const mainNavItems: NavItem[] = [
         title: 'Dashboard',
         href: dashboard(),
         icon: LayoutGrid,
+    },
+    {
+        title: 'Categories',
+        href: categories(),
+        icon: Users,
+    },
+    {
+        title: 'Tags',
+        href: tags(),
+        icon: Users,
     },
     {
         title: 'Users',

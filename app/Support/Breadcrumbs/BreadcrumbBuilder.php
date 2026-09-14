@@ -37,6 +37,13 @@ class BreadcrumbBuilder
         );
     }
 
+    public function admin(): self
+    {
+        return $this->add(
+            title: 'Dashboard',
+            href: route('admin.dashboard'),
+        );
+    }
 
     /**
      * @return Breadcrumb[]

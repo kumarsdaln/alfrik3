@@ -46,7 +46,7 @@ class CreateSuperAdmin extends Command
         }
 
         try {
-            DB::transection(function() use ($name, $email, $password, $role):void {
+            DB::transaction(function() use ($name, $email, $password, $role):void {
                 $user = User::query()->create([
                     'name'=>$name,
                     'email'=>$email,

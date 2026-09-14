@@ -2,8 +2,10 @@
 
 namespace App\Models\Interview;
 
+use App\Enums\Interview\InterviewParticipantRole;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -14,17 +16,19 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 ])]
 class InterviewParticipant extends Model
 {
-    protected $fillable = [
-        'interview_id',
-        'user_id',
-        'role',
-    ];
+    use HasFactory;
+
+    protected function casts(): array
+    {
+        return [
+            'role' => InterviewParticipantRole::class,
+        ];
+    }
 
     public function interview(): BelongsTo
     {
         return $this->belongsTo(
             Interview::class,
-            'interview_id',
         );
     }
 
@@ -32,7 +36,6 @@ class InterviewParticipant extends Model
     {
         return $this->belongsTo(
             User::class,
-            'user_id',
         );
     }
 }

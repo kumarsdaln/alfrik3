@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin\Report;
 
+use App\Enums\Report\ReportStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Report\ReportResource;
 use App\Models\Report\Report;
@@ -61,7 +62,7 @@ class ReportController extends Controller
             'categories' => ReportCategory::query()
                 ->orderBy('name')
                 ->get(['id', 'name', 'slug']),
-
+            'statusOptions' => ReportStatus::dropdown(),    
             'filters' => [
                 'search' => $search,
                 'category' => $category,

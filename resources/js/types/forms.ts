@@ -1,11 +1,5 @@
 import type { Component } from 'vue'
 
-export interface Option<T = string> {
-    value: T
-    label: string
-    color?: string
-}
-
 /*
 |--------------------------------------------------------------------------
 | Form Values
@@ -40,9 +34,7 @@ export type FormSelectValue =
     | string
     | number
 
-export interface FormOption<
-    TValue extends FormSelectValue = FormSelectValue,
-> {
+export interface FormOption<TValue extends FormSelectValue = FormSelectValue,> {
     value: TValue
     label: string
     disabled?: boolean
@@ -51,9 +43,7 @@ export interface FormOption<
     [key: string]: unknown
 }
 
-export type FormOptionInput<
-    TValue extends FormSelectValue = FormSelectValue,
-> =
+export type FormOptionInput<TValue extends FormSelectValue = FormSelectValue,> =
     | FormOption<TValue>
     | TValue
 
