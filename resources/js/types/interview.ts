@@ -1,4 +1,6 @@
 import type { FormOption } from './forms'
+import { Media } from './media'
+import { Profile } from './user'
 
 export enum InterviewType {
     VIDEO = 'video',
@@ -23,30 +25,20 @@ export type InterviewParticipantRoleOption = FormOption<InterviewParticipantRole
 export interface InterviewParticipant {
     id: number
     role: FormOption<InterviewParticipantRole>
-    user: {
-        id: number
-        name: string
-        email: string
-    }
+    user: Profile
 }
 
 export interface InterviewAnswer {
     id: number
     answer: string
-    answered_by: {
-        id: number
-        name: string
-    } | null
+    answered_by: Profile
 }
 
 export interface InterviewQuestion {
     id: number
     question: string
     position: number
-    asked_by: {
-        id: number
-        name: string
-    } | null
+    asked_by: Profile
     answers: InterviewAnswer[]
 
     interview?: {
@@ -70,22 +62,6 @@ export interface InterviewTag {
     slug: string
     description: string | null
     status: boolean
-}
-
-export interface InterviewMedia {
-    id: number
-    collection: string
-    name: string
-    file_name: string
-    mime_type: string
-    extension: string | null
-    size: number
-    disk: string
-    path: string
-    alt: string | null
-    metadata: Record<string, unknown> | null
-    created_at: string
-    updated_at: string
 }
 
 export interface InterviewSeo {
@@ -134,6 +110,6 @@ export interface Interview {
     categories: InterviewCategory[]
     tags: InterviewTag[]
 
-    media: InterviewMedia[]
+    media: Media[]
     seo: InterviewSeo[]
 }

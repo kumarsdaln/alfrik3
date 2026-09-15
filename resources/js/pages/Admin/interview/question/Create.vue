@@ -31,10 +31,13 @@ import AppTextarea from '@/components/form/AppTextarea.vue'
 
         <Form v-slot="{ errors, processing }" v-bind="store.form(interview.data.id)" class="mt-6 max-w-3xl space-y-4">
            <AppFormControl label="Question By" required :error="errors.asked_by">
-                <AppSelect name="asked_by" placeholder="Select interviewer" :options="interviewers.data.map(participant => ({
-                    label: participant.user.name,
-                    value: participant.user.id,
-                }))" />
+                <AppSelect 
+                    name="asked_by" 
+                    placeholder="Select interviewer" 
+                    :options="interviewers.data.map(participant => ({
+                        label: participant.user.name,
+                        value: participant.user.id,
+                    }))" />
             </AppFormControl>
             <AppFormControl label="Question" required :error="errors.question">
                 <AppTextarea name="question" placeholder="Enter interview question" />

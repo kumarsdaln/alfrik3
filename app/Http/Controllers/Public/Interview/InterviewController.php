@@ -45,6 +45,8 @@ class InterviewController extends Controller
             ->with([
                 'participants:id,interview_id,user_id,role',
                 'participants.user:id,name,username,avatar',
+
+                'media:id,mediable_type,mediable_id,collection,name,file_name,mime_type,extension,size,path,alt,metadata',
             ]);
 
         /*
@@ -56,6 +58,8 @@ class InterviewController extends Controller
             ->with([
                 'participants:id,interview_id,user_id,role',
                 'participants.user:id,name,username,avatar',
+
+                'media:id,mediable_type,mediable_id,collection,name,file_name,mime_type,extension,size,path,alt,metadata',
             ])
             ->latest('published_at')
             ->first();
@@ -65,7 +69,7 @@ class InterviewController extends Controller
          * Featured interview
          */
             'featured' => $featured
-                ? new InterviewResource($featured)
+                ? InterviewResource::make($featured)
                 : null,
 
             /*
@@ -80,13 +84,22 @@ class InterviewController extends Controller
                 )
             ),
 
-            'qfilters' => [
+            /*
+         * Current filters
+         */
+            'filters' => [
                 'search' => $request->input('search', ''),
                 'type' => $request->input('type', ''),
             ],
 
+            /*
+         * Interview types
+         */
             'types' => InterviewType::dropdown(),
 
+            /*
+         * Breadcrumbs
+         */
             'breadcrumbs' => BreadcrumbBuilder::make()
                 ->home()
                 ->add('Interview')
@@ -100,42 +113,16 @@ class InterviewController extends Controller
     public function show(Interview $interview)
     {
         $interview->load([
-            /*
-            |--------------------------------------------------------------------------
-            | Participants
-            |--------------------------------------------------------------------------
-            */
-
             'participants:id,interview_id,user_id,role',
             'participants.user:id,name,username,avatar',
 
-            /*
-            |--------------------------------------------------------------------------
-            | Questions
-            |--------------------------------------------------------------------------
-            */
-
-            'questions:id,interview_id,asked_by,question,order',
-
-            'questions.interviewer:id,name,username,avatar',
-
-            /*
-            |--------------------------------------------------------------------------
-            | Answers
-            |--------------------------------------------------------------------------
-            */
+            'questions:id,interview_id,asked_by,question,position',
+            'questions.asker:id,name,username,avatar',
 
             'questions.answers:id,question_id,answered_by,answer',
+            'questions.answers.answerer:id,name,username,avatar',
 
-            'questions.answers.answeredBy:id,name,username,avatar',
-
-            /*
-            |--------------------------------------------------------------------------
-            | Media
-            |--------------------------------------------------------------------------
-            */
-
-            'media:id,interview_id,media_type,source_type,file_url,embed_url,thumbnail,duration',
+            'media:id,mediable_type,mediable_id,collection,name,path,file_name,mime_type,extension,size,alt,metadata',
         ]);
 
         return Inertia::render('interviews/Show', [
@@ -144,6 +131,7 @@ class InterviewController extends Controller
                 ->add('Interview', route('interviews.index'))
                 ->add($interview->title)
                 ->toArray(),
+
             'interview' => InterviewResource::make($interview),
         ]);
     }

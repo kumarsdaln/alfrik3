@@ -9,37 +9,22 @@ import {
 } from '@lucide/vue'
 
 import Avatar from '@/components/profile/Avatar.vue'
-import { Badge } from '../ui/badge'
+import Badge from '@/components/ui/badge/Badge.vue'
 
-type InterviewFormat = 'written' | 'video' | 'audio'
+import type { Interview } from '@/types'
 
-interface User {
-    id: number
-    username: string
-    name: string
-    avatar?: string | null
-}
+import { formatDate } from '@/utils/dateUtils'
 
-interface Participant {
-    id: number
-    role: string
-    user?: User | null
-}
+import { show } from '@/routes/interviews'
+import { computed } from 'vue'
+import { Link } from '@inertiajs/vue3'
 
-interface Interview {
-    id: number
-    slug: string
-    title: string
-    description?: string | null
-    thumbnail?: string | null
-    interview_type?: string | null
-    published_at?: string | null
-    participants?: Participant[]
-}
 
 const props = defineProps<{
     interview: Interview | null
 }>()
+
+console.log(props.interview)
 
 
 /*
@@ -48,40 +33,7 @@ const props = defineProps<{
 |--------------------------------------------------------------------------
 */
 
-function getFormat(
-    type?: string | null,
-): InterviewFormat {
-    if (!type) {
-        return 'written'
-    }
-
-    const value = type.value.toLowerCase()
-
-    if (value.includes('video')) {
-        return 'video'
-    }
-
-    if (value.includes('audio')) {
-        return 'audio'
-    }
-
-    return 'written'
-}
-
-
-/*
-|--------------------------------------------------------------------------
-| Format Configuration
-|--------------------------------------------------------------------------
-*/
-
-const formatConfig: Record<
-    InterviewFormat,
-    {
-        label: string
-        icon: typeof FileText
-    }
-> = {
+const formatConfig = {
     written: {
         label: 'Written Interview',
         icon: FileText,
@@ -101,76 +53,58 @@ const formatConfig: Record<
 
 /*
 |--------------------------------------------------------------------------
-| Participants
+| Media
 |--------------------------------------------------------------------------
 */
 
-function getInterviewee(
-    participants?: Participant[],
-): Participant | null {
+const getCoverMedia = () => {
     return (
-        participants?.find(
-            participant => participant.role === 'interviewee',
+        (props.interview?.media ?? []).find(
+            media =>
+                media.mime_type.startsWith('image/') ||
+                media.collection === 'cover' ||
+                media.collection === 'thumbnail',
         ) ?? null
     )
-}
-
-function getIntervieweeName(
-    participants?: Participant[],
-): string {
-    return getInterviewee(participants)?.user?.name ?? 'Featured Guest'
-}
-
-function getIntervieweeAvatar(
-    participants?: Participant[],
-): string | null {
-    return getInterviewee(participants)?.user?.avatar ?? null
-}
-
-function getIntervieweeRole(
-    participants?: Participant[],
-): string {
-    const participant = getInterviewee(participants)
-
-    if (!participant) {
-        return ''
-    }
-
-    return participant.role
 }
 
 
 /*
 |--------------------------------------------------------------------------
-| Date
+| Participant
 |--------------------------------------------------------------------------
 */
 
-function formatDate(
-    date?: string | null,
-): string {
-    if (!date) {
-        return ''
-    }
+const participants = computed(() => {
+    return (props.interview?.participants ?? []).filter(
+        participant => participant.user?.name,
+    )
+})
 
-    return new Intl.DateTimeFormat('en-US', {
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric',
-    }).format(new Date(date))
-}
+const visibleParticipants = computed(() => {
+    return participants.value.slice(0, 3)
+})
+
+const remainingParticipants = computed(() => {
+    return Math.max(
+        participants.value.length - 3,
+        0,
+    )
+})
+
+const participantNames = computed(() => {
+    return participants.value
+        .map(participant => participant.user?.name)
+        .filter(Boolean)
+        .join(', ')
+})
 </script>
 
 
 <template>
-    <section
-        id="interviews"
-        class="border-b border-border bg-background"
-    >
+    <section id="interviews" class="border-b border-border bg-background">
         <div class="px-5 sm:px-6 lg:px-0">
-
-            <div
-                class="
+            <div class="
                     grid
                     gap-10
                     py-10
@@ -178,17 +112,12 @@ function formatDate(
                     lg:grid-cols-[0.9fr_1.1fr]
                     lg:gap-20
                     lg:py-16
-                "
-            >
+                ">
 
-                <!-- ======================================================
-                     INTRO
-                ======================================================= -->
+                <!-- Intro -->
 
                 <div class="flex flex-col justify-center">
-
-                    <p
-                        class="
+                    <p class="
                             mb-5
                             text-[10px]
                             font-semibold
@@ -196,14 +125,11 @@ function formatDate(
                             tracking-[0.2em]
                             text-muted-foreground
                             sm:text-[11px]
-                        "
-                    >
+                        ">
                         Conversations · Perspectives · Ideas
                     </p>
 
-
-                    <h1
-                        class="
+                    <h1 class="
                             max-w-[650px]
                             text-[48px]
                             font-medium
@@ -212,8 +138,7 @@ function formatDate(
                             text-foreground
                             sm:text-[60px]
                             lg:text-[72px]
-                        "
-                    >
+                        ">
                         The people.
                         <br />
 
@@ -225,27 +150,22 @@ function formatDate(
                         </span>
                     </h1>
 
-
-                    <p
-                        class="
+                    <p class="
                             mt-7
                             max-w-[520px]
                             text-[15px]
                             leading-7
                             text-muted-foreground
                             sm:text-[16px]
-                        "
-                    >
+                        ">
                         In-depth conversations with researchers,
                         leaders, creators and thinkers behind the
                         ideas, decisions and movements shaping our world.
                     </p>
 
-
                     <!-- Available Formats -->
 
-                    <div
-                        class="
+                    <div class="
                             mt-6
                             flex
                             flex-wrap
@@ -256,40 +176,27 @@ function formatDate(
                             uppercase
                             tracking-[0.12em]
                             text-muted-foreground
-                        "
-                    >
+                        ">
                         <span class="flex items-center gap-1.5">
-                            <FileText
-                                :size="13"
-                                :stroke-width="1.7"
-                            />
+                            <FileText :size="13" :stroke-width="1.7" />
                             Written
                         </span>
 
                         <span class="flex items-center gap-1.5">
-                            <Play
-                                :size="13"
-                                :stroke-width="1.7"
-                            />
+                            <Play :size="13" :stroke-width="1.7" />
                             Video
                         </span>
 
                         <span class="flex items-center gap-1.5">
-                            <Headphones
-                                :size="13"
-                                :stroke-width="1.7"
-                            />
+                            <Headphones :size="13" :stroke-width="1.7" />
                             Audio
                         </span>
                     </div>
 
-
                     <!-- CTA -->
 
                     <div class="mt-8">
-                        <a
-                            href="#interviews"
-                            class="
+                        <a href="#interviews" class="
                                 group
                                 inline-flex
                                 items-center
@@ -300,121 +207,91 @@ function formatDate(
                                 text-[13px]
                                 font-medium
                                 text-foreground
-                            "
-                        >
+                            ">
                             Explore interviews
 
-                            <ArrowUpRight
-                                :size="15"
-                                :stroke-width="1.8"
-                                class="
+                            <ArrowUpRight :size="15" :stroke-width="1.8" class="
                                     transition-transform
                                     duration-200
                                     group-hover:-translate-y-0.5
                                     group-hover:translate-x-0.5
-                                "
-                            />
+                                " />
                         </a>
                     </div>
                 </div>
 
 
-                <!-- ======================================================
-                     FEATURED INTERVIEW
-                ======================================================= -->
+                <!-- Featured Interview -->
 
-                <article
-                    v-if="interview"
-                    class="lg:pt-4"
-                >
-                    <a
-                        :href="`/interviews/${interview.slug}`"
-                        class="group block"
-                    >
+                <article v-if="interview" class="lg:pt-4">
+                    <Link :href="show(interview.slug).url" :aria-label="interview.title" class="block">
 
-                        <!-- Image -->
-
-                        <div
-                            class="
+                    <!-- Image -->
+                    <div class="
                                 relative
                                 overflow-hidden
                                 bg-muted
-                            "
-                        >
-                            <div
-                                class="
+                            ">
+                        <div class="
                                     aspect-[4/3]
                                     overflow-hidden
                                     sm:aspect-[16/10]
                                     lg:aspect-[4/3]
-                                "
-                            >
-                                <img
-                                    v-if="interview.thumbnail"
-                                    :src="interview.thumbnail"
-                                    :alt="interview.title"
-                                    class="
+                                ">
+                            <img v-if="getCoverMedia()?.url" :src="getCoverMedia()?.url" :alt="getCoverMedia()?.alt ??
+                                interview.title
+                                " class="
                                         h-full
                                         w-full
                                         object-cover
                                         transition-transform
                                         duration-500
                                         group-hover:scale-[1.02]
-                                    "
-                                />
+                                    " />
 
-                                <div
-                                    v-else
-                                    class="
+                            <div v-else class="
                                         flex
                                         h-full
                                         w-full
                                         items-center
                                         justify-center
                                         bg-muted
-                                    "
-                                >
-                                    <FileText
-                                        :size="36"
-                                        :stroke-width="1"
-                                        class="text-muted-foreground/40"
-                                    />
-                                </div>
+                                    ">
+                                <FileText :size="36" :stroke-width="1" class="text-muted-foreground/40" />
                             </div>
+                        </div>
 
+                        <!-- Featured Badge -->
 
-                            <!-- Featured Badge -->
-                            <div class="
+                        <div class="
                                     absolute
                                     left-3
                                     top-3
                                 ">
-                                <Badge variant="secondary">
-                                    <component :is="Gem" :size="13" :stroke-width="1.8" />
-                                    Featured
-                                </Badge>
-                            </div>
+                            <Badge variant="secondary">
+                                <Gem :size="13" :stroke-width="1.8" />
+
+                                Featured
+                            </Badge>
                         </div>
+                    </div>
 
 
-                        <!-- Content -->
+                    <!-- Content -->
 
-                        <div class="py-5 sm:py-6">
+                    <div class="py-5 sm:py-6">
 
-                            <!-- Format + Date -->
+                        <!-- Format + Date -->
 
-                            <div
-                                class="
+                        <div class="
                                     mb-4
                                     flex
                                     flex-wrap
                                     items-center
                                     justify-between
                                     gap-3
-                                "
-                            >
-                                <span
-                                    class="
+                                ">
+                            <span class="
                                         flex
                                         items-center
                                         gap-1.5
@@ -423,33 +300,21 @@ function formatDate(
                                         uppercase
                                         tracking-[0.15em]
                                         text-foreground
-                                    "
-                                >
-                                    <component
-                                        :is="
-                                            formatConfig[
-                                                getFormat(
-                                                    interview.interview_type,
-                                                )
-                                            ].icon
-                                        "
-                                        :size="13"
-                                        :stroke-width="1.8"
-                                    />
+                                    ">
+                                <component :is="formatConfig[
+                                    interview.interview_type.value
+                                ]?.icon ?? FileText
+                                    " :size="13" :stroke-width="1.8" />
 
-                                    {{
-                                        formatConfig[
-                                            getFormat(
-                                                interview.interview_type,
-                                            )
-                                        ].label
-                                    }}
-                                </span>
+                                {{
+                                    formatConfig[
+                                        interview.interview_type.value
+                                    ]?.label ?? 'Written Interview'
+                                }}
+                            </span>
 
 
-                                <span
-                                    v-if="interview.published_at"
-                                    class="
+                            <span v-if="interview.published_at" class="
                                         flex
                                         items-center
                                         gap-1.5
@@ -457,78 +322,71 @@ function formatDate(
                                         uppercase
                                         tracking-[0.12em]
                                         text-muted-foreground
-                                    "
-                                >
-                                    <CalendarDays
-                                        :size="12"
-                                        :stroke-width="1.7"
-                                    />
+                                    ">
+                                <CalendarDays :size="12" :stroke-width="1.7" />
 
-                                    {{ formatDate(interview.published_at) }}
-                                </span>
-                            </div>
+                                {{
+                                    formatDate(
+                                        interview.published_at,
+                                    )
+                                }}
+                            </span>
+                        </div>
 
 
-                            <!-- Person -->
+                        <!-- Participants -->
 
-                            <div
-                                v-if="getInterviewee(interview.participants)"
-                                class="
-                                    mb-4
-                                    flex
-                                    items-center
-                                    gap-3
-                                "
-                            >
-                                <Avatar
-                                    :image="
-                                        getIntervieweeAvatar(
-                                            interview.participants,
-                                        )
-                                    "
-                                    :name="
-                                        getIntervieweeName(
-                                            interview.participants,
-                                        )
-                                    "
-                                    size="size-9"
-                                />
+                        <!-- Participants -->
 
-                                <div class="min-w-0">
-                                    <div
-                                        class="
-                                            text-[12px]
-                                            font-medium
-                                            text-foreground
-                                        "
-                                    >
-                                        {{
-                                            getIntervieweeName(
-                                                interview.participants,
-                                            )
-                                        }}
-                                    </div>
+                        <div v-if="participants.length" class="
+        mb-4
+        flex
+        min-w-0
+        items-center
+        gap-3
+    ">
+                            <!-- Avatar Stack -->
 
-                                    <div
-                                        class="
-                                            text-[11px]
-                                            text-muted-foreground
-                                        "
-                                    >
-                                        {{
-                                            getIntervieweeRole(
-                                                interview.participants,
-                                            )
-                                        }}
-                                    </div>
+                            <div class="flex shrink-0 -space-x-2">
+                                <Avatar v-for="participant in visibleParticipants" :key="participant.id"
+                                    :name="participant.user?.name" :image="participant.user?.avatar" size="size-8"
+                                    text-size="text-[10px]" rounded="full" class="ring-2 ring-white" />
+
+                                <div v-if="remainingParticipants" class="
+                flex
+                size-8
+                shrink-0
+                items-center
+                justify-center
+                rounded-full
+                bg-neutral-100
+                text-[9px]
+                font-medium
+                text-neutral-600
+                ring-2
+                ring-white
+            ">
+                                    +{{ remainingParticipants }}
                                 </div>
                             </div>
 
+                            <!-- Names -->
 
-                            <!-- Title -->
+                            <p class="
+            min-w-0
+            truncate
+            text-[11px]
+            leading-5
+            text-muted-foreground
+        " :title="participantNames">
+                                {{ participantNames }}
+                            </p>
+                        </div>
 
-                            <h2
-                                class="
+
+                        <!-- Title -->
+
+                        <h2 class="
                                     max-w-[650px]
                                     text-[22px]
                                     font-medium
@@ -539,29 +397,26 @@ function formatDate(
                                     duration-200
                                     group-hover:text-muted-foreground
                                     sm:text-[25px]
-                                "
-                            >
-                                {{ interview.title }}
-                            </h2>
+                                ">
+                            {{ interview.title }}
+                        </h2>
 
 
-                            <!-- Description -->
+                        <!-- Description -->
 
-                            <p
-                                v-if="interview.description"
-                                class="
+                        <p v-if="interview.description" class="
                                     mt-3
                                     max-w-[620px]
                                     line-clamp-2
                                     text-sm
                                     leading-6
                                     text-muted-foreground
-                                "
-                            >
-                                {{ interview.description }}
-                            </p>
-                        </div>
-                    </a>
+                                ">
+                            {{ interview.description }}
+                        </p>
+
+                    </div>
+                    </Link>
                 </article>
 
             </div>

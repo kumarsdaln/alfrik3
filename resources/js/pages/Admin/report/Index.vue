@@ -13,7 +13,6 @@ import AppText from '@/components/ui/AppText.vue'
 import Button from '@/components/ui/button/Button.vue'
 import AppSelect from '@/components/form/AppSelect.vue'
 import FilterControl from '@/components/filters/FilterControl.vue'
-import Layout from '@/layouts/table/Layout.vue'
 
 import { useFilters } from '@/composables/useFilters'
 import { create } from '@/routes/admin/reports'

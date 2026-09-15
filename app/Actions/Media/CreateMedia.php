@@ -13,8 +13,7 @@ class CreateMedia
 {
     public function __construct(
         protected StorageService $storage,
-    ) {
-    }
+    ) {}
 
     public function handle(
         Model $model,
@@ -29,8 +28,8 @@ class CreateMedia
 
         try {
             $stored = $this->storage->store(
-                $file,
-                $directory,
+                file: $file,
+                directory: $directory,
             );
 
             return DB::transaction(function () use (
@@ -45,11 +44,10 @@ class CreateMedia
                 return $model->media()->create([
                     'collection' => $collection,
 
-                    'name' => $name
-                        ?? pathinfo(
-                            $file->getClientOriginalName(),
-                            PATHINFO_FILENAME
-                        ),
+                    'name' => $name ?? pathinfo(
+                        $file->getClientOriginalName(),
+                        PATHINFO_FILENAME,
+                    ),
 
                     'file_name' => $stored['file_name'],
 
@@ -62,16 +60,14 @@ class CreateMedia
                     'size' => $file->getSize(),
 
                     'disk' => $stored['disk'],
-
                     'path' => $stored['path'],
 
                     'alt' => $alt,
-
                     'metadata' => $metadata ?: null,
                 ]);
             });
         } catch (Throwable $exception) {
-            if ($stored) {
+            if ($stored !== null) {
                 $this->storage->delete(
                     $stored['path'],
                     $stored['disk'],

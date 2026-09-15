@@ -1,10 +1,11 @@
 <?php
 
-namespace App\Http\Controllers\Admin;
+namespace App\Http\Controllers\Admin\Interview;
 
 use App\Actions\Media\CreateMedia;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Media\StoreMediaRequest;
+use App\Http\Resources\MediaResource;
 use App\Models\Interview\Interview;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
@@ -17,8 +18,14 @@ class InterviewMediaController extends Controller
         $interview->load('media');
 
         return Inertia::render('admin/interview/media/Index', [
-            'interview' => $interview,
-            'media' => $interview->media,
+            'interview' => [
+                'id' => $interview->id,
+                'title' => $interview->title,
+            ],
+
+            'media' => MediaResource::collection(
+                $interview->media
+            ),
         ]);
     }
 
@@ -30,7 +37,7 @@ class InterviewMediaController extends Controller
         $action->handle(
             model: $interview,
             file: $request->file('file'),
-            collection: $request->string('collection')->toString(),
+            collection: $request->input('collection'),
             name: $request->input('name'),
             alt: $request->input('alt'),
         );

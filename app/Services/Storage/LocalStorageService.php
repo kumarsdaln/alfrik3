@@ -5,6 +5,7 @@ namespace App\Services\Storage;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use RuntimeException;
 
 class LocalStorageService implements StorageService
 {
@@ -12,16 +13,22 @@ class LocalStorageService implements StorageService
         UploadedFile $file,
         string $directory = 'media'
     ): array {
-        $disk = config('filesystems.default');
+        $disk = 'public';
 
         $fileName = Str::uuid()->toString()
             . '.' . $file->getClientOriginalExtension();
 
-        $path = $file->storeAs(
+        $path = Storage::disk($disk)->putFileAs(
             $directory,
-            $fileName,
-            $disk
+            $file,
+            $fileName
         );
+
+        if ($path === false) {
+            throw new RuntimeException(
+                'Unable to store the uploaded file.'
+            );
+        }
 
         return [
             'disk' => $disk,

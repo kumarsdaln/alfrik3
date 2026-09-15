@@ -6,7 +6,6 @@ import InterviewCard from '@/components/interview/InterviewCard.vue'
 import InterviewHero from '@/components/interview/InterviewHero.vue'
 import FilterControl from '@/components/filters/FilterControl.vue'
 import AppSelect from '@/components/form/AppSelect.vue'
-
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 
 import {
@@ -14,51 +13,7 @@ import {
 } from '@/actions/App/Http/Controllers/Public/Interview/InterviewController'
 
 import { useFilters } from '@/composables/useFilters'
-
-
-/*
-|--------------------------------------------------------------------------
-| Types
-|--------------------------------------------------------------------------
-*/
-
-interface User {
-    id: number
-    username: string
-    name: string
-    avatar?: string | null
-}
-
-interface Participant {
-    id: number
-    role: string
-    user?: User | null
-}
-
-interface Interview {
-    id: number
-    slug: string
-    title: string
-    description?: string | null
-    thumbnail?: string | null
-    interview_type?: string | null
-    published_at?: string | null
-    duration?: string | number | null
-    action_label?: string | null
-    participants?: Participant[]
-}
-
-interface PaginatedInterviews {
-    data: Interview[]
-    current_page: number
-    last_page: number
-    total: number
-}
-
-interface FilterOption {
-    label: string
-    value: string
-}
+import { Interview, Pagination } from '@/types'
 
 
 /*
@@ -68,10 +23,13 @@ interface FilterOption {
 */
 
 interface Props {
-    featured?: Interview | null
-    interviews: PaginatedInterviews
+    featured?: {
+        data: Interview
+    }
 
-    qfilters?: {
+    interviews: Pagination<Interview>
+
+    filters: {
         search?: string
         type?: string
     }
@@ -93,70 +51,32 @@ const props = defineProps<Props>()
 
 const {
     filters,
+    filterCount,
     applyFilters,
     clearFilters,
-    filterCount,
-} = useFilters({
-    search: props.qfilters?.search ?? '',
-    type: props.qfilters?.type ?? '',
-})
-
-
-/*
-|--------------------------------------------------------------------------
-| Interview Cards
-|--------------------------------------------------------------------------
-*/
-
-const interviewCards = computed(() =>
-    props.interviews.data.map(interview => ({
-        id: interview.id,
-
-        href: interviewShow(interview.slug).url,
-
-        title: interview.title,
-
-        format: normalizeFormat(interview.interview_type),
-
-        image: interview.thumbnail ?? '',
-
-        participants: interview.participants ?? [],
-
-        created_at: interview.published_at ?? undefined,
-    })),
+} = useFilters(
+    {
+        search: props.filters.search ?? '',
+        type: props.filters.type ?? '',
+    },
+    {
+        url: window.location.pathname,
+        searchKey: 'search',
+        debounce: 500,
+    },
 )
-
-
-/*
-|--------------------------------------------------------------------------
-| Helpers
-|--------------------------------------------------------------------------
-*/
-
-function normalizeFormat(
-    type?: string | null,
-): 'written' | 'video' | 'audio' {
-    if (!type) {
-        return 'written'
-    }
-
-    const value = type.value.toLowerCase().trim()
-
-    if (value.includes('video')) {
-        return 'video'
-    }
-
-    if (value.includes('audio')) {
-        return 'audio'
-    }
-
-    return 'written'
-}
 </script>
 
 
 <template>
-    <InterviewHero :interview="featured.data" />
+    <!-- ================================================================
+         FEATURED INTERVIEW
+    ================================================================= -->
+
+    <InterviewHero
+        v-if="featured"
+        :interview="featured.data"
+    />
 
 
     <!-- ================================================================
@@ -186,7 +106,7 @@ function normalizeFormat(
          INTERVIEWS
     ================================================================= -->
 
-    <div class="relative">
+    <div class="relative mb-6">
         <InfiniteScroll
             data="interviews"
             :key="`${filters.search}-${filters.type}`"
@@ -204,7 +124,7 @@ function normalizeFormat(
             "
         >
             <InterviewCard
-                v-for="interview in interviewCards"
+                v-for="interview in interviews.data"
                 :key="interview.id"
                 :interview="interview"
             />

@@ -7,7 +7,7 @@ export interface Media {
     extension: string | null
     size: number
     disk: string
-    path: string
+    url: string
     alt: string | null
     metadata: Record<string, unknown> | null
     created_at: string

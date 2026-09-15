@@ -53,6 +53,9 @@ class QuestionController extends Controller
     }
     public function create(Interview $interview): Response
     {
+        $interview->load([
+            'participants.user'
+        ]);
         return Inertia::render('admin/interview/question/Create', [
             'interview' => new InterviewResource($interview),
             'interviewers' => InterviewParticipantResource::collection(
