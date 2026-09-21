@@ -2,64 +2,44 @@
 
 namespace App\Models\Magazine;
 
+use App\Enums\Magazine\MagazineStatus;
+use App\Models\Category;
+use App\Models\Media;
+use App\Models\SeoMetadata;
+use App\Models\Tag;
 use App\Models\User;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Database\Eloquent\Relations\MorphToMany;
 
+#[Fillable([
+    'title',
+    'slug',
+    'subtitle',
+    'description',
+    'author_id',
+    'status',
+    'featured',
+    'published_at',
+])]
 class Magazine extends Model
 {
-    use HasFactory;
-
-    protected $table = 'magazines';
-
-    protected $fillable = [
-        'title',
-        'slug',
-        'subtitle',
-        'description',
-        'cover_image',
-        'category_id',
-        'author_id',
-        'status',
-        'featured',
-        'published_at',
-        'meta_title',
-        'meta_description',
-        'meta_keywords',
-    ];
-
-    protected $casts = [
-        'status' => 'boolean',
-        'featured' => 'boolean',
-        'published_at' => 'datetime',
-    ];
-
-    protected $appends = [
-        'is_published',
-    ];
-
-    /*
-    |--------------------------------------------------------------------------
-    | Relationships
-    |--------------------------------------------------------------------------
-    */
-
-    public function category(): BelongsTo
+    protected function casts(): array
     {
-        return $this->belongsTo(
-            MagazineCategory::class,
-            'category_id'
-        );
+        return [
+            'status' => MagazineStatus::class,
+            'featured' => 'boolean',
+            'published_at' => 'datetime',
+        ];
     }
-
     public function author(): BelongsTo
     {
         return $this->belongsTo(
             User::class,
-            'author_id'
+            'author_id',
         );
     }
 
@@ -67,44 +47,38 @@ class Magazine extends Model
     {
         return $this->hasMany(
             MagazineIssue::class,
-            'magazine_id'
         );
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Scopes
-    |--------------------------------------------------------------------------
-    */
-
-    public function scopePublished(Builder $query): Builder
+    public function media(): MorphMany
     {
-        return $query
-            ->where('status', true)
-            ->whereNotNull('published_at')
-            ->where('published_at', '<=', now());
+        return $this->morphMany(
+            Media::class,
+            'mediable',
+        );
     }
 
-    public function scopeFeatured(Builder $query): Builder
+    public function categories(): MorphToMany
     {
-        return $query->where('featured', true);
+        return $this->morphToMany(
+            Category::class,
+            'categorizable',
+        );
     }
 
-    public function scopeDraft(Builder $query): Builder
+    public function tags(): MorphToMany
     {
-        return $query->where('status', false);
+        return $this->morphToMany(
+            Tag::class,
+            'taggable',
+        );
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Accessors
-    |--------------------------------------------------------------------------
-    */
-
-    public function getIsPublishedAttribute(): bool
+    public function seo(): MorphMany
     {
-        return $this->status
-            && $this->published_at !== null
-            && $this->published_at->isPast();
+        return $this->morphMany(
+            SeoMetadata::class,
+            'seoable',
+        );
     }
 }

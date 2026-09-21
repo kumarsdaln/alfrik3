@@ -1,29 +1,8 @@
-// resources/js/types/magazine.ts
-
-/*
-|--------------------------------------------------------------------------
-| Magazine Category
-|--------------------------------------------------------------------------
-*/
-
-export interface MagazineCategory {
-    id: number
-    name: string
-    slug: string
-
-    icon?: string | null
-    description?: string | null
-
-    status: boolean
-    position: number
-
-    meta_title?: string | null
-    meta_description?: string | null
-    meta_keywords?: string | null
-
-    articles_count?: number
-    magazines_count?: number
-}
+import { FormOption } from './forms'
+import { Media } from './media'
+import { SeoMetadata } from './seo'
+import type { Category, Tag } from './taxonomy'
+import type { Profile } from './user'
 
 /*
 |--------------------------------------------------------------------------
@@ -37,24 +16,21 @@ export interface Magazine {
     title: string
     slug: string
     subtitle?: string | null
+    description?: string | null
 
-    content?: string | null
-    cover_image?: string | null
-
-    category_id?: number | null
     author_id?: number | null
 
-    status: boolean
+    status: MagazineStatusOption
     featured: boolean
 
     published_at?: string | null
 
-    meta_title?: string | null
-    meta_description?: string | null
-    meta_keywords?: string | null
+    author?: Profile | null
 
-    category?: MagazineCategory | null
-    author?: MagazineAuthor | null
+    categories?: Category[]
+    tags?: Tag[]
+    media?: Media[]
+    seo?: SeoMetadata[]
 
     issues?: MagazineIssue[]
 
@@ -86,25 +62,16 @@ export interface MagazineIssue {
     description?: string | null
     editor?: string | null
 
-    cover_image?: string | null
-
-    file_path?: string | null
-    file_size?: number | null
-    file_size_label?: string | null
-    file_type?: string | null
-
     download_count: number
 
-    status: boolean
+    status: MagazineIssueStatusOption
     featured: boolean
 
-    meta_title?: string | null
-    meta_description?: string | null
-    meta_keywords?: string | null
-
-    edition_label?: string | null
-
     magazine?: Magazine | null
+
+    media?: Media[]
+    seo?: SeoMetadata[]
+
     articles?: MagazineArticle[]
 
     created_at?: string
@@ -121,7 +88,6 @@ export interface MagazineArticle {
     id: number
 
     issue_id: number
-    category_id?: number | null
     author_id?: number | null
 
     title: string
@@ -131,15 +97,13 @@ export interface MagazineArticle {
     excerpt?: string | null
     content?: string | null
 
-    cover_image?: string | null
-
-    type: string
+    type: MagazineArticleTypeOption
     byline?: string | null
 
     position: number
     featured: boolean
 
-    status: boolean
+    status: MagazineArticleStatusOption
     published_at?: string | null
 
     views: number
@@ -147,13 +111,13 @@ export interface MagazineArticle {
     reading_time?: number | null
     reading_time_label?: string | null
 
-    meta_title?: string | null
-    meta_description?: string | null
-    meta_keywords?: string | null
-
     issue?: MagazineIssue | null
-    category?: MagazineCategory | null
-    author?: MagazineAuthor | null
+    author?: Profile | null
+
+    categories?: Category[]
+    tags?: Tag[]
+    media?: Media[]
+    seo?: SeoMetadata[]
 
     created_at?: string
     updated_at?: string
@@ -161,12 +125,54 @@ export interface MagazineArticle {
 
 /*
 |--------------------------------------------------------------------------
-| Magazine Author
+| Magazine Status
 |--------------------------------------------------------------------------
 */
 
-export interface MagazineAuthor {
-    id: number
-    name: string
-    username?: string | null
+export enum MagazineStatus {
+    DRAFT = 'draft',
+    PUBLISHED = 'published',
+    ARCHIVED = 'archived',
 }
+export type MagazineStatusOption = FormOption<MagazineStatus>
+
+/*
+|--------------------------------------------------------------------------
+| Magazine Issue Status
+|--------------------------------------------------------------------------
+*/
+
+export enum MagazineIssueStatus {
+    DRAFT = 'draft',
+    PUBLISHED = 'published',
+    ARCHIVED = 'archived',
+}
+export type MagazineIssueStatusOption = FormOption<MagazineIssueStatus>
+
+/*
+|--------------------------------------------------------------------------
+| Magazine Article Status
+|--------------------------------------------------------------------------
+*/
+
+export enum MagazineArticleStatus {
+    DRAFT = 'draft',
+    PUBLISHED = 'published',
+    ARCHIVED = 'archived',
+}
+export type MagazineArticleStatusOption = FormOption<MagazineArticleStatus>
+
+/*
+|--------------------------------------------------------------------------
+| Magazine Article Type
+|--------------------------------------------------------------------------
+*/
+
+export enum MagazineArticleType {
+    ARTICLE = 'article',
+    INTERVIEW = 'interview',
+    OPINION = 'opinion',
+    FEATURE = 'feature',
+    NEWS = 'news',
+}
+export type MagazineArticleTypeOption = FormOption<MagazineArticleType>

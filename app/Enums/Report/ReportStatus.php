@@ -1,28 +1,32 @@
 <?php
+
 namespace App\Enums\Report;
 
 use App\Traits\Enums\HasDropdown;
 
-enum ReportStatus: boolean
+enum ReportStatus: string
 {
     use HasDropdown;
     
-    case DRAFT = false;
-    case PUBLISHED = true;
+    case Draft = 'draft';
+    case Published = 'published';
+    case Archived = 'archived';
 
     public function label(): string
     {
         return match ($this) {
-            self::DRAFT => 'Draft',
-            self::PUBLISHED => 'Published',
+            self::Draft => 'Draft',
+            self::Published => 'Published',
+            self::Archived => 'Archived',
         };
     }
 
     public function color(): string
     {
         return match ($this) {
-            self::DRAFT => '#6B7280',
-            self::PUBLISHED => '#22C55E',
+            self::Draft => 'secondary',
+            self::Published => 'success',
+            self::Archived => 'destructive',
         };
     }
 }

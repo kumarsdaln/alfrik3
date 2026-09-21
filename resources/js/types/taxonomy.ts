@@ -1,3 +1,9 @@
+export interface Model {
+    type: string
+    id: number
+    title: string
+}
+
 export interface Category {
     id: number
     name: string

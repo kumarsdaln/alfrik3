@@ -1,16 +1,66 @@
 <?php
 
 use App\Http\Controllers\Admin\Survey\SurveyController;
+use App\Http\Controllers\Admin\Survey\SurveyQuestionController;
+use App\Http\Controllers\Admin\Survey\SurveyQuestionOptionController;
+use App\Http\Controllers\Admin\Survey\SurveyResponseController;
+use App\Http\Controllers\Admin\Survey\SurveySectionController;
 use Illuminate\Support\Facades\Route;
 
 // Admin survey builder + results
-Route::name('admin.surveys.')->prefix('admin/surveys')->middleware(['auth', 'role:admin'])->group(function () {
-    Route::get('', [SurveyController::class, 'index'])->name('index');
-    Route::get('create', [SurveyController::class, 'create'])->name('create');
-    Route::post('store', [SurveyController::class, 'store'])->name('store');
-    Route::get('{survey}/edit', [SurveyController::class, 'edit'])->name('edit');
-    Route::post('{survey}/update', [SurveyController::class, 'update'])->name('update');
-    Route::patch('{survey}/status', [SurveyController::class, 'updateStatus'])->name('update.status');
-    Route::get('{survey}/results', [SurveyController::class, 'results'])->name('results');
-    Route::delete('{survey}/delete', [SurveyController::class, 'destroy'])->name('destroy');
-});
+Route::prefix('admin/survey')
+    ->name('admin.survey.')
+    ->middleware(['auth', 'role:admin'])
+    ->group(function () {
+        Route::controller(SurveyController::class)
+            ->group(function () {
+                Route::get('/', 'index')->name('index');
+                Route::get('/create', 'create')->name('create');
+                Route::post('/', 'store')->name('store');
+                Route::get('/{survey}', 'show')->name('show');
+                Route::get('/{survey}/edit', 'edit')->name('edit');
+                Route::put('/{survey}', 'update')->name('update');
+                Route::delete('/{survey}', 'destroy')->name('destroy');
+                Route::get('/{survey}/analytics', 'analytics')->name('analytics');
+            });
+        Route::prefix('{survey}/sections')
+            ->name('sections.')
+            ->controller(SurveySectionController::class)
+            ->group(function () {
+                Route::get('/', 'index')->name('index');
+                Route::post('/', 'store')->name('store');
+                Route::get('/{section}/edit', 'edit')->name('edit');
+                Route::put('/{section}', 'update')->name('update');
+                Route::delete('/{section}', 'destroy')->name('destroy');
+            });
+
+        Route::prefix('{survey}/questions')
+            ->name('questions.')
+            ->controller(SurveyQuestionController::class)
+            ->group(function () {
+                Route::get('/', 'index')->name('index');
+                Route::post('/', 'store')->name('store');
+                Route::get('/{question}/edit', 'edit')->name('edit');
+                Route::put('/{question}', 'update')->name('update');
+                Route::delete('/{question}', 'destroy')->name('destroy');
+                Route::prefix('{question}/options')
+                    ->name('options.')
+                    ->controller(SurveyQuestionOptionController::class)
+                    ->group(function () {
+                        Route::get('/', 'index')->name('index');
+                        Route::post('/', 'store')->name('store');
+                        Route::get('/{option}/edit', 'edit')->name('edit');
+                        Route::put('/{option}', 'update')->name('update');
+                        Route::delete('/{option}', 'destroy')->name('destroy');
+                    });
+            });
+
+        Route::prefix('{survey}/responses')
+            ->name('survey.responses.')
+            ->controller(SurveyResponseController::class)
+            ->group(function () {
+                Route::get('/', 'index')->name('index');
+                Route::get('/{response}', 'show')->name('show');
+                Route::delete('/{response}', 'destroy')->name('destroy');
+            });
+    });

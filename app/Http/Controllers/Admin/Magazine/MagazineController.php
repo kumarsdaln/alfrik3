@@ -2,214 +2,210 @@
 
 namespace App\Http\Controllers\Admin\Magazine;
 
+use App\Actions\Magazine\ArchiveMagazine;
+use App\Actions\Magazine\CreateMagazine;
+use App\Actions\Magazine\DeleteMagazine;
+use App\Actions\Magazine\PublishMagazine;
+use App\Actions\Magazine\UpdateMagazine;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Magazine\StoreMagazineRequest;
+use App\Http\Requests\Magazine\UpdateMagazineRequest;
 use App\Models\Magazine\Magazine;
-use App\Models\Magazine\MagazineCategory;
 use App\Models\User;
+use App\Enums\Magazine\MagazineStatus;
+use App\Http\Resources\Magazine\MagazineResource;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
+use Inertia\Response;
 
 class MagazineController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request): Response
     {
-        $search = $request->query('search');
-        $category = $request->query('category');
-        $status = $request->query('status');
-
         $magazines = Magazine::query()
-            ->with(['category:id,name,slug', 'author:id,name,username'])
-            ->when($search, fn ($q) => $q->where('title', 'ilike', "%{$search}%"))
-            ->when($category, fn ($q) => $q->where('category_id', $category))
-            ->when($status !== null && $status !== '', fn ($q) => $q->where('status', (bool) (int) $status))
-            ->orderByDesc('created_at')
-            ->paginate(15)
+            ->with([
+                'author:id,name,username,avatar',
+                'media',
+                'categories:id,name,slug',
+                'tags:id,name,slug',
+            ])
+            ->when(
+                $request->filled('search'),
+                fn($query) => $query->where(function ($query) use ($request) {
+                    $search = $request->input('search');
+
+                    $query
+                        ->where('title', 'like', "%{$search}%")
+                        ->orWhere('slug', 'like', "%{$search}%");
+                })
+            )
+            ->when(
+                $request->filled('status'),
+                fn($query) => $query->where(
+                    'status',
+                    $request->input('status')
+                )
+            )
+            ->latest()
+            ->paginate(20)
             ->withQueryString();
 
-        return Inertia::render('Admin/Magazine/Index', [
-            'magazines' => $magazines,
-            'categories' => MagazineCategory::orderBy('name')->get(['id', 'name', 'slug']),
+        $stats = [
+            [
+                'label' => 'Total Magazines',
+                'value' => Magazine::count(),
+            ],
+            [
+                'label' => 'Published',
+                'value' => Magazine::where(
+                    'status',
+                    MagazineStatus::Published
+                )->count(),
+            ],
+            [
+                'label' => 'Draft',
+                'value' => Magazine::where(
+                    'status',
+                    MagazineStatus::Draft
+                )->count(),
+            ],
+            [
+                'label' => 'Archived',
+                'value' => Magazine::where(
+                    'status',
+                    MagazineStatus::Archived
+                )->count(),
+            ],
+            [
+                'label' => 'Featured',
+                'value' => Magazine::where('featured', true)->count(),
+            ],
+        ];
+
+        return Inertia::render('admin/magazines/Index', [
+            'magazines' => MagazineResource::collection($magazines),
+
+            'stats' => $stats,
+
             'filters' => [
-                'search' => $search,
-                'category' => $category,
-                'status' => $status,
+                'search' => $request->input('search'),
+                'status' => $request->input('status'),
+            ],
+
+            'statusOptions' => MagazineStatus::dropdown(),
+
+            'breadcrumbs' => [
+                [
+                    'label' => 'Magazines',
+                    'href' => route('admin.magazines.index'),
+                ],
             ],
         ]);
     }
 
-    public function create()
+    public function create(): Response
     {
-        return Inertia::render('Admin/Magazine/Create', [
-            'categories' => MagazineCategory::orderBy('name')->get(['id', 'name', 'slug']),
-            'authors' => $this->authorOptions(),
+        return Inertia::render('admin/magazines/Create', [
+            'authors' => User::query()
+                ->select([
+                    'id',
+                    'name',
+                    'username',
+                    'avatar',
+                ])
+                ->orderBy('name')
+                ->get(),
+
+            'statusOptions' => MagazineStatus::dropdown(),
         ]);
     }
 
-    public function store(Request $request)
-    {
-        $validated = $this->validateMagazine($request);
-
-        $data = $this->pullFields($validated);
-        $data['slug'] = Magazine::uniqueSlug($validated['title']);
-        $data['content'] = $this->buildContent($request);
-        $data['cover_image'] = $this->storeCover($request) ?? null;
-        $data['status'] = (bool) ($validated['status'] ?? false);
-
-        Magazine::create($data);
-
-        return redirect()
-            ->route('admin.magazine.index')
-            ->with('success', 'Magazine issue created successfully.');
+    public function store(
+        StoreMagazineRequest $request,
+        CreateMagazine $action,
+    ): RedirectResponse {
+        $action->handle($request->validated());
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Magazine created successfully.')]);
+        return to_route('admin.magazines.index');
     }
 
-    public function edit(Magazine $magazine)
+    public function edit(Magazine $magazine): Response
     {
-        $magazine->load('category:id,name,slug');
+        $magazine->load([
+            'author:id,name,username,avatar',
+            'media',
+            'categories:id,name,slug',
+            'tags:id,name,slug',
+            'seo',
+        ]);
 
-        return Inertia::render('Admin/Magazine/Edit', [
-            'magazine' => array_merge($magazine->toArray(), [
-                'sections' => $magazine->sections,
-            ]),
-            'categories' => MagazineCategory::orderBy('name')->get(['id', 'name', 'slug']),
-            'authors' => $this->authorOptions(),
+        return Inertia::render('admin/magazines/Edit', [
+            'magazine' => $magazine,
+            'authors' => User::query()
+                ->select([
+                    'id',
+                    'name',
+                    'username',
+                    'avatar',
+                ])
+                ->orderBy('name')
+                ->get(),
+
+            'statuses' => collect(MagazineStatus::cases())
+                ->map(fn(MagazineStatus $status) => [
+                    'value' => $status->value,
+                    'label' => str($status->value)->headline()->toString(),
+                ])
+                ->values(),
         ]);
     }
 
-    public function update(Request $request, Magazine $magazine)
-    {
-        $validated = $this->validateMagazine($request);
+    public function update(
+        UpdateMagazineRequest $request,
+        Magazine $magazine,
+        UpdateMagazine $action,
+    ): RedirectResponse {
+        $action->handle(
+            $magazine,
+            $request->validated(),
+        );
 
-        $data = $this->pullFields($validated);
-        $data['slug'] = Magazine::uniqueSlug($validated['title'], $magazine->id);
-        $data['content'] = $this->buildContent($request);
-        $data['status'] = (bool) ($validated['status'] ?? false);
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Magazine updated successfully.')]);
 
-        if ($request->hasFile('cover_image')) {
-            $this->deleteCover($magazine->cover_image);
-            $data['cover_image'] = $this->storeCover($request);
-        }
-
-        $magazine->update($data);
-
-        return redirect()
-            ->route('admin.magazine.index')
-            ->with('success', 'Magazine issue updated successfully.');
+        return to_route('admin.magazines.index');
     }
 
-    public function updateStatus(Request $request, Magazine $magazine)
-    {
-        $validated = $request->validate(['status' => ['required', 'boolean']]);
-        $magazine->update(['status' => $validated['status']]);
+    public function destroy(
+        Magazine $magazine,
+        DeleteMagazine $action,
+    ): RedirectResponse {
+        $action->handle($magazine);
 
-        return back()->with('success', 'Status updated.');
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Magazine deleted successfully.')]);
+
+        return to_route('admin.magazines.index');
     }
 
-    public function destroy(Magazine $magazine)
-    {
-        $this->deleteCover($magazine->cover_image);
-        $magazine->delete();
+    public function publish(
+        Magazine $magazine,
+        PublishMagazine $action,
+    ): RedirectResponse {
+        $action->handle($magazine);
 
-        return redirect()
-            ->route('admin.magazine.index')
-            ->with('success', 'Magazine issue deleted.');
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Magazine published successfully.')]);
+
+        return back();
     }
 
-    private function validateMagazine(Request $request): array
-    {
-        return $request->validate([
-            'title' => ['required', 'string', 'max:255'],
-            'subtitle' => ['nullable', 'string'],
-            'category_id' => ['nullable', 'integer', 'exists:magazine_categories,id'],
-            'author_id' => ['nullable', 'integer', 'exists:users,id'],
-            'status' => ['nullable', 'boolean'],
-            'published_at' => ['nullable', 'date'],
-            'cover_image' => ['nullable', 'image', 'max:5120'],
-            'meta_title' => ['nullable', 'string', 'max:255'],
-            'meta_description' => ['nullable', 'string', 'max:500'],
-            'meta_keywords' => ['nullable', 'string', 'max:500'],
-            'sections' => ['nullable', 'array'],
-            'sections.*.section' => ['nullable', 'string', 'max:255'],
-            'sections.*.content' => ['nullable', 'string'],
-        ]);
-    }
+    public function archive(
+        Magazine $magazine,
+        ArchiveMagazine $action,
+    ): RedirectResponse {
+        $action->handle($magazine);
 
-    /**
-     * Users eligible to be credited as an issue author.
-     */
-    private function authorOptions()
-    {
-        return User::query()
-            ->where(function ($query) {
-                $query
-                    ->whereHas('roles', function ($roleQuery) {
-                        $roleQuery->whereIn('name', [
-                            'admin',
-                            'editor',
-                            'author',
-                        ]);
-                    });
-            })
-            ->orderBy('name')
-            ->limit(200)
-            ->get([
-                'id',
-                'name',
-                'email',
-            ]);
-    }
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Magazine archived successfully.')]);
 
-    private function pullFields(array $validated): array
-    {
-        return [
-            'title' => $validated['title'],
-            'subtitle' => $validated['subtitle'] ?? null,
-            'category_id' => $validated['category_id'] ?? null,
-            'author_id' => $validated['author_id'] ?? null,
-            'published_at' => $validated['published_at'] ?? null,
-            'meta_title' => $validated['meta_title'] ?? null,
-            'meta_description' => $validated['meta_description'] ?? null,
-            'meta_keywords' => $validated['meta_keywords'] ?? null,
-        ];
-    }
-
-    /**
-     * Assemble the sectioned content JSON stored in `magazine.content`.
-     */
-    private function buildContent(Request $request): string
-    {
-        $sections = collect($request->input('sections', []))
-            ->filter(fn ($s) => filled($s['section'] ?? null) || filled($s['content'] ?? null))
-            ->map(fn ($s) => [
-                'section' => $s['section'] ?? '',
-                'content' => $s['content'] ?? '',
-            ])
-            ->values()
-            ->all();
-
-        return json_encode(['sections' => $sections], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
-    }
-
-    private function storeCover(Request $request): ?string
-    {
-        if (! $request->hasFile('cover_image')) {
-            return null;
-        }
-
-        $image = $request->file('cover_image');
-        $fileName = uniqid('mag_').'.'.$image->getClientOriginalExtension();
-        Storage::disk('public')->put('images/magazine/'.$fileName, file_get_contents($image));
-
-        return '/storage/images/magazine/'.$fileName;
-    }
-
-    private function deleteCover(?string $path): void
-    {
-        if (! $path) {
-            return;
-        }
-
-        $relative = ltrim(str_replace('storage/', '', ltrim($path, '/')), '/');
-        Storage::disk('public')->delete($relative);
+        return back();
     }
 }

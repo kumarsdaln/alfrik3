@@ -19,11 +19,16 @@ class MediaResource extends JsonResource
 
             'mime_type' => $this->mime_type,
             'extension' => $this->extension,
+
             'size' => $this->size,
+
+            'disk' => $this->disk,
+            'path' => $this->path,
 
             'url' => $this->url(),
 
             'alt' => $this->alt,
+
             'metadata' => $this->metadata,
 
             'created_at' => $this->created_at,

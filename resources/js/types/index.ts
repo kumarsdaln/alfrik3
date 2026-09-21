@@ -4,7 +4,9 @@ export * from './ui';
 export * from './pagination';
 export * from './filters';
 export * from './forms';
+export * from './media'
 export * from './taxonomy';
+export * from './seo'
 
 export * from './user';
 export * from './interview'

@@ -1,38 +1,41 @@
 <script setup lang="ts">
-    import { Textarea } from '@/components/ui/textarea'
+import { computed } from 'vue'
 
-    interface Props {
-        modelValue?: string
-        name?: string
-        placeholder?: string
-        rows?: number
-        disabled?: boolean
-        required?: boolean
-        readonly?: boolean
-        maxlength?: number
-        minlength?: number
-        autocomplete?: string
-        id?: string
-    }
+import { Textarea } from '@/components/ui/textarea'
 
-    const props = withDefaults(defineProps<Props>(), {
-        modelValue: '',
-        rows: 5,
-        disabled: false,
-        required: false,
-        readonly: false,
-    })
+interface Props {
+    defaultValue?: string
+    name?: string
+    placeholder?: string
+    rows?: number
+    disabled?: boolean
+    required?: boolean
+    readonly?: boolean
+    maxlength?: number
+    minlength?: number
+    autocomplete?: string
+    id?: string
+}
 
-    const emit = defineEmits<{
-        'update:modelValue': [value: string]
-    }>()
+const props = withDefaults(defineProps<Props>(), {
+    rows: 5,
+    disabled: false,
+    required: false,
+    readonly: false,
+})
+
+const model = defineModel<string>()
+
+const value = computed(() => model.value ?? props.defaultValue ?? '')
+
+const textareaId = computed(() => props.id ?? props.name)
 </script>
 
 <template>
     <Textarea
-        :id="id ?? name"
+        :id="textareaId"
         :name="name"
-        :value="modelValue"
+        :value="value"
         :placeholder="placeholder"
         :rows="rows"
         :disabled="disabled"
@@ -41,11 +44,6 @@
         :maxlength="maxlength"
         :minlength="minlength"
         :autocomplete="autocomplete"
-        @input="
-            emit(
-                'update:modelValue',
-                ($event.target as HTMLTextAreaElement).value,
-            )
-        "
+        @input="model = ($event.target as HTMLTextAreaElement).value"
     />
 </template>

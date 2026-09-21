@@ -7,25 +7,34 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 class SurveyResource extends JsonResource
 {
-    /**
-     * Transform the resource into an array.
-     *
-     * @return array<string, mixed>
-     */
     public function toArray(Request $request): array
     {
         return [
             'id' => $this->id,
+
+            'research_id' => $this->research_id,
+
             'title' => $this->title,
             'slug' => $this->slug,
             'description' => $this->description,
 
-            'questions_count' => $this->questions_count ?? 0,
-            'responses_count' => $this->responses_count ?? 0,
+            'status' => [
+                'value' => $this->status->value,
+                'label' => $this->status->label(),
+                'color' => $this->status->color(),
+            ],
 
-            'published_at' => $this->published_at,
-            'closes_at' => $this->closes_at,
-            'created_at' => $this->created_at,
+            'anonymous' => $this->anonymous,
+            'multiple_responses' => $this->multiple_responses,
+            'featured' => $this->featured,
+
+            'starts_at' => $this->starts_at?->toISOString(),
+            'ends_at' => $this->ends_at?->toISOString(),
+
+            'response_count' => $this->response_count,
+
+            'created_at' => $this->created_at?->toISOString(),
+            'updated_at' => $this->updated_at?->toISOString(),
         ];
     }
 }

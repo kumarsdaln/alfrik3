@@ -1,16 +1,19 @@
 <script setup lang="ts">
-    import type { HTMLAttributes, TextareaHTMLAttributes } from 'vue'
-    import { reactiveOmit } from '@vueuse/core'
+import type {
+    HTMLAttributes,
+    TextareaHTMLAttributes,
+} from 'vue'
+import { reactiveOmit } from '@vueuse/core'
 
-    import { cn } from '@/lib/utils'
+import { cn } from '@/lib/utils'
 
-    interface Props extends /* @vue-ignore */ TextareaHTMLAttributes {
-        class?: HTMLAttributes['class']
-    }
+interface Props extends /* @vue-ignore */ TextareaHTMLAttributes {
+    class?: HTMLAttributes['class']
+}
 
-    const props = defineProps<Props>()
+const props = defineProps<Props>()
 
-    const delegatedProps = reactiveOmit(props, 'class')
+const delegatedProps = reactiveOmit(props, 'class')
 </script>
 
 <template>
@@ -20,52 +23,52 @@
         :class="
             cn(
                 `
-                    flex
-                    min-h-32
-                    w-full
-                    resize-y
-                    border
-                    border-border-light
-                    bg-surface-light
-                    px-4
-                    py-3
+                flex
+                min-h-32
+                w-full
+                resize-y
 
-                    font-redhat
-                    text-sm
-                    leading-6
-                    text-content-light
+                border
+                border-border-light
+                bg-surface-light
 
-                    outline-none
-                    transition-colors
-                    duration-200
+                px-4
+                py-3
 
-                    placeholder:text-content-lightMuted
+                font-redhat
+                text-sm
+                leading-6
+                text-content-light
 
-                    hover:border-content-lightMuted
+                outline-none
+                transition-colors
+                duration-200
 
-                    focus:border-primary
+                placeholder:text-content-lightMuted
 
-                    disabled:cursor-not-allowed
-                    disabled:bg-surface-lightMuted
-                    disabled:opacity-50
+                hover:border-content-lightMuted
+                focus:border-primary
 
-                    dark:border-border-dark
-                    dark:bg-surface-dark
-                    dark:text-content-dark
+                disabled:cursor-not-allowed
+                disabled:bg-surface-lightMuted
+                disabled:opacity-50
 
-                    dark:placeholder:text-content-darkMuted
+                dark:border-border-dark
+                dark:bg-surface-dark
+                dark:text-content-dark
 
-                    dark:hover:border-content-darkMuted
+                dark:placeholder:text-content-darkMuted
 
-                    dark:focus:border-primary
+                dark:hover:border-content-darkMuted
+                dark:focus:border-primary
 
-                    dark:disabled:bg-surface-darkMuted
+                dark:disabled:bg-surface-darkMuted
 
-                    aria-invalid:border-destructive
-                    aria-invalid:focus:border-destructive
+                aria-invalid:border-destructive
+                aria-invalid:focus:border-destructive
                 `,
                 props.class,
             )
         "
-    ></textarea>
+    />
 </template>

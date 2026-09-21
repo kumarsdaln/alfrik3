@@ -19,8 +19,14 @@ class CategoryResource extends JsonResource
             'name' => $this->name,
             'slug' => $this->slug,
             'description' => $this->description,
+            'parent_id' => $this->parent_id,
             'status' => $this->status,
             'sort_order' => $this->sort_order,
+            'parent' => new CategoryResource(
+                $this->whenLoaded('parent')
+            ),
+            'created_at' => $this->created_at,
+            'updated_at' => $this->updated_at,
         ];
     }
 }

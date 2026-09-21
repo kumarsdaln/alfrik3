@@ -27,6 +27,7 @@ Route::get('admin/', AdminDashboard::class)->name('admin.dashboard');
 require __DIR__.'/admin/category.php';
 require __DIR__.'/admin/tag.php';
 require __DIR__.'/admin/media.php';
+require __DIR__.'/admin/seo.php';
 require __DIR__.'/admin/user.php';
 require __DIR__.'/admin/event.php';
 require __DIR__.'/admin/interview.php';

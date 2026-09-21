@@ -19,7 +19,7 @@ import type { NavItem } from '@/types';
 import { dashboard } from '@/routes';
 import { index as users } from '@/routes/admin/users';
 import { index as interviews } from '@/routes/admin/interviews';
-import { index as magazines } from '@/routes/admin/magazine';
+import { index as magazines } from '@/routes/admin/magazines';
 import {index as categories } from '@/actions/App/Http/Controllers/Admin/Category/CategoryController';
 import {index as tags } from '@/actions/App/Http/Controllers/Admin/Tag/TagController';
 import { index as research } from '@/routes/admin/research';

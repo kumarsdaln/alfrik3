@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input'
 interface Props {
     name?: string
     type?: string
+    defaultValue?: string | number
     placeholder?: string
     disabled?: boolean
     required?: boolean
@@ -24,9 +25,7 @@ const props = withDefaults(
     },
 )
 
-const model = defineModel<string | number>({
-    default: '',
-})
+const model = defineModel<string | number>()
 
 const generatedId = useId()
 
@@ -37,12 +36,13 @@ const inputId = props.id ?? generatedId
     <Input
         :id="inputId"
         v-model="model"
-        :name="name"
-        :type="type"
-        :placeholder="placeholder"
-        :disabled="disabled"
-        :required="required"
-        :autocomplete="autocomplete"
-        :aria-invalid="error || undefined"
+        :default-value="props.defaultValue"
+        :name="props.name"
+        :type="props.type"
+        :placeholder="props.placeholder"
+        :disabled="props.disabled"
+        :required="props.required"
+        :autocomplete="props.autocomplete"
+        :aria-invalid="props.error || undefined"
     />
 </template>

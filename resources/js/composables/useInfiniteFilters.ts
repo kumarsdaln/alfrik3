@@ -1,16 +1,15 @@
 import { reactive, watch } from 'vue'
 import { router } from '@inertiajs/vue3'
-import { RequestPayload } from '@inertiajs/core'
 
-import type { VisitOptions } from '@inertiajs/core'
-import type { RouteParams } from '@/lib/route'
+import type {
+    RequestPayload,
+    VisitOptions,
+} from '@inertiajs/core'
 
 export interface UseInfiniteFiltersOptions<
     T extends RequestPayload,
 > {
-    route: string
-    /** Params for routes that take segments, e.g. content.type expects a slug. */
-    routeParams?: RouteParams
+    url: string
     dataKey: string
     filterKey?: string
     initialFilters: T
@@ -30,49 +29,13 @@ export function useInfiniteFilters<
     const debounce =
         options.debounce ?? 500
 
-    let timeout: ReturnType<
-        typeof setTimeout
-    >
+    let timeout: ReturnType<typeof setTimeout> | undefined
 
     let isResetting = false
 
-    // Apply
-    const applyFilters = (): void => {
-
+    const visit = () => {
         router.visit(
-            route(options.route, options.routeParams),
-            {
-                data: {
-                    ...filters,
-                },
-                only: [
-                    options.dataKey,
-                    options.filterKey ??
-                    'filters',
-                ],
-
-                reset: [
-                    options.dataKey,
-                ],
-
-                preserveScroll: true,
-                preserveState: true,
-                replace: true,
-                ...options.visitOptions,
-            }
-        )
-    }
-
-    // Reset
-    const resetFilters = (): void => {
-        isResetting = true
-        clearTimeout(timeout)
-        Object.assign(
-            filters,
-            options.initialFilters,
-        )
-        router.visit(
-            route(options.route, options.routeParams),
+            options.url,
             {
                 data: {
                     ...filters,
@@ -87,28 +50,74 @@ export function useInfiniteFilters<
                     options.dataKey,
                 ],
 
-                preserveScroll: true,
                 preserveState: true,
+                preserveScroll: true,
                 replace: true,
-                onFinish: () => {
-                    isResetting = false
-                },
+
                 ...options.visitOptions,
-            }
+            },
         )
     }
 
-    // Watch
+    const applyFilters = () => {
+        clearTimeout(timeout)
+
+        timeout = setTimeout(() => {
+            visit()
+        }, debounce)
+    }
+
+    const resetFilters = () => {
+        clearTimeout(timeout)
+
+        isResetting = true
+
+        Object.assign(
+            filters,
+            options.initialFilters,
+        )
+
+        router.visit(
+            options.url,
+            {
+                data: {
+                    ...filters,
+                },
+
+                only: [
+                    options.dataKey,
+                    options.filterKey ?? 'filters',
+                ],
+
+                reset: [
+                    options.dataKey,
+                ],
+
+                preserveState: true,
+                preserveScroll: true,
+                replace: true,
+
+                onFinish: () => {
+                    isResetting = false
+                },
+
+                ...options.visitOptions,
+            },
+        )
+    }
+
     watch(
-        () => ({ ...filters }),
+        filters,
         () => {
-            if ( isResetting) {return}
-            clearTimeout(timeout)
-            timeout = setTimeout(applyFilters,debounce,)
+            if (isResetting) {
+                return
+            }
+
+            applyFilters()
         },
         {
             deep: true,
-        }
+        },
     )
 
     return {

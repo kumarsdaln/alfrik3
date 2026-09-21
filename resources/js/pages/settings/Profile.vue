@@ -61,12 +61,11 @@ const email = ref(user.value.email)
                 required
             >
                 <AppInput
-                    v-model="name"
+                    :default-value="name"
                     name="name"
                     autocomplete="name"
                     placeholder="Full name"
                     required
-                    :error="!!errors.name"
                 />
             </AppFormControl>
 
@@ -79,13 +78,12 @@ const email = ref(user.value.email)
                 required
             >
                 <AppInput
-                    v-model="email"
+                    :default-value="email"
                     name="email"
                     type="email"
                     autocomplete="email"
                     placeholder="Email address"
                     required
-                    :error="!!errors.email"
                 />
             </AppFormControl>
 

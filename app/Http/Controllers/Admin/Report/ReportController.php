@@ -2,249 +2,263 @@
 
 namespace App\Http\Controllers\Admin\Report;
 
+use App\Actions\Report\CreateReport;
+use App\Actions\Report\DeleteReport;
+use App\Actions\Report\UpdateReport;
 use App\Enums\Report\ReportStatus;
+use App\Enums\Report\ReportType;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Report\StoreReportRequest;
+use App\Http\Requests\Report\UpdateReportRequest;
 use App\Http\Resources\Report\ReportResource;
 use App\Models\Report\Report;
-use App\Models\Report\ReportCategory;
+use App\Models\Research\Research;
 use App\Models\User;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
+use Inertia\Response;
 
 class ReportController extends Controller
 {
-    public function index(Request $request)
+    /*
+    |--------------------------------------------------------------------------
+    | Index
+    |--------------------------------------------------------------------------
+    */
+
+    public function index(Request $request): Response
     {
-        $search = $request->query('search');
-        $category = $request->query('category');
-        $status = $request->query('status');
-
-        $reportsQuery = Report::query()
-            ->when(
-                $search,
-                fn($q) => $q->where('title', 'ilike', "%{$search}%")
-            )
-            ->when(
-                $category,
-                fn($q) => $q->where('category_id', $category)
-            )
-            ->when(
-                $status !== null && $status !== '',
-                fn($q) => $q->where('status', (bool) (int) $status)
-            );
-
-        $reports = (clone $reportsQuery)
+        $reports = Report::query()
             ->with([
-                'category:id,name,slug',
-                'author:id,name,username',
+                'research:id,title',
+                'author:id,name',
             ])
-            ->orderByDesc('created_at')
+            ->when(
+                $request->filled('search'),
+                function ($query) use ($request) {
+                    $search = $request->string('search');
+
+                    $query->where(function ($query) use ($search) {
+                        $query
+                            ->where('title', 'like', "%{$search}%")
+                            ->orWhere(
+                                'subtitle',
+                                'like',
+                                "%{$search}%"
+                            );
+                    });
+                }
+            )
+            ->when(
+                $request->filled('status'),
+                fn($query) => $query->where(
+                    'status',
+                    $request->string('status')
+                )
+            )
+            ->when(
+                $request->filled('type'),
+                fn($query) => $query->where(
+                    'type',
+                    $request->string('type')
+                )
+            )
+            ->latest()
             ->paginate(15)
             ->withQueryString();
 
         $stats = [
             'total' => Report::count(),
 
-            'published' => Report::where('status', true)->count(),
+            'draft' => Report::where(
+                'status',
+                ReportStatus::Draft
+            )->count(),
 
-            'draft' => Report::where('status', false)->count(),
+            'published' => Report::where(
+                'status',
+                ReportStatus::Published
+            )->count(),
 
-            'this_month' => Report::whereBetween('created_at', [
-                now()->startOfMonth(),
-                now()->endOfMonth(),
-            ])->count(),
+            'featured' => Report::where(
+                'featured',
+                true
+            )->count(),
         ];
 
         return Inertia::render('admin/report/Index', [
             'reports' => ReportResource::collection($reports),
 
-            'categories' => ReportCategory::query()
-                ->orderBy('name')
-                ->get(['id', 'name', 'slug']),
-            'statusOptions' => ReportStatus::dropdown(),    
+            'stats' => $stats,
+
             'filters' => [
-                'search' => $search,
-                'category' => $category,
-                'status' => $status,
+                'search' => $request->string('search')->toString(),
+
+                'status' => $request->string('status')->toString(),
+
+                'type' => $request->string('type')->toString(),
             ],
 
-            'stats' => $stats,
+            'statusOptions' => ReportStatus::dropdown(),
+
+            'typeOptions' => ReportType::dropdown(),
         ]);
     }
 
-    public function create()
+    /*
+    |--------------------------------------------------------------------------
+    | Create
+    |--------------------------------------------------------------------------
+    */
+
+    public function create(): Response
     {
         return Inertia::render('admin/report/Create', [
-            'categories' => ReportCategory::orderBy('name')->get(['id', 'name', 'slug']),
-            'authors' => $this->authorOptions(),
+            'statusOptions' => ReportStatus::dropdown(),
+            'typeOptions' => ReportType::dropdown(),
+
+            'researchOptions' => Research::query()
+                ->orderBy('title')
+                ->get(['id', 'title'])
+                ->map(fn(Research $research) => [
+                    'value' => $research->id,
+                    'label' => $research->title,
+                ])
+                ->values()
+                ->all(),
+
+            'authorOptions' => User::query()
+                ->orderBy('name')
+                ->get(['id', 'name'])
+                ->map(fn(User $user) => [
+                    'value' => $user->id,
+                    'label' => $user->name,
+                ])
+                ->values()
+                ->all(),
         ]);
     }
 
-    public function store(Request $request)
-    {
-        $validated = $this->validateReport($request);
+    /*
+    |--------------------------------------------------------------------------
+    | Store
+    |--------------------------------------------------------------------------
+    */
 
-        $data = $this->pullFields($validated);
-        $data['slug'] = Report::uniqueSlug($validated['title']);
-        $data['cover_image'] = $this->storeCover($request);
+    public function store(
+        StoreReportRequest $request,
+        CreateReport $action,
+    ): RedirectResponse {
+        $report = $action->handle(
+            $request->validated()
+        );
 
-        if ($file = $this->storeFile($request)) {
-            $data = array_merge($data, $file);
-        }
-
-        Report::create($data);
-
-        return redirect()->route('admin.reports.index')->with('success', 'Report created successfully.');
+        return redirect()
+            ->route('admin.report.show', $report)
+            ->with(
+                'success',
+                'Report created successfully.'
+            );
     }
 
-    public function edit(Report $report)
-    {
-        $report->load(['category:id,name,slug', 'author:id,name,username']);
+    /*
+    |--------------------------------------------------------------------------
+    | Show
+    |--------------------------------------------------------------------------
+    */
 
+    public function show(Report $report): Response
+    {
+        $report->load([
+            'research:id,title',
+            'author:id,name',
+            'sections.contentBlocks',
+        ]);
+
+        return Inertia::render('admin/report/Show', [
+            'report' => new ReportResource($report),
+        ]);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Edit
+    |--------------------------------------------------------------------------
+    */
+
+    public function edit(Report $report): Response
+    {
         return Inertia::render('admin/report/Edit', [
-            'report' => $report,
-            'categories' => ReportCategory::orderBy('name')->get(['id', 'name', 'slug']),
-            'authors' => $this->authorOptions(),
+            'report' => new ReportResource($report),
+
+            'statusOptions' => ReportStatus::dropdown(),
+
+            'typeOptions' => ReportType::dropdown(),
+
+            'researchOptions' => Research::query()
+                ->orderBy('title')
+                ->get(['id', 'title'])
+                ->map(fn(Research $research) => [
+                    'value' => $research->id,
+                    'label' => $research->title,
+                ])
+                ->values()
+                ->all(),
+
+            'authorOptions' => User::query()
+                ->orderBy('name')
+                ->get(['id', 'name'])
+                ->map(fn(User $user) => [
+                    'value' => $user->id,
+                    'label' => $user->name,
+                ])
+                ->values()
+                ->all(),
         ]);
     }
 
-    public function update(Request $request, Report $report)
-    {
-        $validated = $this->validateReport($request);
+    /*
+    |--------------------------------------------------------------------------
+    | Update
+    |--------------------------------------------------------------------------
+    */
 
-        $data = $this->pullFields($validated);
-        $data['slug'] = Report::uniqueSlug($validated['title'], $report->id);
+    public function update(
+        UpdateReportRequest $request,
+        Report $report,
+        UpdateReport $action,
+    ): RedirectResponse {
+        $action->handle(
+            $report,
+            $request->validated()
+        );
 
-        if ($request->hasFile('cover_image')) {
-            $this->deleteFile($report->cover_image);
-            $data['cover_image'] = $this->storeCover($request);
-        }
-
-        if ($request->hasFile('file')) {
-            $this->deleteFile($report->file_path);
-            $data = array_merge($data, $this->storeFile($request));
-        }
-
-        $report->update($data);
-
-        return redirect()->route('admin.reports.index')->with('success', 'Report updated successfully.');
+        return redirect()
+            ->route('admin.report.show', $report)
+            ->with(
+                'success',
+                'Report updated successfully.'
+            );
     }
 
-    public function updateStatus(Request $request, Report $report)
-    {
-        $validated = $request->validate(['status' => ['required', 'boolean']]);
-        $report->update(['status' => $validated['status']]);
+    /*
+    |--------------------------------------------------------------------------
+    | Destroy
+    |--------------------------------------------------------------------------
+    */
 
-        return back()->with('success', 'Status updated.');
-    }
+    public function destroy(
+        Report $report,
+        DeleteReport $action,
+    ): RedirectResponse {
+        $action->handle($report);
 
-    public function destroy(Report $report)
-    {
-        $this->deleteFile($report->cover_image);
-        $this->deleteFile($report->file_path);
-        $report->delete();
-
-        return redirect()->route('admin.reports.index')->with('success', 'Report deleted.');
-    }
-
-    private function validateReport(Request $request): array
-    {
-        return $request->validate([
-            'title' => ['required', 'string', 'max:255'],
-            'summary' => ['nullable', 'string'],
-            'category_id' => ['nullable', 'integer', 'exists:report_categories,id'],
-            'author_id' => ['nullable', 'integer', 'exists:users,id'],
-            'report_year' => ['nullable', 'integer', 'min:1990', 'max:2100'],
-            'status' => ['nullable', 'boolean'],
-            'featured' => ['nullable', 'boolean'],
-            'gated' => ['nullable', 'boolean'],
-            'published_at' => ['nullable', 'date'],
-            'cover_image' => ['nullable', 'image', 'max:5120'],
-            'file' => ['nullable', 'file', 'mimes:pdf,doc,docx,ppt,pptx,xls,xlsx', 'max:51200'],
-            'meta_title' => ['nullable', 'string', 'max:255'],
-            'meta_description' => ['nullable', 'string', 'max:500'],
-            'meta_keywords' => ['nullable', 'string', 'max:500'],
-        ]);
-    }
-
-    private function pullFields(array $v): array
-    {
-        return [
-            'title' => $v['title'],
-            'summary' => $v['summary'] ?? null,
-            'category_id' => $v['category_id'] ?? null,
-            'author_id' => $v['author_id'] ?? null,
-            'report_year' => $v['report_year'] ?? null,
-            'published_at' => $v['published_at'] ?? null,
-            'status' => (bool) ($v['status'] ?? false),
-            'featured' => (bool) ($v['featured'] ?? false),
-            'gated' => (bool) ($v['gated'] ?? false),
-            'meta_title' => $v['meta_title'] ?? null,
-            'meta_description' => $v['meta_description'] ?? null,
-            'meta_keywords' => $v['meta_keywords'] ?? null,
-        ];
-    }
-
-    private function authorOptions()
-    {
-        return User::query()
-            ->whereHas('roles', function ($query) {
-                $query->whereIn('slug', [
-                    'admin',
-                    'editor',
-                    'author'
-                ]);
-            })
-            ->orderBy('name')
-            ->limit(200)
-            ->get([
-                'id',
-                'name',
-                'email',
-            ]);
-    }
-
-    private function storeCover(Request $request): ?string
-    {
-        if (! $request->hasFile('cover_image')) {
-            return null;
-        }
-
-        $image = $request->file('cover_image');
-        $name = uniqid('rep_').'.'.$image->getClientOriginalExtension();
-        Storage::disk('public')->put('images/reports/'.$name, file_get_contents($image));
-
-        return '/storage/images/reports/'.$name;
-    }
-
-    /**
-     * @return array{file_path:string,file_size:int,file_type:string}|null
-     */
-    private function storeFile(Request $request): ?array
-    {
-        if (! $request->hasFile('file')) {
-            return null;
-        }
-
-        $doc = $request->file('file');
-        $ext = strtolower($doc->getClientOriginalExtension());
-        $name = uniqid('report_').'.'.$ext;
-        Storage::disk('public')->put('reports/'.$name, file_get_contents($doc));
-
-        return [
-            'file_path' => '/storage/reports/'.$name,
-            'file_size' => $doc->getSize(),
-            'file_type' => $ext,
-        ];
-    }
-
-    private function deleteFile(?string $path): void
-    {
-        if (! $path) {
-            return;
-        }
-
-        Storage::disk('public')->delete(ltrim(str_replace('storage/', '', ltrim($path, '/')), '/'));
+        return redirect()
+            ->route('admin.report.index')
+            ->with(
+                'success',
+                'Report deleted successfully.'
+            );
     }
 }

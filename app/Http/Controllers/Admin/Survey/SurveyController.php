@@ -2,208 +2,318 @@
 
 namespace App\Http\Controllers\Admin\Survey;
 
+use App\Actions\Survey\CreateSurvey;
+use App\Actions\Survey\DeleteSurvey;
+use App\Actions\Survey\UpdateSurvey;
+use App\Enums\Survey\SurveyResponseStatus;
+use App\Enums\Survey\SurveyStatus;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Survey\StoreSurveyRequest;
+use App\Http\Requests\Survey\UpdateSurveyRequest;
+use App\Http\Resources\Admin\Survey\SurveyResponseResource;
+use App\Http\Resources\Survey\SurveyResource;
+use App\Models\Research\Research;
 use App\Models\Survey\Survey;
 use App\Models\Survey\SurveyAnswer;
-use App\Models\Survey\SurveyOption;
 use App\Models\Survey\SurveyQuestion;
-use App\Services\SurveyResultService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
+use Inertia\Response;
 
 class SurveyController extends Controller
 {
-    public function index(Request $request)
-    {
-        $search = $request->query('search');
+    public function index(
+        Request $request,
+    ): Response {
+        $query = Survey::query()
+            ->with('research');
 
-        $surveys = Survey::query()
-            ->withCount('questions', 'responses')
-            ->when($search, fn ($q) => $q->where('title', 'ilike', "%{$search}%"))
-            ->orderByDesc('created_at')
-            ->paginate(15)
+        if ($request->filled('search')) {
+            $search = $request->string('search');
+
+            $query->where(function ($query) use ($search) {
+                $query
+                    ->where('title', 'like', "%{$search}%")
+                    ->orWhere('slug', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('status')) {
+            $query->where(
+                'status',
+                $request->string('status')
+            );
+        }
+
+        if ($request->filled('research_id')) {
+            $query->where(
+                'research_id',
+                $request->integer('research_id')
+            );
+        }
+
+        $surveys = $query
+            ->latest()
+            ->paginate(20)
             ->withQueryString();
 
-        return Inertia::render('Admin/Surveys/Index', [
-            'surveys' => $surveys,
-            'filters' => ['search' => $search],
+        return Inertia::render(
+            'admin/survey/Index',
+            [
+                'surveys' => SurveyResource::collection($surveys),
+
+                'filters' => [
+                    'search' => $request->input('search'),
+                    'status' => $request->input('status'),
+                    'research_id' => $request->input('research_id'),
+                ],
+
+                'statusOptions' => SurveyStatus::dropdown(),
+
+                'stats' => [
+                    'total' => Survey::count(),
+
+                    'published' => Survey::where(
+                        'status',
+                        SurveyStatus::Published
+                    )->count(),
+
+                    'draft' => Survey::where(
+                        'status',
+                        SurveyStatus::Draft
+                    )->count(),
+
+                    'closed' => Survey::where(
+                        'status',
+                        SurveyStatus::Closed
+                    )->count(),
+                ],
+            ]
+        );
+    }
+
+    public function create(): Response
+    {
+        return Inertia::render(
+            'admin/survey/Create',
+            [
+                'statusOptions' => SurveyStatus::dropdown(),
+
+                'researches' => Research::query()
+                    ->orderBy('title')
+                    ->get([
+                        'id',
+                        'title',
+                    ]),
+            ]
+        );
+    }
+
+    public function store(
+        StoreSurveyRequest $request,
+        CreateSurvey $action,
+    ): RedirectResponse {
+        $survey = $action->handle(
+            $request->validated()
+        );
+
+        return redirect()
+            ->route(
+                'admin.survey.show',
+                $survey
+            )
+            ->with(
+                'success',
+                'Survey created successfully.'
+            );
+    }
+
+    public function show(
+        Survey $survey,
+    ): Response {
+        $survey->load('research');
+
+        return Inertia::render(
+            'admin/survey/Show',
+            [
+                'survey' => new SurveyResource($survey),
+            ]
+        );
+    }
+
+    public function edit(
+        Survey $survey,
+    ): Response {
+        $survey->load('research');
+
+        return Inertia::render(
+            'admin/survey/Edit',
+            [
+                'survey' => new SurveyResource($survey),
+
+                'statusOptions' => SurveyStatus::dropdown(),
+
+                'researches' => Research::query()
+                    ->orderBy('title')
+                    ->get([
+                        'id',
+                        'title',
+                    ]),
+            ]
+        );
+    }
+
+    public function update(
+        UpdateSurveyRequest $request,
+        Survey $survey,
+        UpdateSurvey $action,
+    ): RedirectResponse {
+        $action->handle(
+            $survey,
+            $request->validated()
+        );
+
+        return redirect()
+            ->route(
+                'admin.survey.show',
+                $survey
+            )
+            ->with(
+                'success',
+                'Survey updated successfully.'
+            );
+    }
+
+    public function destroy(
+        Survey $survey,
+        DeleteSurvey $action,
+    ): RedirectResponse {
+        $action->handle($survey);
+
+        return redirect()
+            ->route('admin.survey.index')
+            ->with(
+                'success',
+                'Survey deleted successfully.'
+            );
+    }
+
+    public function analytics(Survey $survey): Response
+    {
+        $survey->load([
+            'questions.options',
+            'sections.questions.options',
         ]);
-    }
 
-    public function create()
-    {
-        return Inertia::render('Admin/Surveys/Create');
-    }
+        $responses = $survey->responses();
 
-    public function store(Request $request)
-    {
-        $validated = $this->validateSurvey($request);
+        $totalResponses = (clone $responses)->count();
 
-        $survey = DB::transaction(function () use ($validated, $request) {
-            $survey = Survey::create(array_merge($this->meta($validated), [
-                'slug' => Survey::uniqueSlug($validated['title']),
-                'author_id' => auth()->id(),
-            ]));
+        $submittedResponses = (clone $responses)
+            ->where('status', SurveyResponseStatus::Submitted)
+            ->count();
 
-            $this->syncQuestions($survey, $request->input('questions', []));
+        $inProgressResponses = (clone $responses)
+            ->where('status', SurveyResponseStatus::InProgress)
+            ->count();
 
-            return $survey;
-        });
+        $abandonedResponses = (clone $responses)
+            ->where('status', SurveyResponseStatus::Abandoned)
+            ->count();
 
-        return redirect()->route('admin.surveys.edit', $survey->id)->with('success', 'Survey created.');
-    }
+        $completionRate = $totalResponses > 0
+            ? round(
+                ($submittedResponses / $totalResponses) * 100,
+                1
+            )
+            : 0;
 
-    public function edit(Survey $survey)
-    {
-        $survey->load(['questions.options']);
+        $recentResponses = $survey->responses()
+            ->latest()
+            ->limit(10)
+            ->get();
 
-        return Inertia::render('Admin/Surveys/Edit', ['survey' => $survey]);
-    }
+        $questions = $survey->questions
+            ->merge(
+                $survey->sections->flatMap(
+                    fn($section) => $section->questions
+                )
+            )
+            ->unique('id')
+            ->values();
 
-    public function update(Request $request, Survey $survey)
-    {
-        $validated = $this->validateSurvey($request);
+        $questionAnalytics = $questions->map(
+            function (SurveyQuestion $question) {
+                $answers = SurveyAnswer::query()
+                    ->where('question_id', $question->id)
+                    ->whereHas(
+                        'response',
+                        fn($query) => $query
+                            ->where('survey_id', $this->survey->id)
+                            ->where(
+                                'status',
+                                SurveyResponseStatus::Submitted
+                            )
+                    )
+                    ->get();
 
-        DB::transaction(function () use ($survey, $validated, $request) {
-            $survey->update(array_merge($this->meta($validated), [
-                'slug' => Survey::uniqueSlug($validated['title'], $survey->id),
-            ]));
+                return [
+                    'id' => $question->id,
+                    'question' => $question->question,
+                    'type' => [
+                        'value' => $question->type->value,
+                        'label' => $question->type->label(),
+                    ],
+                    'total_answers' => $answers->count(),
+                    'options' => $question->options
+                        ->map(function ($option) use ($answers, $question) {
+                            $count = $answers->sum(
+                                function ($answer) use ($option, $question) {
+                                    if (
+                                        $question->type->value === 'multiple_choice'
+                                    ) {
+                                        return collect($answer->answer_json ?? [])
+                                            ->contains((int) $option->id)
+                                            ? 1
+                                            : 0;
+                                    }
 
-            $this->syncQuestions($survey, $request->input('questions', []));
-        });
+                                    return (int) (
+                                        $answer->option_id === $option->id
+                                    );
+                                }
+                            );
 
-        return back()->with('success', 'Survey saved.');
-    }
+                            return [
+                                'id' => $option->id,
+                                'label' => $option->label,
+                                'value' => $option->value,
+                                'count' => $count,
+                            ];
+                        })
+                        ->values(),
+                    'numbers' => $answers
+                        ->pluck('answer_number')
+                        ->filter(fn($value) => $value !== null)
+                        ->values(),
+                ];
+            }
+        );
 
-    public function updateStatus(Request $request, Survey $survey)
-    {
-        $validated = $request->validate(['status' => ['required', 'boolean']]);
-        $survey->update(['status' => $validated['status']]);
-
-        return back()->with('success', 'Status updated.');
-    }
-
-    public function results(Survey $survey)
-    {
-        return Inertia::render('Admin/Surveys/Results', [
-            'survey' => $survey->only('id', 'title', 'slug', 'description', 'show_results'),
-            'results' => app(SurveyResultService::class)->aggregate($survey),
+        return Inertia::render('admin/survey/Analytics', [
+            'survey' => new SurveyResource($survey),
+            'stats' => [
+                'total_responses' => $totalResponses,
+                'submitted_responses' => $submittedResponses,
+                'in_progress_responses' => $inProgressResponses,
+                'abandoned_responses' => $abandonedResponses,
+                'completion_rate' => $completionRate,
+            ],
+            'questions' => $questionAnalytics,
+            'recent_responses' => SurveyResponseResource::collection(
+                $recentResponses
+            ),
         ]);
-    }
-
-    public function destroy(Survey $survey)
-    {
-        DB::transaction(function () use ($survey) {
-            $questionIds = $survey->questions()->pluck('id');
-            SurveyAnswer::whereIn('question_id', $questionIds)->delete();
-            SurveyOption::whereIn('question_id', $questionIds)->delete();
-            $survey->questions()->delete();
-            $survey->responses()->delete();
-            $survey->delete();
-        });
-
-        return redirect()->route('admin.surveys.index')->with('success', 'Survey deleted.');
-    }
-
-    private function validateSurvey(Request $request): array
-    {
-        return $request->validate([
-            'title' => ['required', 'string', 'max:255'],
-            'description' => ['nullable', 'string'],
-            'status' => ['nullable', 'boolean'],
-            'allow_anonymous' => ['nullable', 'boolean'],
-            'one_response_per_user' => ['nullable', 'boolean'],
-            'show_results' => ['nullable', 'boolean'],
-            'published_at' => ['nullable', 'date'],
-            'closes_at' => ['nullable', 'date'],
-            'questions' => ['nullable', 'array'],
-            'questions.*.id' => ['nullable', 'integer'],
-            'questions.*.question' => ['required', 'string', 'max:1000'],
-            'questions.*.type' => ['required', 'in:single_choice,multiple_choice,text,rating'],
-            'questions.*.required' => ['nullable', 'boolean'],
-            'questions.*.settings' => ['nullable', 'array'],
-            'questions.*.options' => ['nullable', 'array'],
-            'questions.*.options.*.id' => ['nullable', 'integer'],
-            'questions.*.options.*.label' => ['required', 'string', 'max:255'],
-        ]);
-    }
-
-    private function meta(array $v): array
-    {
-        return [
-            'title' => $v['title'],
-            'description' => $v['description'] ?? null,
-            'status' => (bool) ($v['status'] ?? false),
-            'allow_anonymous' => (bool) ($v['allow_anonymous'] ?? true),
-            'one_response_per_user' => (bool) ($v['one_response_per_user'] ?? true),
-            'show_results' => (bool) ($v['show_results'] ?? false),
-            'published_at' => $v['published_at'] ?? null,
-            'closes_at' => $v['closes_at'] ?? null,
-        ];
-    }
-
-    /**
-     * Diff-sync the builder's questions + options against the DB.
-     */
-    private function syncQuestions(Survey $survey, array $questions): void
-    {
-        $keptQuestionIds = [];
-
-        foreach (array_values($questions) as $qIndex => $qData) {
-            $isChoice = in_array($qData['type'], ['single_choice', 'multiple_choice'], true);
-
-            $attrs = [
-                'survey_id' => $survey->id,
-                'question' => $qData['question'],
-                'type' => $qData['type'],
-                'required' => (bool) ($qData['required'] ?? false),
-                'position' => $qIndex,
-                'settings' => $qData['settings'] ?? null,
-            ];
-
-            // Update in place only if the id belongs to this survey; else create.
-            $question = ! empty($qData['id'])
-                ? $survey->questions()->find($qData['id'])
-                : null;
-            if ($question) {
-                $question->update($attrs);
-            } else {
-                $question = SurveyQuestion::create($attrs);
-            }
-            $keptQuestionIds[] = $question->id;
-
-            // Options only apply to choice questions.
-            $keptOptionIds = [];
-            if ($isChoice) {
-                foreach (array_values($qData['options'] ?? []) as $oIndex => $oData) {
-                    $oAttrs = ['question_id' => $question->id, 'label' => $oData['label'], 'position' => $oIndex];
-                    $option = ! empty($oData['id'])
-                        ? $question->options()->find($oData['id'])
-                        : null;
-                    if ($option) {
-                        $option->update($oAttrs);
-                    } else {
-                        $option = SurveyOption::create($oAttrs);
-                    }
-                    $keptOptionIds[] = $option->id;
-                }
-            }
-
-            // Remove options that were deleted in the builder.
-            $staleOptions = $question->options()->whereNotIn('id', $keptOptionIds ?: [0])->pluck('id');
-            if ($staleOptions->isNotEmpty()) {
-                SurveyAnswer::whereIn('option_id', $staleOptions)->delete();
-                SurveyOption::whereIn('id', $staleOptions)->delete();
-            }
-        }
-
-        // Remove questions dropped in the builder (and their options + answers).
-        $staleQuestions = $survey->questions()->whereNotIn('id', $keptQuestionIds ?: [0])->pluck('id');
-        if ($staleQuestions->isNotEmpty()) {
-            SurveyAnswer::whereIn('question_id', $staleQuestions)->delete();
-            SurveyOption::whereIn('question_id', $staleQuestions)->delete();
-            SurveyQuestion::whereIn('id', $staleQuestions)->delete();
-        }
     }
 }

@@ -3,19 +3,34 @@
 namespace App\Models\Survey;
 
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 #[Fillable([
     'response_id',
     'question_id',
     'option_id',
-    'value_text',
+    'answer_text',
+    'answer_number',
+    'answer_boolean',
+    'answer_json',
 ])]
 class SurveyAnswer extends Model
 {
-    public $timestamps = false;
+    use HasFactory;
 
-    public function response()
+
+    protected function casts(): array
+    {
+        return [
+            'answer_number' => 'decimal:4',
+            'answer_boolean' => 'boolean',
+            'answer_json' => 'array',
+        ];
+    }
+
+    public function response(): BelongsTo
     {
         return $this->belongsTo(
             SurveyResponse::class,
@@ -23,7 +38,7 @@ class SurveyAnswer extends Model
         );
     }
 
-    public function question()
+    public function question(): BelongsTo
     {
         return $this->belongsTo(
             SurveyQuestion::class,
@@ -31,10 +46,10 @@ class SurveyAnswer extends Model
         );
     }
 
-    public function option()
+    public function option(): BelongsTo
     {
         return $this->belongsTo(
-            SurveyOption::class,
+            SurveyQuestionOption::class,
             'option_id'
         );
     }

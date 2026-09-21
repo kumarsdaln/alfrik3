@@ -2,151 +2,102 @@
 
 namespace App\Models\Report;
 
+use App\Enums\Report\ReportStatus;
+use App\Enums\Report\ReportType;
+use App\Models\Category;
+use App\Models\Media;
+use App\Models\Research\Research;
+use App\Models\Tag;
 use App\Models\User;
-use Illuminate\Database\Eloquent\Attributes\Fillable;
-use Illuminate\Database\Eloquent\Attributes\Scope;
-use Illuminate\Database\Eloquent\Builder;
+use App\Models\SeoMetadata;
+use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Support\Str;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
+use Illuminate\Database\Eloquent\Relations\MorphToMany;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
 
 #[Fillable([
+    'research_id',
     'title',
     'slug',
+    'subtitle',
+    'description',
     'summary',
-    'cover_image',
-    'file_path',
-    'file_size',
-    'file_type',
-    'category_id',
-    'author_id',
-    'report_year',
-    'published_at',
+    'type',
     'status',
+    'author_id',
     'featured',
-    'gated',
-    'download_count',
-    'meta_title',
-    'meta_description',
-    'meta_keywords',
+    'published_at',
+    'report_date',
 ])]
 class Report extends Model
 {
-    protected $casts = [
-        'status' => 'boolean',
-        'featured' => 'boolean',
-        'gated' => 'boolean',
-        'published_at' => 'datetime',
-        'download_count' => 'integer',
-        'file_size' => 'integer',
-        'report_year' => 'integer',
-    ];
+    use HasFactory;
 
-    protected $appends = [
-        'file_size_label',
-    ];
 
-    public function category(): BelongsTo
+    protected function casts(): array
     {
-        return $this->belongsTo(
-            ReportCategory::class,
-            'category_id'
-        );
+        return [
+            'type' => ReportType::class,
+            'status' => ReportStatus::class,
+            'featured' => 'boolean',
+            'published_at' => 'datetime',
+            'report_date' => 'datetime',
+        ];
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Relationships
+    |--------------------------------------------------------------------------
+    */
+
+    public function research(): BelongsTo
+    {
+        return $this->belongsTo(Research::class);
     }
 
     public function author(): BelongsTo
     {
-        return $this->belongsTo(
-            User::class,
-            'author_id'
+        return $this->belongsTo(User::class, 'author_id');
+    }
+
+    public function sections(): HasMany
+    {
+        return $this->hasMany(ReportSection::class)
+            ->orderBy('position');
+    }
+
+    public function media(): MorphMany
+    {
+        return $this->morphMany(Media::class, 'mediable');
+    }
+
+    public function categories(): MorphToMany
+    {
+        return $this->morphToMany(
+            Category::class,
+            'categorizable'
         );
     }
 
-    /**
-     * Published reports.
-     *
-     * A report is published when it is active and either:
-     * - has no scheduled publication date, or
-     * - its publication date has passed.
-     */
-    #[Scope]
-    public function published(Builder $query): Builder
+    public function tags(): MorphToMany
     {
-        return $query
-            ->where('status', true)
-            ->where(function (Builder $query) {
-                $query
-                    ->whereNull('published_at')
-                    ->orWhere('published_at', '<=', now());
-            });
+        return $this->morphToMany(
+            Tag::class,
+            'taggable'
+        );
     }
 
-    /**
-     * Scheduled reports.
-     */
-    #[Scope]
-    public function scheduled(Builder $query): Builder
+    public function seo(): MorphOne
     {
-        return $query
-            ->where('status', true)
-            ->whereNotNull('published_at')
-            ->where('published_at', '>', now());
-    }
-
-    /**
-     * Featured reports.
-     */
-    #[Scope]
-    public function featured(Builder $query): Builder
-    {
-        return $query->where('featured', true);
-    }
-
-    /**
-     * Human-readable file size.
-     */
-    public function getFileSizeLabelAttribute(): ?string
-    {
-        if (! $this->file_size) {
-            return null;
-        }
-
-        $mb = $this->file_size / (1024 * 1024);
-
-        return $mb >= 1
-            ? round($mb, 1) . ' MB'
-            : max(
-                1,
-                (int) round($this->file_size / 1024)
-            ) . ' KB';
-    }
-
-    /**
-     * Generate a unique slug.
-     */
-    public static function uniqueSlug(
-        string $title,
-        ?int $ignoreId = null
-    ): string {
-        $base = Str::slug($title) ?: 'report';
-        $slug = $base;
-        $i = 1;
-
-        while (
-            static::where('slug', $slug)
-            ->when(
-                $ignoreId,
-                fn($query) => $query->where(
-                    'id',
-                    '!=',
-                    $ignoreId
-                )
-            )
-            ->exists()
-        ) {
-            $slug = $base . '-' . $i++;
-        }
-
-        return $slug;
+        return $this->morphOne(
+            SeoMetadata::class,
+            'seoable'
+        );
     }
 }

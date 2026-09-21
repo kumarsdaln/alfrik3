@@ -1,23 +1,21 @@
 <script setup lang="ts">
-    import { Form, router } from '@inertiajs/vue3'
-    import { ArrowLeft, Trash2 } from '@lucide/vue'
-
-    import AppFormControl from '@/components/form/AppFormControl.vue'
-    import AppInput from '@/components/form/AppInput.vue'
-    import AppSelect from '@/components/form/AppSelect.vue'
-    import AppTextarea from '@/components/form/AppTextarea.vue'
-    import Heading from '@/components/Heading.vue'
-    import Button from '@/components/ui/button/Button.vue'
-
+    import { Form, Link } from '@inertiajs/vue3'
     import {
-        edit as mediaEdit,
-        update as mediaUpdate,
-        destroy as mediaDestroy,
-    } from '@/routes/admin/media'
+        FileText,
+        Music,
+    } from '@lucide/vue'
 
-    import type { Media } from '@/types'
+    import Heading from '@/components/Heading.vue'
+    import BackButton from '@/components/ui/BackButton.vue'
+    import Button from '@/components/ui/button/Button.vue'
+    import Input from '@/components/ui/input/Input.vue'
+    import Label from '@/components/ui/label/Label.vue'
+
+    import type { Media, Model } from '@/types'
+    import { update } from '@/routes/admin/media'
 
     interface Props {
+        model: Model
         media: {
             data: Media
         }
@@ -25,170 +23,245 @@
 
     const props = defineProps<Props>()
 
-    function goBack() {
-        router.visit(
-            mediaEdit(props.media.data.id).url
-        )
+    const indexUrl = `/admin/media/${props.model.type}/${props.model.id}`
+
+    const isImage = (media: Media): boolean => {
+        return media.mime_type?.startsWith('image/') ?? false
     }
 
-    function deleteMedia() {
-        if (
-            !confirm(
-                'Are you sure you want to delete this media? This action cannot be undone.'
-            )
-        ) {
-            return
+    const isVideo = (media: Media): boolean => {
+        return media.mime_type?.startsWith('video/') ?? false
+    }
+
+    const isAudio = (media: Media): boolean => {
+        return media.mime_type?.startsWith('audio/') ?? false
+    }
+
+    const formatSize = (size: number): string => {
+        if (size < 1024) {
+            return `${size} B`
         }
 
-        router.delete(
-            mediaDestroy(props.media.data.id).url,
-            {
-                preserveScroll: true,
-                onSuccess: () => {
-                    router.visit('/admin/media')
-                },
-            },
-        )
+        if (size < 1024 * 1024) {
+            return `${(size / 1024).toFixed(1)} KB`
+        }
+
+        if (size < 1024 * 1024 * 1024) {
+            return `${(size / (1024 * 1024)).toFixed(1)} MB`
+        }
+
+        return `${(size / (1024 * 1024 * 1024)).toFixed(1)} GB`
     }
 </script>
 
 <template>
-    <div class="space-y-8">
+    <div class="min-h-[calc(100vh-64px)]">
 
         <!-- Header -->
-        <div class="flex items-start gap-4">
-            <Button type="button" variant="outline" size="icon" class="shrink-0" @click="goBack">
-                <ArrowLeft class="size-4" />
+        <div class="border-b py-4">
+            <div class="flex items-center gap-3 sm:gap-4">
+                <BackButton />
 
-                <span class="sr-only">
-                    Back
-                </span>
-            </Button>
-
-            <Heading title="Edit Media" description="Update media information and metadata." />
+                <Heading title="Edit Media" :description="`Edit media for ${props.model.title}`" />
+            </div>
         </div>
 
-        <!-- Preview / Information -->
-        <section class="rounded-xl border bg-card">
-            <div class="border-b px-6 py-5">
-                <h2 class="font-semibold">
-                    Media Information
-                </h2>
+        <!-- Content -->
+        <div class="py-4">
+            <div class="max-w-3xl">
 
-                <p class="mt-1 text-sm text-muted-foreground">
-                    Information about the stored file.
-                </p>
+                <Form v-bind="update.form({ type: model.type, id: model.id, mediaId: media.data.id })"
+                    #default="{ processing, errors }">
+                    <div class="space-y-6">
+
+                        <!-- Preview -->
+                        <div class="overflow-hidden border bg-card">
+
+                            <div class="flex min-h-[240px] items-center justify-center bg-muted sm:min-h-[360px]">
+
+                                <!-- Image -->
+                                <img v-if="isImage(media.data)" :src="media.data.url"
+                                    :alt="media.data.alt ?? media.data.name"
+                                    class="max-h-[360px] max-w-full object-contain" />
+
+                                <!-- Video -->
+                                <video v-else-if="isVideo(media.data)" :src="media.data.url" controls
+                                    class="max-h-[360px] max-w-full" />
+
+                                <!-- Audio -->
+                                <div v-else-if="isAudio(media.data)"
+                                    class="flex w-full flex-col items-center gap-5 px-4">
+                                    <div class="flex size-16 items-center justify-center border bg-background">
+                                        <Music class="size-7 text-muted-foreground" />
+                                    </div>
+
+                                    <audio :src="media.data.url" controls class="w-full max-w-md" />
+                                </div>
+
+                                <!-- Other File -->
+                                <div v-else class="flex flex-col items-center gap-3 px-4 text-center">
+                                    <div class="flex size-16 items-center justify-center border bg-background">
+                                        <FileText class="size-7 text-muted-foreground" />
+                                    </div>
+
+                                    <div class="min-w-0">
+                                        <p class="break-all font-medium">
+                                            {{ media.data.file_name }}
+                                        </p>
+
+                                        <p v-if="media.data.mime_type" class="mt-1 text-sm text-muted-foreground">
+                                            {{ media.data.mime_type }}
+                                        </p>
+                                    </div>
+                                </div>
+
+                            </div>
+
+                            <!-- File Information -->
+                            <div class="grid grid-cols-2 border-t sm:grid-cols-4">
+
+                                <!-- File -->
+                                <div class="min-w-0 border-r px-4 py-3">
+                                    <p class="text-xs text-muted-foreground">
+                                        File
+                                    </p>
+
+                                    <p class="mt-1 truncate text-sm font-medium" :title="media.data.file_name">
+                                        {{ media.data.file_name }}
+                                    </p>
+                                </div>
+
+                                <!-- Type -->
+                                <div class="min-w-0 px-4 py-3 sm:border-r">
+                                    <p class="text-xs text-muted-foreground">
+                                        Type
+                                    </p>
+
+                                    <p class="mt-1 text-sm font-medium">
+                                        {{
+                                            media.data.extension
+                                                ?.toUpperCase()
+                                            || 'FILE'
+                                        }}
+                                    </p>
+                                </div>
+
+                                <!-- Size -->
+                                <div class="border-r border-t px-4 py-3 sm:border-t-0">
+                                    <p class="text-xs text-muted-foreground">
+                                        Size
+                                    </p>
+
+                                    <p class="mt-1 text-sm font-medium">
+                                        {{ formatSize(media.data.size) }}
+                                    </p>
+                                </div>
+
+                                <!-- Collection -->
+                                <div class="border-t px-4 py-3 sm:border-t-0">
+                                    <p class="text-xs text-muted-foreground">
+                                        Collection
+                                    </p>
+
+                                    <p class="mt-1 truncate text-sm font-medium" :title="media.data.collection">
+                                        {{ media.data.collection }}
+                                    </p>
+                                </div>
+
+                            </div>
+                        </div>
+
+                        <!-- Media Information -->
+                        <div class="border bg-card">
+
+                            <!-- Section Header -->
+                            <div class="border-b px-4 py-4 sm:px-5">
+                                <h2 class="font-medium">
+                                    Media Information
+                                </h2>
+
+                                <p class="mt-1 text-sm text-muted-foreground">
+                                    Update the metadata associated with this
+                                    media file.
+                                </p>
+                            </div>
+
+                            <!-- Form Fields -->
+                            <div class="space-y-5 p-4 sm:p-5">
+
+                                <!-- Name -->
+                                <div class="space-y-2">
+                                    <Label for="name">
+                                        Name
+                                    </Label>
+
+                                    <Input id="name" name="name" :default-value="media.data.name" />
+
+                                    <p v-if="errors.name" class="text-sm text-destructive">
+                                        {{ errors.name }}
+                                    </p>
+                                </div>
+
+                                <!-- Collection -->
+                                <div class="space-y-2">
+                                    <Label for="collection">
+                                        Collection
+                                    </Label>
+
+                                    <Input id="collection" name="collection" :default-value="media.data.collection" />
+
+                                    <p v-if="errors.collection" class="text-sm text-destructive">
+                                        {{ errors.collection }}
+                                    </p>
+
+                                    <p class="text-xs text-muted-foreground">
+                                        Use a collection name to organize
+                                        related media files.
+                                    </p>
+                                </div>
+
+                                <!-- Alt Text -->
+                                <div class="space-y-2">
+                                    <Label for="alt">
+                                        Alt Text
+                                    </Label>
+
+                                    <Input id="alt" name="alt" :default-value="media.data.alt ?? ''" />
+
+                                    <p v-if="errors.alt" class="text-sm text-destructive">
+                                        {{ errors.alt }}
+                                    </p>
+
+                                    <p class="text-xs text-muted-foreground">
+                                        Describe the image for accessibility
+                                        and SEO.
+                                    </p>
+                                </div>
+
+                            </div>
+
+                            <!-- Actions -->
+                            <div
+                                class="flex flex-col-reverse gap-3 border-t px-4 py-4 sm:flex-row sm:justify-end sm:px-5">
+                                <Link :href="indexUrl">
+                                    <Button type="button" variant="outline" class="w-full sm:w-auto">
+                                        Cancel
+                                    </Button>
+                                </Link>
+
+                                <Button type="submit" :disabled="processing" class="w-full sm:w-auto">
+                                    {{
+                                        processing
+                                            ? 'Saving...'
+                                            : 'Save Changes'
+                                    }}
+                                </Button>
+                            </div>
+
+                        </div>
+                    </div>
+                </Form>
             </div>
-
-            <div class="grid gap-6 p-6 sm:grid-cols-2 lg:grid-cols-4">
-
-                <div>
-                    <p class="text-xs font-medium text-muted-foreground">
-                        File Name
-                    </p>
-
-                    <p class="mt-1 truncate text-sm font-medium">
-                        {{ media.data.file_name }}
-                    </p>
-                </div>
-
-                <div>
-                    <p class="text-xs font-medium text-muted-foreground">
-                        Type
-                    </p>
-
-                    <p class="mt-1 text-sm">
-                        {{ media.data.mime_type }}
-                    </p>
-                </div>
-
-                <div>
-                    <p class="text-xs font-medium text-muted-foreground">
-                        Extension
-                    </p>
-
-                    <p class="mt-1 text-sm uppercase">
-                        {{ media.data.extension ?? '—' }}
-                    </p>
-                </div>
-
-                <div>
-                    <p class="text-xs font-medium text-muted-foreground">
-                        Size
-                    </p>
-
-                    <p class="mt-1 text-sm">
-                        {{ media.data.size }}
-                    </p>
-                </div>
-
-            </div>
-        </section>
-
-        <!-- Form -->
-        <section class="rounded-xl border bg-card">
-            <div class="border-b px-6 py-5">
-                <h2 class="font-semibold">
-                    Media Details
-                </h2>
-
-                <p class="mt-1 text-sm text-muted-foreground">
-                    Update how this media is identified and organized.
-                </p>
-            </div>
-
-            <Form v-bind="mediaUpdate(media.data.id).form()" :options="{
-                preserveScroll: true,
-            }" #default="{ errors, processing }" class="space-y-6 p-6">
-                <AppFormControl label="Name" :error="errors.name">
-                    <AppInput name="name" :default-value="media.data.name" placeholder="Enter media name" />
-                </AppFormControl>
-
-                <AppFormControl label="Collection" :error="errors.collection" required>
-                    <AppInput name="collection" :default-value="media.data.collection" placeholder="default" />
-                </AppFormControl>
-
-                <AppFormControl label="Alt Text" :error="errors.alt"
-                    description="Describe the media for accessibility and SEO.">
-                    <AppTextarea name="alt" :default-value="media.data.alt ?? ''" placeholder="Describe this media..."
-                        :rows="4" />
-                </AppFormControl>
-
-                <div class="flex items-center justify-between gap-3 border-t pt-6">
-                    <Button type="button" variant="outline" @click="goBack">
-                        Cancel
-                    </Button>
-
-                    <Button type="submit" :disabled="processing">
-                        {{ processing ? 'Updating...' : 'Update Media' }}
-                    </Button>
-                </div>
-            </Form>
-        </section>
-
-        <!-- Danger Zone -->
-        <section class="
-                rounded-xl
-                border border-destructive/30
-                bg-destructive/5
-            ">
-            <div class="flex items-center justify-between gap-6 p-6">
-                <div>
-                    <h2 class="font-semibold text-destructive">
-                        Delete Media
-                    </h2>
-
-                    <p class="mt-1 text-sm text-muted-foreground">
-                        Permanently delete this media file and its database record.
-                    </p>
-                </div>
-
-                <Button type="button" variant="destructive" class="shrink-0 gap-2" @click="deleteMedia">
-                    <Trash2 class="size-4" />
-                    Delete Media
-                </Button>
-            </div>
-        </section>
-
+        </div>
     </div>
 </template>

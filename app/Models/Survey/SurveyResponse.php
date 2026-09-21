@@ -4,38 +4,50 @@ namespace App\Models\Survey;
 
 use App\Models\User;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+
 
 #[Fillable([
     'survey_id',
     'user_id',
-    'session_token',
-    'ip_address',
+    'respondent_name',
+    'respondent_email',
+    'respondent_ip',
+    'user_agent',
+    'started_at',
+    'submitted_at',
+    'status',
 ])]
 class SurveyResponse extends Model
 {
-    public const UPDATED_AT = null;
+    use HasFactory;
 
-    protected $hidden = [
-        'session_token',
-        'ip_address',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'started_at' => 'datetime',
+            'submitted_at' => 'datetime',
+        ];
+    }
 
-    public function survey()
+    public function survey(): BelongsTo
     {
         return $this->belongsTo(Survey::class);
     }
 
-    public function user()
+    public function user(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(
+            User::class,
+            'user_id'
+        );
     }
 
-    public function answers()
+    public function answers(): HasMany
     {
-        return $this->hasMany(
-            SurveyAnswer::class,
-            'response_id'
-        );
+        return $this->hasMany(SurveyAnswer::class);
     }
 }

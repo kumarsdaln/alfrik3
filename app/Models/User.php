@@ -225,4 +225,17 @@ class User extends Authenticatable implements PasskeyUser
         )->withPivot('position')
             ->orderBy('position');
     }
+
+    public function team(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            User::class,
+            'research_members'
+        )
+            ->withPivot([
+                'role',
+                'joined_at',
+            ])
+            ->withTimestamps();
+    }
 }
