@@ -14,6 +14,14 @@ class ReportResource extends JsonResource
 
             'research_id' => $this->research_id,
 
+            'research' => $this->whenLoaded(
+                'research',
+                fn () => [
+                    'id' => $this->research->id,
+                    'title' => $this->research->title,
+                ]
+            ),
+
             'title' => $this->title,
 
             'slug' => $this->slug,
@@ -24,17 +32,9 @@ class ReportResource extends JsonResource
 
             'summary' => $this->summary,
 
-            'type' => [
-                'value' => $this->type->value,
-                'label' => $this->type->label(),
-                'color' => $this->type->color(),
-            ],
+            'type' => $this->type->value->option(),
 
-            'status' => [
-                'value' => $this->status->value,
-                'label' => $this->status->label(),
-                'color' => $this->status->color(),
-            ],
+            'status' => $this->status->value->option(),
 
             'author_id' => $this->author_id,
 
@@ -51,6 +51,13 @@ class ReportResource extends JsonResource
             'published_at' => $this->published_at?->toISOString(),
 
             'report_date' => $this->report_date?->toISOString(),
+
+            'sections' => $this->whenLoaded(
+                'sections',
+                fn () => ReportSectionResource::collection(
+                    $this->sections
+                ),
+            ),
 
             'created_at' => $this->created_at?->toISOString(),
 
