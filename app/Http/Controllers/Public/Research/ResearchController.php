@@ -2,142 +2,151 @@
 
 namespace App\Http\Controllers\Public\Research;
 
+use App\Enums\Research\ResearchStatus;
+use App\Enums\Research\ResearchType;
 use App\Http\Controllers\Controller;
+use App\Http\Resources\Research\ResearchResource;
+use App\Models\Research\Research;
 use App\Support\Breadcrumbs\BreadcrumbBuilder;
-use App\Models\Research\ResearchArea;
-use App\Models\Research\ResearchPaper;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
 use Inertia\Inertia;
+use Inertia\Response;
 
 class ResearchController extends Controller
 {
-    public function index(Request $request)
+    /**
+     * Display published research.
+     */
+    public function index(Request $request): Response
     {
-        $activeArea = trim((string) $request->query('area', ''));
-        $search = trim((string) $request->query('search', ''));
+        $activeType = trim(
+            (string) $request->query('type', '')
+        );
 
-        $columns = [
-            'id',
-            'title',
-            'slug',
-            'abstract',
-            'authors',
-            'author_id',
-            'area_id',
-            'institution',
-            'cover_image',
-            'published_at',
-            'featured',
-            'download_count',
-            'created_at',
-        ];
+        $search = trim(
+            (string) $request->query('search', '')
+        );
 
         /*
-    |--------------------------------------------------------------------------
-    | Research Papers Query
-    |--------------------------------------------------------------------------
-    */
+        |--------------------------------------------------------------------------
+        | Research Query
+        |--------------------------------------------------------------------------
+        */
 
-        $query = ResearchPaper::query()
-            ->published()
+        $query = Research::query()
+            ->where('status', ResearchStatus::Published)
             ->with([
-                'area:id,name,slug',
-                'author:id,name,username',
+                'author:id,name',
+                'media',
             ])
             ->when(
-                $activeArea !== '',
-                fn($q) => $q->whereHas(
-                    'area',
-                    fn($area) => $area->where('slug', $activeArea)
+                $activeType !== '',
+                fn ($query) => $query->where(
+                    'type',
+                    $activeType
                 )
             )
             ->when(
                 $search !== '',
-                fn($q) => $q->where(function ($searchQuery) use ($search) {
-                    $searchQuery
-                        ->where('title', 'ilike', "%{$search}%")
-                        ->orWhere('abstract', 'ilike', "%{$search}%")
-                        ->orWhere('authors', 'ilike', "%{$search}%")
-                        ->orWhere('institution', 'ilike', "%{$search}%");
+                fn ($query) => $query->where(function ($query) use ($search) {
+                    $query
+                        ->where(
+                            'title',
+                            'ilike',
+                            "%{$search}%"
+                        )
+                        ->orWhere(
+                            'subtitle',
+                            'ilike',
+                            "%{$search}%"
+                        )
+                        ->orWhere(
+                            'summary',
+                            'ilike',
+                            "%{$search}%"
+                        )
+                        ->orWhere(
+                            'description',
+                            'ilike',
+                            "%{$search}%"
+                        );
                 })
             )
             ->orderByDesc('published_at')
             ->orderByDesc('created_at');
 
-
         /*
-    |--------------------------------------------------------------------------
-    | Featured Research Paper
-    |--------------------------------------------------------------------------
-    |
-    | Only show the featured section when the user is browsing the main
-    | research page, not when filtering/searching.
-    |
-    */
+        |--------------------------------------------------------------------------
+        | Featured Research
+        |--------------------------------------------------------------------------
+        |
+        | Only show the featured research area when the user is browsing
+        | the main research page without filters.
+        |
+        */
 
         $featured = null;
 
-        if ($activeArea === '' && $search === '') {
-            $featured = ResearchPaper::query()
-                ->published()
-                ->featured()
+        if ($activeType === '' && $search === '') {
+            $featured = Research::query()
+                ->where('status', ResearchStatus::Published)
+                ->where('featured', true)
                 ->with([
-                    'area:id,name,slug',
-                    'author:id,name,username',
+                    'author:id,name',
+                    'media',
                 ])
                 ->orderByDesc('published_at')
                 ->orderByDesc('created_at')
-                ->first($columns);
+                ->first();
 
             /*
-         * If there is no explicitly featured paper, use the newest
-         * published paper as the featured paper.
-         */
+            |--------------------------------------------------------------------------
+            | Fallback to latest published research
+            |--------------------------------------------------------------------------
+            */
+
             if (! $featured) {
-                $featured = (clone $query)->first($columns);
+                $featured = Research::query()
+                    ->where('status', ResearchStatus::Published)
+                    ->with([
+                        'author:id,name',
+                        'media',
+                    ])
+                    ->orderByDesc('published_at')
+                    ->orderByDesc('created_at')
+                    ->first();
             }
         }
 
-
         /*
-    |--------------------------------------------------------------------------
-    | Research Areas
-    |--------------------------------------------------------------------------
-    */
-
-        $areas = ResearchArea::query()
-            ->withCount([
-                'papers as published_count' => fn($q) => $q->published(),
-            ])
-            ->orderBy('name')
-            ->get([
-                'id',
-                'name',
-                'slug',
-            ]);
-
-
-        /*
-    |--------------------------------------------------------------------------
-    | Response
-    |--------------------------------------------------------------------------
-    */
+        |--------------------------------------------------------------------------
+        | Response
+        |--------------------------------------------------------------------------
+        */
 
         return Inertia::render('research/Index', [
-            'papers' => Inertia::scroll(
-                fn() => $query
-                    ->paginate(12, $columns)
-                    ->withQueryString()
+            'research' => Inertia::scroll(
+                fn () => ResearchResource::collection(
+                    $query
+                        ->paginate(12)
+                        ->withQueryString()
+                )
             ),
 
-            'featured' => $featured,
+            'featured' => $featured
+                ? new ResearchResource($featured)
+                : null,
 
-            'areas' => $areas,
+            /*
+            |--------------------------------------------------------------------------
+            | Research Types
+            |--------------------------------------------------------------------------
+            */
+
+            'types' => ResearchType::dropdown(),
 
             'qfilters' => [
-                'area' => $activeArea,
+                'type' => $activeType,
                 'search' => $search,
             ],
 
@@ -148,73 +157,126 @@ class ResearchController extends Controller
         ]);
     }
 
-    public function show(ResearchPaper $paper)
+    /**
+     * Display a single published research.
+     */
+    public function show(Research $research): Response
     {
-        abort_unless($this->isLive($paper), 404);
+        abort_unless(
+            $this->isLive($research),
+            404
+        );
 
-        // Main paper
-        $paper->load([
-            'area:id,name,slug',
-            'author:id,name,username',
+        /*
+        |--------------------------------------------------------------------------
+        | Research
+        |--------------------------------------------------------------------------
+        */
+
+        $research->load([
+            'author:id,name',
+
+            'media',
+
+            'methodology',
+
+            'sources' => fn ($query) => $query
+                ->orderBy('position'),
+
+            'questions' => fn ($query) => $query
+                ->orderBy('position'),
+
+            'findings' => fn ($query) => $query
+                ->orderBy('position'),
+
+            'evidence' => fn ($query) => $query
+                ->orderBy('position'),
+
+            'members',
         ]);
 
-        // Related research
-        $related = ResearchPaper::query()
-            ->published()
-            ->whereKeyNot($paper->id)
+        /*
+        |--------------------------------------------------------------------------
+        | Related Research
+        |--------------------------------------------------------------------------
+        */
+
+        $related = Research::query()
+            ->where('status', ResearchStatus::Published)
+            ->where('id', '!=', $research->id)
             ->when(
-                $paper->area_id,
-                fn($query) => $query->where('area_id', $paper->area_id)
+                $research->type,
+                fn ($query) => $query->where(
+                    'type',
+                    $research->type->value
+                )
             )
             ->with([
-                'area:id,name,slug',
+                'author:id,name',
+                'media',
             ])
             ->orderByDesc('published_at')
             ->orderByDesc('created_at')
-            ->limit(3)
-            ->get([
-                'id',
-                'title',
-                'slug',
-                'authors',
-                'cover_image',
-                'area_id',
-                'published_at',
-            ]);
+            ->take(3)
+            ->get();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Response
+        |--------------------------------------------------------------------------
+        */
 
         return Inertia::render('research/Show', [
-            'paper' => $paper,
-            'related' => $related,
+            'research' => new ResearchResource($research),
+
+            'related' => ResearchResource::collection(
+                $related
+            ),
 
             'breadcrumbs' => BreadcrumbBuilder::make()
                 ->home()
-                ->add('Research', route('research.index'))
-                ->add($paper->title)
+                ->add(
+                    'Research',
+                    route('research.index')
+                )
+                ->add($research->title)
                 ->toArray(),
 
+            /*
+            |--------------------------------------------------------------------------
+            | SEO
+            |--------------------------------------------------------------------------
+            */
+
             'meta_data' => [
-                'meta_title' => $paper->meta_title ?: $paper->title,
-                'meta_description' => $paper->meta_description ?: $paper->abstract,
-                'meta_keywords' => $paper->meta_keywords ?: $paper->keywords,
+                'meta_title' => $research->seo?->title
+                    ?: $research->title,
+
+                'meta_description' => $research->seo?->description
+                    ?: $research->summary,
+
+                'canonical_url' => $research->seo?->canonical_url,
+
+                'og_title' => $research->seo?->og_title,
+                'og_description' => $research->seo?->og_description,
+                'og_image' => $research->seo?->og_image,
+
+                'twitter_title' => $research->seo?->twitter_title,
+                'twitter_description' => $research->seo?->twitter_description,
+                'twitter_image' => $research->seo?->twitter_image,
             ],
         ]);
     }
 
-    public function download(ResearchPaper $paper)
+    /**
+     * Determine whether research is publicly available.
+     */
+    private function isLive(Research $research): bool
     {
-        abort_unless($this->isLive($paper), 404);
-        abort_unless((bool) $paper->file_path, 404, 'No file attached to this paper.');
-
-        $relative = ltrim(str_replace('storage/', '', ltrim($paper->file_path, '/')), '/');
-        abort_unless(Storage::disk('public')->exists($relative), 404, 'File not found.');
-
-        $paper->increment('download_count');
-
-        return Storage::disk('public')->download($relative, Str::slug($paper->title) . '.' . ($paper->file_type ?: 'pdf'));
-    }
-
-    private function isLive(ResearchPaper $paper): bool
-    {
-        return $paper->status && (is_null($paper->published_at) || $paper->published_at->lte(now()));
+        return $research->status === ResearchStatus::Published
+            && (
+                is_null($research->published_at)
+                || $research->published_at->lte(now())
+            );
     }
 }

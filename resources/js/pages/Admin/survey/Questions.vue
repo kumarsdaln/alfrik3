@@ -17,7 +17,7 @@
 
     import AppTable from '@/components/ui/AppTable.vue'
     import AppTableActions from '@/components/ui/AppTableActions.vue'
-    import TableLayout from '@/layouts/table/Layout.vue'
+    import TableLayout from '@/layouts/table/TableLayout.vue'
 
     import { useForm } from '@inertiajs/vue3'
 

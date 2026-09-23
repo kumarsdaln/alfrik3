@@ -1,89 +1,92 @@
 <script setup lang="ts">
-import { useId } from 'vue'
-import {
-    CheckboxIndicator,
-    CheckboxRoot,
-} from 'reka-ui'
 import { Check } from '@lucide/vue'
+import { computed, useId } from 'vue'
 
 interface Props {
-    modelValue?: boolean | number | string
-    defaultValue?: boolean | number | string
-    disabled?: boolean
-    required?: boolean
     name?: string
-    id?: string
     label?: string
-    falseValue?: boolean | number | string
-    trueValue?: boolean | number | string
+
+    modelValue?: boolean
+
+    defaultValue?: boolean
+
+    trueValue?: string | number
+    falseValue?: string | number
+
+    disabled?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
     modelValue: undefined,
     defaultValue: false,
+    trueValue: '1',
+    falseValue: '0',
     disabled: false,
-    required: false,
-    trueValue: true,
-    falseValue: false,
 })
 
 const emit = defineEmits<{
-    'update:modelValue': [value: boolean | number | string]
+    'update:modelValue': [value: boolean]
 }>()
 
-const generatedId = useId()
-const checkboxId = props.id ?? generatedId
+const id = useId()
 
-function updateValue(value: boolean | number | string) {
-    emit('update:modelValue', value)
-}
+const checked = computed({
+    get() {
+        return props.modelValue ?? props.defaultValue
+    },
+
+    set(value: boolean) {
+        emit('update:modelValue', value)
+    },
+})
 </script>
 
 <template>
-    <div class="flex items-center gap-2">
-        <CheckboxRoot
-            :id="checkboxId"
-            :name="props.name"
-            :model-value="props.modelValue"
-            :default-value="props.defaultValue"
-            :true-value="props.trueValue"
-            :false-value="props.falseValue"
-            :disabled="props.disabled"
-            :required="props.required"
-            class="
-                peer
-                flex size-4 shrink-0 items-center justify-center
-                border border-input
-                bg-background
-                outline-none
-                transition-colors
-                focus-visible:ring-2
-                focus-visible:ring-ring
-                focus-visible:ring-offset-2
-                disabled:cursor-not-allowed
-                disabled:opacity-50
-                data-[state=checked]:border-primary
-                data-[state=checked]:bg-primary
-                data-[state=checked]:text-primary-foreground
-            "
-            @update:model-value="updateValue"
-        >
-            <CheckboxIndicator>
-                <Check class="size-3.5" />
-            </CheckboxIndicator>
-        </CheckboxRoot>
+    <div>
+        <!--
+            Only needed when the checkbox is being submitted
+            through an HTML/Inertia form.
+        -->
+        <input v-if="name" type="hidden" :name="name" :value="falseValue" />
 
-        <label
-            v-if="props.label"
-            :for="checkboxId"
-            class="
+        <label :for="id" class="
+                inline-flex
                 cursor-pointer
-                text-sm font-medium leading-none
-                peer-disabled:cursor-not-allowed
-                peer-disabled:opacity-70
-            "
-        >
-            {{ props.label }}
+                items-center
+                gap-3
+                select-none
+            " :class="{
+                'cursor-not-allowed opacity-60': disabled,
+            }">
+            <input :id="id" v-model="checked" type="checkbox" :name="name" :value="trueValue" :disabled="disabled"
+                class="peer sr-only" />
+
+            <span class="
+                    flex
+                    size-5
+                    shrink-0
+                    items-center
+                    justify-center
+                    border
+                    border-input
+                    bg-background
+                    text-transparent
+                    transition-colors
+
+                    peer-focus-visible:ring-2
+                    peer-focus-visible:ring-ring
+                    peer-focus-visible:ring-offset-2
+
+                    peer-checked:border-primary
+                    peer-checked:bg-primary
+                    peer-checked:text-primary-foreground
+                ">
+                <Check class="size-3.5 stroke-[3]" />
+            </span>
+
+            <span v-if="label" class="text-sm font-medium leading-none">
+                {{ label }}
+            </span>
         </label>
     </div>
 </template>

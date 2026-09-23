@@ -27,30 +27,76 @@ class ResearchController extends Controller
                 $request->filled('search'),
                 fn($query) => $query->where(function ($query) use ($request) {
                     $query
-                        ->where('title', 'like', '%' . $request->search . '%')
-                        ->orWhere('slug', 'like', '%' . $request->search . '%');
+                        ->where(
+                            'title',
+                            'ilike',
+                            '%' . $request->search . '%'
+                        )
+                        ->orWhere(
+                            'slug',
+                            'ilike',
+                            '%' . $request->search . '%'
+                        );
                 })
             )
             ->when(
                 $request->filled('status'),
-                fn($query) => $query->where('status', $request->status)
+                fn($query) => $query->where(
+                    'status',
+                    $request->status
+                )
             )
             ->when(
                 $request->filled('type'),
-                fn($query) => $query->where('type', $request->type)
+                fn($query) => $query->where(
+                    'type',
+                    $request->type
+                )
             )
             ->latest()
             ->paginate(20)
             ->withQueryString();
 
+        /*
+    |--------------------------------------------------------------------------
+    | Stats
+    |--------------------------------------------------------------------------
+    */
+
+        $stats = [
+            'total' => Research::count(),
+
+            'draft' => Research::where(
+                'status',
+                ResearchStatus::Draft
+            )->count(),
+
+            'published' => Research::where(
+                'status',
+                ResearchStatus::Published
+            )->count(),
+
+            'featured' => Research::where(
+                'featured',
+                true
+            )->count(),
+        ];
+
         return Inertia::render('admin/research/Index', [
-            'researches' => ResearchResource::collection($researches),
+            'researches' => ResearchResource::collection(
+                $researches
+            ),
+
+            'stats' => $stats,
+
             'filters' => [
                 'search' => $request->search,
                 'status' => $request->status,
                 'type' => $request->type,
             ],
+
             'statusOptions' => ResearchStatus::dropdown(),
+
             'typeOptions' => ResearchType::dropdown(),
         ]);
     }
@@ -73,6 +119,7 @@ class ResearchController extends Controller
         $research = $action->handle(
             $request->validated()
         );
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Research created.')]);
 
         return to_route(
             'admin.research.show',
@@ -113,6 +160,8 @@ class ResearchController extends Controller
             data: $request->validated(),
         );
 
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Research updated.')]);
+
         return to_route(
             'admin.research.show',
             $research
@@ -122,7 +171,7 @@ class ResearchController extends Controller
     public function destroy(Research $research): RedirectResponse
     {
         $research->delete();
-
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Research destroyed.')]);
         return to_route('admin.research.index');
     }
 }

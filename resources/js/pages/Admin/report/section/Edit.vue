@@ -1,113 +1,132 @@
 <script setup lang="ts">
-    import { Head, router, useForm } from '@inertiajs/vue3'
-    import { ArrowLeft } from '@lucide/vue'
+import { Head, Form, Link } from '@inertiajs/vue3'
 
-    import AppButton from '@/components/ui/AppButton.vue'
-    import AppFormControl from '@/components/form/AppFormControl.vue'
-    import AppInput from '@/components/form/AppInput.vue'
-    import AppTextarea from '@/components/form/AppTextarea.vue'
-    import Heading from '@/components/Heading.vue'
-    import TableLayout from '@/layouts/table/Layout.vue'
+import AppFormControl from '@/components/form/AppFormControl.vue'
+import AppInput from '@/components/form/AppInput.vue'
+import AppTextarea from '@/components/form/AppTextarea.vue'
 
-    import {
-        index,
-        update,
-    } from '@/routes/admin/report/sections'
+import Heading from '@/components/Heading.vue'
+import BackButton from '@/components/ui/BackButton.vue'
+import Button from '@/components/ui/button/Button.vue'
 
-    import type { ReportSection } from '@/types/report'
+import {
+    index,
+    update,
+} from '@/routes/admin/report/sections'
 
-    interface Props {
-        report: {
-            id: number
-            title: string
-        }
-        section: ReportSection
+import type { ReportSection } from '@/types/report'
+
+
+interface Props {
+    report: {
+        id: number
+        title: string
     }
 
-    const props = defineProps<Props>()
+    section: ReportSection
+}
 
-    const form = useForm({
-        title: props.section.title,
-        subtitle: props.section.subtitle ?? '',
-        content: props.section.content ?? '',
-        position: props.section.position,
-    })
-
-    const submit = () => {
-        form.put(
-            update.url({
-                report: props.report.id,
-                section: props.section.id,
-            }),
-        )
-    }
-
-    const back = () => {
-        router.visit(
-            index.url({
-                report: props.report.id,
-            }),
-        )
-    }
+defineProps<Props>()
 </script>
+
 
 <template>
 
     <Head :title="`Edit Section - ${report.title}`" />
 
-    <TableLayout>
-        <div class="space-y-6">
-            <div class="flex items-center gap-3">
-                <AppButton variant="ghost" size="icon" type="button" @click="back">
-                    <ArrowLeft class="size-4" />
-                </AppButton>
+    <div class="space-y-6">
 
-                <Heading title="Edit Report Section" :description="report.title" />
+        <!-- Header -->
+
+        <div class="flex gap-4 py-5">
+            <BackButton />
+
+            <Heading title="Edit Report Section" :description="report.title" />
+        </div>
+
+
+        <!-- Form -->
+
+        <Form v-slot="{ errors, processing }" v-bind="update.form({
+            report: report.id,
+            section: section.id,
+        })" :options="{
+                preserveScroll: true,
+            }" class="space-y-6">
+
+            <div class="rounded-lg border bg-background p-6">
+
+                <div class="mb-6">
+                    <h2 class="text-base font-semibold">
+                        Section Information
+                    </h2>
+
+                    <p class="mt-1 text-sm text-muted-foreground">
+                        Update the content and ordering of this report section.
+                    </p>
+                </div>
+
+
+                <div class="space-y-5">
+
+                    <!-- Title -->
+
+                    <AppFormControl label="Title" :error="errors.title" required>
+                        <AppInput name="title" :default-value="section.title" placeholder="Enter section title" />
+                    </AppFormControl>
+
+
+                    <!-- Subtitle -->
+
+                    <AppFormControl label="Subtitle" :error="errors.subtitle">
+                        <AppInput name="subtitle" :default-value="section.subtitle ?? ''"
+                            placeholder="Enter section subtitle" />
+                    </AppFormControl>
+
+
+                    <!-- Content -->
+
+                    <AppFormControl label="Content" :error="errors.content">
+                        <AppTextarea name="content" :default-value="section.content ?? ''"
+                            placeholder="Write the section content..." :rows="14" />
+                    </AppFormControl>
+
+
+                    <!-- Position -->
+
+                    <AppFormControl label="Position" :error="errors.position"
+                        description="Lower numbers appear first in the report.">
+                        <AppInput name="position" type="number" min="0" :default-value="section.position" />
+                    </AppFormControl>
+
+                </div>
             </div>
 
-            <form class="space-y-6" @submit.prevent="submit">
-                <div class="rounded-lg border bg-background p-6">
-                    <div class="mb-6">
-                        <h2 class="text-base font-semibold">
-                            Section Information
-                        </h2>
 
-                        <p class="mt-1 text-sm text-muted-foreground">
-                            Update the content and ordering of this report section.
-                        </p>
-                    </div>
+            <!-- Actions -->
 
-                    <div class="space-y-5">
-                        <AppFormControl label="Title" :error="form.errors.title" required>
-                            <AppInput v-model="form.title" name="title" placeholder="Enter section title" />
-                        </AppFormControl>
+            <div class="flex justify-end gap-3">
 
-                        <AppFormControl label="Subtitle" :error="form.errors.subtitle">
-                            <AppInput v-model="form.subtitle" name="subtitle" placeholder="Enter section subtitle" />
-                        </AppFormControl>
-
-                        <AppFormControl label="Content" :error="form.errors.content">
-                            <AppTextarea v-model="form.content" name="content"
-                                placeholder="Write the section content..." rows="14" />
-                        </AppFormControl>
-
-                        <AppFormControl label="Position" :error="form.errors.position"
-                            description="Lower numbers appear first in the report.">
-                            <AppInput v-model.number="form.position" type="number" name="position" min="0" />
-                        </AppFormControl>
-                    </div>
-                </div>
-
-                <div class="flex justify-end gap-3">
-                    <AppButton type="button" variant="outline" @click="back">
+                <Button type="button" variant="outline" as-child>
+                    <Link :href="index({
+                        report: report.id,
+                    })
+                        ">
                         Cancel
-                    </AppButton>
+                    </Link>
+                </Button>
 
-                    <AppButton type="submit" :disabled="form.processing">
-                        Update Section
-                    </AppButton>
-                </div>
-            </form>
-        </div>
-    </TableLayout>
+
+                <Button type="submit" :disabled="processing">
+                    {{
+                        processing
+                            ? 'Processing...'
+                            : 'Update Section'
+                    }}
+                </Button>
+
+            </div>
+
+        </Form>
+    </div>
 </template>

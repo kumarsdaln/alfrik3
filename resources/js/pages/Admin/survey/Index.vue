@@ -10,13 +10,13 @@
 
     import AppStats from '@/components/ui/AppStats.vue'
     import AppSelect from '@/components/form/AppSelect.vue'
-    import FilterControl from '@/components/ui/FilterControl.vue'
+    import FilterControl from '@/components/filters/FilterControl.vue'
 
     import AppTable from '@/components/ui/AppTable.vue'
     import AppTableActions from '@/components/ui/AppTableActions.vue'
     import AppPagination from '@/components/ui/AppPagination.vue'
 
-    import TableLayout from '@/layouts/table/Layout.vue'
+    import TableLayout from '@/layouts/table/TableLayout.vue'
 
     import { useFilters } from '@/composables/useFilters'
 
@@ -224,7 +224,7 @@
 
         <!-- Pagination -->
 
-        <AppPagination v-if="surveys.meta" :links="surveys.meta.links" />
+        <AppPagination v-if="surveys.meta" :meta="surveys.meta" />
 
     </TableLayout>
 </template>

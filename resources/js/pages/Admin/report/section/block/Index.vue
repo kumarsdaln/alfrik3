@@ -5,9 +5,9 @@
     import AppButton from '@/components/ui/AppButton.vue'
     import AppTable from '@/components/ui/AppTable.vue'
     import AppTableActions from '@/components/ui/AppTableActions.vue'
-    import Badge from '@/components/ui/Badge.vue'
+    import Badge from '@/components/ui/badge/Badge.vue'
     import Heading from '@/components/Heading.vue'
-    import TableLayout from '@/layouts/table/Layout.vue'
+    import TableLayout from '@/layouts/table/TableLayout.vue'
 
     import {
         create,

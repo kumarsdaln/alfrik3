@@ -23,8 +23,8 @@ import { index as magazines } from '@/routes/admin/magazines';
 import {index as categories } from '@/actions/App/Http/Controllers/Admin/Category/CategoryController';
 import {index as tags } from '@/actions/App/Http/Controllers/Admin/Tag/TagController';
 import { index as research } from '@/routes/admin/research';
-import { index as reports } from '@/routes/admin/reports';
-import { index as surveys } from '@/routes/admin/surveys';
+import { index as reports } from '@/routes/admin/report';
+import { index as surveys } from '@/routes/admin/survey';
 
 const mainNavItems: NavItem[] = [
     {

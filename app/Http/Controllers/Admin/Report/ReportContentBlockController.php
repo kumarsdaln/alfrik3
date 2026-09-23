@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Admin;
+namespace App\Http\Controllers\Admin\Report;
 
 use App\Actions\Report\CreateReportContentBlock;
 use App\Actions\Report\DeleteReportContentBlock;

@@ -8,7 +8,6 @@
 
     import Heading from '@/components/Heading.vue'
     import BackButton from '@/components/ui/BackButton.vue'
-    import Button from '@/components/ui/button/Button.vue'
     import Badge from '@/components/ui/badge/Badge.vue'
 
     import AppStats from '@/components/ui/AppStats.vue'
@@ -16,8 +15,8 @@
     import AppTableActions from '@/components/ui/AppTableActions.vue'
     import AppPagination from '@/components/ui/AppPagination.vue'
 
-    import FilterControl from '@/components/table/FilterControl.vue'
-    import TableLayout from '@/layouts/table/Layout.vue'
+    import FilterControl from '@/components/filters/FilterControl.vue'
+    import TableLayout from '@/layouts/table/TableLayout.vue'
 
     import Date from '@/components/datadisplay/Date.vue'
 
@@ -174,7 +173,7 @@
             </template>
 
             <template #cell-started_at="{ row }">
-                <Date v-if="row.started_at" :date="row.started_at" />
+                <Date v-if="row.started_at" :value="row.started_at" />
 
                 <span v-else>
                     —
@@ -182,7 +181,7 @@
             </template>
 
             <template #cell-submitted_at="{ row }">
-                <Date v-if="row.submitted_at" :date="row.submitted_at" />
+                <Date v-if="row.submitted_at" :value="row.submitted_at" />
 
                 <span v-else>
                     —
@@ -207,7 +206,7 @@
         </AppTable>
 
         <div class="mt-4">
-            <AppPagination :pagination="responses" />
+            <AppPagination :meta="responses.meta" />
         </div>
     </TableLayout>
 </template>

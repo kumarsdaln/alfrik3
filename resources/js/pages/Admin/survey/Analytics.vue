@@ -12,7 +12,7 @@ import {
 import AppHeading from '@/components/ui/AppHeading.vue'
 import AppText from '@/components/ui/AppText.vue'
 import AppStats from '@/components/ui/AppStats.vue'
-import Badge from '@/components/ui/Badge.vue'
+import Badge from '@/components/ui/badge/Badge.vue'
 import Date from '@/components/datadisplay/Date.vue'
 
 import { index as surveyIndex } from '@/routes/admin/survey'

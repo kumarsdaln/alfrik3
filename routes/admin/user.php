@@ -5,14 +5,29 @@ use App\Http\Controllers\Admin\User\RoleController;
 use App\Http\Controllers\Admin\User\UserController;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware(['auth', 'role:admin'])
-    ->prefix('admin')
+/*
+|--------------------------------------------------------------------------
+| Admin User Management
+|--------------------------------------------------------------------------
+*/
+
+Route::prefix('admin')
     ->name('admin.')
+    ->middleware(['auth', 'role:admin'])
     ->group(function () {
+
+        /*
+        |--------------------------------------------------------------------------
+        | Users
+        |--------------------------------------------------------------------------
+        */
+
         Route::prefix('users')
             ->name('users.')
+            ->scopeBindings()
             ->controller(UserController::class)
             ->group(function () {
+
                 Route::get('/', 'index')
                     ->name('index');
 
@@ -38,9 +53,21 @@ Route::middleware(['auth', 'role:admin'])
                     ->name('destroy');
             });
 
-        Route::resource('permissions', PermissionController::class)
-            ->except(['show']);
+        /*
+        |--------------------------------------------------------------------------
+        | Roles
+        |--------------------------------------------------------------------------
+        */
 
         Route::resource('roles', RoleController::class)
+            ->except(['show']);
+
+        /*
+        |--------------------------------------------------------------------------
+        | Permissions
+        |--------------------------------------------------------------------------
+        */
+
+        Route::resource('permissions', PermissionController::class)
             ->except(['show']);
     });

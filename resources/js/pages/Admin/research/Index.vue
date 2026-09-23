@@ -1,190 +1,257 @@
 <script setup lang="ts">
-    import { computed } from 'vue'
-    import { Link, router } from '@inertiajs/vue3'
-    import { Eye, Pencil, Plus, Trash2 } from '@lucide/vue'
+import { computed } from 'vue'
+import { Link, router } from '@inertiajs/vue3'
+import { BookOpen, CircleHelp, ClipboardList, Eye, FolderTree, Image, Lightbulb, Mail, Pencil, Plus, Tags, Trash2, Users } from '@lucide/vue'
 
-    import Date from '@/components/datadisplay/Date.vue'
-    import Heading from '@/components/Heading.vue'
-    import BackButton from '@/components/ui/BackButton.vue'
-    import AppPagination from '@/components/ui/AppPagination.vue'
-    import AppStats from '@/components/ui/AppStats.vue'
-    import AppTable from '@/components/ui/AppTable.vue'
-    import AppTableActions from '@/components/ui/AppTableActions.vue'
-    import AppSelect from '@/components/form/AppSelect.vue'
-    import Button from '@/components/ui/button/Button.vue'
-    import Badge from '@/components/ui/badge/Badge.vue'
-    import FilterControl from '@/components/filters/FilterControl.vue'
-    import TableLayout from '@/layouts/table/TableLayout.vue'
+import Date from '@/components/datadisplay/Date.vue'
+import Heading from '@/components/Heading.vue'
+import BackButton from '@/components/ui/BackButton.vue'
+import AppPagination from '@/components/ui/AppPagination.vue'
+import AppStats from '@/components/ui/AppStats.vue'
+import AppTable from '@/components/ui/AppTable.vue'
+import AppTableActions from '@/components/ui/AppTableActions.vue'
+import AppSelect from '@/components/form/AppSelect.vue'
+import Button from '@/components/ui/button/Button.vue'
+import Badge from '@/components/ui/badge/Badge.vue'
+import FilterControl from '@/components/filters/FilterControl.vue'
+import TableLayout from '@/layouts/table/TableLayout.vue'
 
-    import { useFilters } from '@/composables/useFilters'
+    import { index as manageMedia } from '@/routes/admin/media'
+    import { index as manageCategory } from '@/routes/admin/categories/assignment'
+    import { index as manageTags } from '@/routes/admin/tags/assignment'
+    import { edit as manageMethodology } from '@/routes/admin/research/methodology';
+    import { index as manageSources } from '@/routes/admin/research/sources';
+    import { index as manageQuestions } from '@/routes/admin/research/questions';
+    import { index as manageFindings } from '@/routes/admin/research/findings';
+    import { index as manageTeam } from '@/routes/admin/research/team';
+    import { index as manageInvitations } from '@/routes/admin/research/invitations';
 
-    import {
-        create,
-        show,
-        edit,
-        destroy,
-    } from '@/routes/admin/research'
 
-    import type {
-        FormOption,
-        Pagination,
-        Research,
-    } from '@/types'
+import { useFilters } from '@/composables/useFilters'
 
-    import type { TableAction } from '@/components/ui/AppTableActions.vue'
+import {
+    create,
+    show,
+    edit,
+    destroy,
+} from '@/routes/admin/research'
 
-    interface Props {
-        researches: Pagination<Research>
+import type {
+    FormOption,
+    Pagination,
+    Research,
+} from '@/types'
 
-        typeOptions: FormOption[]
-        statusOptions: FormOption[]
+import type { TableAction } from '@/components/ui/AppTableActions.vue'
 
-        filters: {
-            search?: string
-            type?: string
-            status?: string
-        }
+interface Props {
+    researches: Pagination<Research>
 
-        stats: {
-            total: number
-            published: number
-            draft: number
-            archived: number
-            this_month: number
-        }
+    typeOptions: FormOption[]
+    statusOptions: FormOption[]
+
+    filters: {
+        search?: string
+        type?: string
+        status?: string
     }
 
-    const props = defineProps<Props>()
+    stats: {
+        total: number
+        published: number
+        draft: number
+        archived: number
+        this_month: number
+    }
+}
 
-    /*
-    |--------------------------------------------------------------------------
-    | Filters
-    |--------------------------------------------------------------------------
-    */
+const props = defineProps<Props>()
 
-    const {
-        filters,
-        filterCount,
-        applyFilters,
-        clearFilters,
-    } = useFilters(
-        {
-            search: props.filters.search ?? '',
-            type: props.filters.type ?? '',
-            status: props.filters.status ?? '',
-        },
-        {
-            url: window.location.pathname,
-            searchKey: 'search',
-            debounce: 500,
-        },
-    )
+/*
+|--------------------------------------------------------------------------
+| Filters
+|--------------------------------------------------------------------------
+*/
 
-    /*
-    |--------------------------------------------------------------------------
-    | Statistics
-    |--------------------------------------------------------------------------
-    */
+const {
+    filters,
+    filterCount,
+    applyFilters,
+    clearFilters,
+} = useFilters(
+    {
+        search: props.filters.search ?? '',
+        type: props.filters.type ?? '',
+        status: props.filters.status ?? '',
+    },
+    {
+        url: window.location.pathname,
+        searchKey: 'search',
+        debounce: 500,
+    },
+)
 
-    const statItems = computed(() => [
-        {
-            label: 'Total Research',
-            value: props.stats.total,
-        },
-        {
-            label: 'Published',
-            value: props.stats.published,
-        },
-        {
-            label: 'Drafts',
-            value: props.stats.draft,
-        },
-        {
-            label: 'This Month',
-            value: props.stats.this_month,
-        },
-    ])
+/*
+|--------------------------------------------------------------------------
+| Statistics
+|--------------------------------------------------------------------------
+*/
 
-    /*
-    |--------------------------------------------------------------------------
-    | Table
-    |--------------------------------------------------------------------------
-    */
+const statItems = computed(() => [
+    {
+        label: 'Total Research',
+        value: props.stats.total,
+    },
+    {
+        label: 'Published',
+        value: props.stats.published,
+    },
+    {
+        label: 'Drafts',
+        value: props.stats.draft,
+    },
+    {
+        label: 'This Month',
+        value: props.stats.this_month,
+    },
+])
 
-    const columns = [
+/*
+|--------------------------------------------------------------------------
+| Table
+|--------------------------------------------------------------------------
+*/
+
+const columns = [
+    {
+        key: 'id',
+        label: '#',
+        width: '80px',
+    },
+    {
+        key: 'title',
+        label: 'Research',
+    },
+    {
+        key: 'type',
+        label: 'Type',
+        width: '180px',
+    },
+    {
+        key: 'author',
+        label: 'Author',
+        width: '180px',
+    },
+    {
+        key: 'status',
+        label: 'Status',
+        width: '140px',
+    },
+    {
+        key: 'published_at',
+        label: 'Published At',
+        width: '180px',
+    },
+    {
+        key: 'actions',
+        label: '',
+        width: '64px',
+        align: 'right' as const,
+    },
+]
+
+/*
+|--------------------------------------------------------------------------
+| Actions
+|--------------------------------------------------------------------------
+*/
+
+function deleteResearch(research: Research) {
+    if (!confirm(`Are you sure you want to delete "${research.title}"?`)) {
+        return
+    }
+
+    router.delete(destroy(research.id).url, {
+        preserveScroll: true,
+    })
+}
+
+function getResearchActions(research: Research): TableAction[] {
+    return [
         {
-            key: 'id',
-            label: '#',
-            width: '80px',
+            label: 'View',
+            icon: Eye,
+            href: show(research.id).url,
         },
+
         {
-            key: 'title',
-            label: 'Research',
+            label: 'Edit',
+            icon: Pencil,
+            href: edit(research.id).url,
         },
+
         {
-            key: 'type',
-            label: 'Type',
-            width: '180px',
+            label: 'Manage Media',
+            icon: Image,
+            href: manageMedia({type:'resource', id:research.id}).url,
         },
+
         {
-            key: 'author',
-            label: 'Author',
-            width: '180px',
+            label: 'Manage Categories',
+            icon: FolderTree,
+            href: manageCategory({type:'resource', id:research.id}).url,
         },
+
         {
-            key: 'status',
-            label: 'Status',
-            width: '140px',
+            label: 'Manage Tags',
+            icon: Tags,
+            href: manageTags({type:'resource', id:research.id}).url,
         },
+
         {
-            key: 'published_at',
-            label: 'Published At',
-            width: '180px',
+            label: 'Manage Methodology',
+            icon: ClipboardList,
+            href: manageMethodology(research.id).url,
         },
+
         {
-            key: 'actions',
-            label: '',
-            width: '64px',
-            align: 'right' as const,
+            label: 'Manage Sources',
+            icon: BookOpen,
+            href: manageSources(research.id).url,
+        },
+
+        {
+            label: 'Manage Questions',
+            icon: CircleHelp,
+            href: manageQuestions(research.id).url,
+        },
+
+        {
+            label: 'Manage Findings',
+            icon: Lightbulb,
+            href: manageFindings(research.id).url,
+        },
+
+        {
+            label: 'Manage Team',
+            icon: Users,
+            href: manageTeam(research.id).url,
+        },
+
+        {
+            label: 'Manage Invitations',
+            icon: Mail,
+            href: manageInvitations(research.id).url,
+        },
+
+        {
+            label: 'Delete',
+            icon: Trash2,
+            danger: true,
+            onClick: () => deleteResearch(research),
         },
     ]
-
-    /*
-    |--------------------------------------------------------------------------
-    | Actions
-    |--------------------------------------------------------------------------
-    */
-
-    function deleteResearch(research: Research) {
-        if (!confirm(`Are you sure you want to delete "${research.title}"?`)) {
-            return
-        }
-
-        router.delete(destroy(research.id).url, {
-            preserveScroll: true,
-        })
-    }
-
-    function getResearchActions(research: Research): TableAction[] {
-        return [
-            {
-                label: 'View',
-                icon: Eye,
-                href: show(research.id).url,
-            },
-            {
-                label: 'Edit',
-                icon: Pencil,
-                href: edit(research.id).url,
-            },
-            {
-                label: 'Delete',
-                icon: Trash2,
-                danger: true,
-                onClick: () => deleteResearch(research),
-            },
-        ]
-    }
+}
 </script>
 
 <template>
@@ -194,7 +261,6 @@
             <div class="flex items-center justify-between gap-4 py-5">
                 <div class="flex min-w-0 gap-4">
                     <BackButton />
-
                     <Heading title="Research" description="Manage and organize your research projects." />
                 </div>
 

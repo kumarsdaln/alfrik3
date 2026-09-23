@@ -1,199 +1,187 @@
 <script setup lang="ts">
-    import { Head, router, useForm } from '@inertiajs/vue3'
-    import { ArrowLeft } from '@lucide/vue'
+import {
+    AppCheckbox,
+    AppFormControl,
+    AppInput,
+    AppSelect,
+    AppTextarea,
+} from '@/components/form'
 
-    import AppButton from '@/components/ui/AppButton.vue'
-    import AppCheckbox from '@/components/form/AppCheckbox.vue'
-    import AppFormControl from '@/components/form/AppFormControl.vue'
-    import AppInput from '@/components/form/AppInput.vue'
-    import AppSelect from '@/components/form/AppSelect.vue'
-    import AppTextarea from '@/components/form/AppTextarea.vue'
-    import Heading from '@/components/Heading.vue'
-    import TableLayout from '@/layouts/table/Layout.vue'
+import Heading from '@/components/Heading.vue'
+import BackButton from '@/components/ui/BackButton.vue'
+import Button from '@/components/ui/button/Button.vue'
 
-    import { index as reportIndex, store } from '@/routes/admin/report'
+import { Form, Link } from '@inertiajs/vue3'
 
-    import type { FormOption } from '@/types'
-    import type { ReportStatus, ReportType } from '@/types/report'
+import {
+    index,
+    store,
+} from '@/routes/admin/report'
 
-    interface Props {
-        statusOptions: FormOption<ReportStatus>[]
-        typeOptions: FormOption<ReportType>[]
-        researchOptions: FormOption<number>[]
-        authorOptions: FormOption<number>[]
-    }
+import type { FormOption } from '@/types'
 
-    const props = defineProps<Props>()
 
-    const form = useForm({
-        research_id: null as number | null,
-        title: '',
-        slug: '',
-        subtitle: '',
-        description: '',
-        summary: '',
-        type: props.typeOptions[0]?.value ?? '',
-        status: 'draft' as ReportStatus,
-        author_id: null as number | null,
-        featured: false,
-        published_at: '',
-        report_date: '',
-    })
+interface Props {
+    authorOptions: FormOption[]
+    typeOptions: FormOption[]
+    statusOptions: FormOption[]
+}
 
-    const submit = () => {
-        form.post(store.url())
-    }
-
-    const back = () => {
-        router.visit(reportIndex.url())
-    }
+defineProps<Props>()
 </script>
 
+
 <template>
+    <div class="space-y-6">
 
-    <Head title="Create Report" />
+        <!-- Header -->
 
-    <TableLayout>
-        <div class="space-y-6">
-            <div class="flex items-center justify-between gap-4">
-                <div class="flex items-center gap-3">
-                    <AppButton variant="ghost" size="icon" type="button" @click="back">
-                        <ArrowLeft class="size-4" />
-                    </AppButton>
+        <div class="flex gap-4 py-5">
+            <BackButton />
 
-                    <Heading title="Create Report"
-                        description="Create a new report for the Alfrik research platform." />
+            <Heading title="Create Report"
+                description="Create the basic details of this report. Sections and content blocks are managed separately." />
+        </div>
+
+
+        <!-- Form -->
+
+        <Form v-slot="{ errors, processing }" v-bind="store.form()" :options="{
+            preserveScroll: true,
+        }" class="space-y-6">
+
+            <div class="grid gap-6 lg:grid-cols-2">
+
+                <!-- ===================================================== -->
+                <!-- Basic Information -->
+                <!-- ===================================================== -->
+                <div class="space-y-5 rounded-lg border bg-background p-6">
+
+                    <div class="mb-6">
+                        <h2 class="text-base font-semibold">
+                            Report Information
+                        </h2>
+
+                        <p class="mt-1 text-sm text-muted-foreground">
+                            Define the basic information for this report.
+                        </p>
+                    </div>
+
+
+                    <!-- Title -->
+                    <AppFormControl label="Title" required :error="errors.title">
+                        <AppInput name="title" placeholder="Enter report title" />
+                    </AppFormControl>
+
+
+                    <!-- Slug -->
+                    <AppFormControl label="Slug" required :error="errors.slug">
+                        <AppInput name="slug" placeholder="Enter report slug" />
+                    </AppFormControl>
+
+
+                    <!-- Subtitle -->
+                    <AppFormControl label="Subtitle" :error="errors.subtitle">
+                        <AppInput name="subtitle" placeholder="Enter report subtitle" />
+                    </AppFormControl>
+
+
+                    <!-- Summary -->
+                    <AppFormControl label="Summary" :error="errors.summary">
+                        <AppTextarea name="summary" placeholder="Enter report summary" :rows="5" />
+                    </AppFormControl>
+
+
+                    <!-- Description -->
+                    <AppFormControl label="Description" :error="errors.description">
+                        <AppTextarea name="description" placeholder="Enter report description" :rows="8" />
+                    </AppFormControl>
+
                 </div>
+
+
+                <!-- ===================================================== -->
+                <!-- Publishing -->
+                <!-- ===================================================== -->
+                <div class="space-y-5 rounded-lg border bg-background p-6">
+
+                    <div class="mb-6">
+                        <h2 class="text-base font-semibold">
+                            Publishing
+                        </h2>
+
+                        <p class="mt-1 text-sm text-muted-foreground">
+                            Configure the report type, status, author and
+                            publication information.
+                        </p>
+                    </div>
+
+
+                    <!-- Report Type -->
+                    <AppFormControl label="Report Type" required :error="errors.type">
+                        <AppSelect name="type" :options="typeOptions" placeholder="Select report type" />
+                    </AppFormControl>
+
+
+                    <!-- Report Status -->
+                    <AppFormControl label="Report Status" required :error="errors.status">
+                        <AppSelect name="status" :options="statusOptions" placeholder="Select report status" />
+                    </AppFormControl>
+
+
+                    <!-- Author -->
+                    <AppFormControl label="Author" :error="errors.author_id">
+                        <AppSelect name="author_id" :options="authorOptions" placeholder="Select author" />
+                    </AppFormControl>
+
+
+                    <!-- Published At -->
+                    <AppFormControl label="Published At" :error="errors.published_at">
+                        <AppInput name="published_at" type="datetime-local" />
+                    </AppFormControl>
+
+
+                    <!-- Featured -->
+                    <AppFormControl :error="errors.featured">
+                        <AppCheckbox name="featured" true-value="1" false-value="0" label="Feature this report" />
+                    </AppFormControl>
+
+                </div>
+
             </div>
 
-            <form class="space-y-6" @submit.prevent="submit">
-                <div class="grid gap-6 lg:grid-cols-3">
-                    <div class="space-y-6 lg:col-span-2">
-                        <div class="rounded-lg border bg-background p-6">
-                            <div class="mb-6">
-                                <h2 class="text-base font-semibold">
-                                    Report Information
-                                </h2>
 
-                                <p class="mt-1 text-sm text-muted-foreground">
-                                    Add the main information about this report.
-                                </p>
-                            </div>
+            <!-- ========================================================= -->
+            <!-- Actions -->
+            <!-- ========================================================= -->
 
-                            <div class="space-y-5">
-                                <AppFormControl label="Title" :error="form.errors.title" required>
-                                    <AppInput v-model="form.title" name="title" placeholder="Enter report title" />
-                                </AppFormControl>
+            <div class="
+                    flex
+                    justify-end
+                    gap-3
+                    border-t
+                    border-border-light
+                    pt-6
+                    dark:border-border-dark
+                ">
 
-                                <AppFormControl label="Slug" :error="form.errors.slug" required>
-                                    <AppInput v-model="form.slug" name="slug" placeholder="report-slug" />
-                                </AppFormControl>
+                <Button type="button" variant="outline" as-child>
+                    <Link :href="index()">
+                        Cancel
+                    </Link>
+                </Button>
 
-                                <AppFormControl label="Subtitle" :error="form.errors.subtitle">
-                                    <AppInput v-model="form.subtitle" name="subtitle"
-                                        placeholder="Enter report subtitle" />
-                                </AppFormControl>
 
-                                <AppFormControl label="Description" :error="form.errors.description">
-                                    <AppTextarea v-model="form.description" name="description"
-                                        placeholder="Describe the report..." rows="7" />
-                                </AppFormControl>
+                <Button type="submit" :disabled="processing">
+                    {{
+                        processing
+                            ? 'Processing...'
+                            : 'Create Report'
+                    }}
+                </Button>
 
-                                <AppFormControl label="Summary" :error="form.errors.summary">
-                                    <AppTextarea v-model="form.summary" name="summary"
-                                        placeholder="Write a short summary of the report..." rows="5" />
-                                </AppFormControl>
-                            </div>
-                        </div>
+            </div>
 
-                        <div class="rounded-lg border bg-background p-6">
-                            <div class="mb-6">
-                                <h2 class="text-base font-semibold">
-                                    Report Dates
-                                </h2>
-
-                                <p class="mt-1 text-sm text-muted-foreground">
-                                    Define when the report belongs to and when it
-                                    becomes publicly available.
-                                </p>
-                            </div>
-
-                            <div class="grid gap-5 md:grid-cols-2">
-                                <AppFormControl label="Report Date" :error="form.errors.report_date">
-                                    <AppInput v-model="form.report_date" type="date" name="report_date" />
-                                </AppFormControl>
-
-                                <AppFormControl label="Published At" :error="form.errors.published_at">
-                                    <AppInput v-model="form.published_at" type="datetime-local" name="published_at" />
-                                </AppFormControl>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="space-y-6">
-                        <div class="rounded-lg border bg-background p-6">
-                            <div class="mb-6">
-                                <h2 class="text-base font-semibold">
-                                    Classification
-                                </h2>
-
-                                <p class="mt-1 text-sm text-muted-foreground">
-                                    Organize and classify this report.
-                                </p>
-                            </div>
-
-                            <div class="space-y-5">
-                                <AppFormControl label="Research" :error="form.errors.research_id">
-                                    <AppSelect v-model="form.research_id" :options="researchOptions"
-                                        placeholder="Select research" clearable />
-                                </AppFormControl>
-
-                                <AppFormControl label="Report Type" :error="form.errors.type" required>
-                                    <AppSelect v-model="form.type" :options="typeOptions"
-                                        placeholder="Select report type" />
-                                </AppFormControl>
-
-                                <AppFormControl label="Status" :error="form.errors.status" required>
-                                    <AppSelect v-model="form.status" :options="statusOptions"
-                                        placeholder="Select status" />
-                                </AppFormControl>
-
-                                <AppFormControl label="Author" :error="form.errors.author_id">
-                                    <AppSelect v-model="form.author_id" :options="authorOptions"
-                                        placeholder="Select author" clearable />
-                                </AppFormControl>
-                            </div>
-                        </div>
-
-                        <div class="rounded-lg border bg-background p-6">
-                            <div class="mb-6">
-                                <h2 class="text-base font-semibold">
-                                    Visibility
-                                </h2>
-
-                                <p class="mt-1 text-sm text-muted-foreground">
-                                    Control how this report is highlighted.
-                                </p>
-                            </div>
-
-                            <AppCheckbox id="report-featured" name="featured" v-model="form.featured" true-value="1"
-                                false-value="0" label="Feature this report" />
-                        </div>
-
-                        <div class="rounded-lg border bg-background p-6">
-                            <div class="flex justify-end gap-3">
-                                <AppButton type="button" variant="outline" @click="back">
-                                    Cancel
-                                </AppButton>
-
-                                <AppButton type="submit" :disabled="form.processing">
-                                    Create Report
-                                </AppButton>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </form>
-        </div>
-    </TableLayout>
+        </Form>
+    </div>
 </template>

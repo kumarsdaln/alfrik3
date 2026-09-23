@@ -7,7 +7,6 @@ use App\Enums\Report\ReportType;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Report\ReportResource;
 use App\Models\Report\Report;
-use App\Models\Research\Research;
 use App\Support\Breadcrumbs\BreadcrumbBuilder;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -35,10 +34,14 @@ class ReportController extends Controller
         */
 
         $query = Report::query()
-            ->where('status', 'published')
+            ->where(
+                'status',
+                ReportStatus::Published
+            )
             ->with([
                 'research:id,title',
                 'author:id,name',
+                'media',
             ])
             ->when(
                 $activeType !== '',
@@ -75,34 +78,46 @@ class ReportController extends Controller
         |--------------------------------------------------------------------------
         | Featured Report
         |--------------------------------------------------------------------------
+        |
+        | Only show the featured report when the user is browsing the
+        | main reports page without search or type filters.
+        |
         */
 
         $featured = null;
 
         if ($activeType === '' && $search === '') {
             $featured = Report::query()
-                ->where('status', 'published')
+                ->where(
+                    'status',
+                    ReportStatus::Published
+                )
                 ->where('featured', true)
                 ->with([
                     'research:id,title',
                     'author:id,name',
+                    'media',
                 ])
                 ->orderByDesc('published_at')
                 ->orderByDesc('created_at')
                 ->first();
 
             /*
-            |----------------------------------------------------------------------
+            |--------------------------------------------------------------------------
             | Fallback to latest published report
-            |----------------------------------------------------------------------
+            |--------------------------------------------------------------------------
             */
 
             if (! $featured) {
                 $featured = Report::query()
-                    ->where('status', 'published')
+                    ->where(
+                        'status',
+                        ReportStatus::Published
+                    )
                     ->with([
                         'research:id,title',
                         'author:id,name',
+                        'media',
                     ])
                     ->orderByDesc('published_at')
                     ->orderByDesc('created_at')
@@ -135,22 +150,7 @@ class ReportController extends Controller
             |--------------------------------------------------------------------------
             */
 
-            'types' => collect(
-                ReportType::dropdown()
-            )->values()->all(),
-
-            /*
-            |--------------------------------------------------------------------------
-            | Research
-            |--------------------------------------------------------------------------
-            */
-
-            'researches' => Research::query()
-                ->orderBy('title')
-                ->get([
-                    'id',
-                    'title',
-                ]),
+            'types' => ReportType::dropdown(),
 
             'qfilters' => [
                 'type' => $activeType,
@@ -178,14 +178,13 @@ class ReportController extends Controller
         |--------------------------------------------------------------------------
         | Report
         |--------------------------------------------------------------------------
-        |
-        | Load the complete report structure required by the public page.
-        |
         */
 
         $report->load([
             'research:id,title',
             'author:id,name',
+            'media',
+            'seo',
 
             'sections' => fn ($query) => $query
                 ->orderBy('position'),
@@ -201,8 +200,15 @@ class ReportController extends Controller
         */
 
         $related = Report::query()
-            ->where('status', 'published')
-            ->where('id', '!=', $report->id)
+            ->where(
+                'status',
+                ReportStatus::Published
+            )
+            ->where(
+                'id',
+                '!=',
+                $report->id
+            )
             ->when(
                 $report->type,
                 fn ($query) => $query->where(
@@ -213,6 +219,7 @@ class ReportController extends Controller
             ->with([
                 'research:id,title',
                 'author:id,name',
+                'media',
             ])
             ->orderByDesc('published_at')
             ->orderByDesc('created_at')
@@ -272,8 +279,7 @@ class ReportController extends Controller
      */
     private function isLive(Report $report): bool
     {
-        return $report->status
-            === ReportStatus::Published
+        return $report->status === ReportStatus::Published
             && (
                 is_null($report->published_at)
                 || $report->published_at->lte(now())

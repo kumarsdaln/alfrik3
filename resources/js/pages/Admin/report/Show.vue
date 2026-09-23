@@ -8,9 +8,9 @@
     } from '@lucide/vue'
 
     import AppButton from '@/components/ui/AppButton.vue'
-    import Badge from '@/components/ui/Badge.vue'
+    import Badge from '@/components/ui/badge/Badge.vue'
     import Heading from '@/components/Heading.vue'
-    import TableLayout from '@/layouts/table/Layout.vue'
+    import TableLayout from '@/layouts/table/TableLayout.vue'
 
     import { edit as reportEdit } from '@/routes/admin/report'
 

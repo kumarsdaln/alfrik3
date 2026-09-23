@@ -7,7 +7,7 @@
         ListChecks,
         Pencil,
         Users,
-    } from 'lucide-vue-next'
+    } from '@lucide/vue'
 
     import Heading from '@/components/Heading.vue'
     import BackButton from '@/components/ui/BackButton.vue'

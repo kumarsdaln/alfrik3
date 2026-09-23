@@ -1,82 +1,131 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\Interview\AnswerController;
 use App\Http\Controllers\Admin\Interview\InterviewController;
-use App\Http\Controllers\Admin\Interview\InterviewMediaController;
-use App\Http\Controllers\Admin\Interview\InterviewTaxonomyController;
-use App\Http\Controllers\Admin\Interview\MediaController;
 use App\Http\Controllers\Admin\Interview\ParticipantController;
 use App\Http\Controllers\Admin\Interview\QuestionController;
+use Illuminate\Support\Facades\Route;
 
-Route::prefix('admin/interviews')->name('admin.interviews.')->middleware(['auth', 'role:admin'])->group(function () {
-    Route::get('/', [InterviewController::class, 'index'])->name('index');
-    Route::get('/create', [InterviewController::class, 'create'])->name('create');
-    Route::post('/store', [InterviewController::class, 'store'])->name('store');
-    Route::get('/{interview}', [InterviewController::class, 'show'])->name('show');
-    Route::get('/{interview}/edit', [InterviewController::class, 'edit'])->name('edit');
-    Route::post('/{interview}/update', [InterviewController::class, 'update'])->name('update');
-    // Route::patch('/{interview}/update/status', [InterviewController::class, 'updateStatus'])->name('update.status');
-    // Route::patch('/{interview}/update/type', [InterviewController::class, 'updateType'])->name('update.type');
-    Route::delete('/{interview}/delete', [InterviewController::class, 'destroy'])->name('destroy');
+/*
+|--------------------------------------------------------------------------
+| Admin Interview Management
+|--------------------------------------------------------------------------
+*/
 
-    Route::prefix('{interview}/taxonomy')
-        ->name('taxonomy.')
-        ->controller(InterviewTaxonomyController::class)
-        ->group(function () {
-            Route::get('/', 'index')->name('index');
-            Route::put('/', 'update')->name('update');
+Route::prefix('admin/interviews')
+    ->name('admin.interviews.')
+    ->middleware(['auth', 'role:admin'])
+    ->scopeBindings()
+    ->group(function () {
+
+        /*
+        |--------------------------------------------------------------------------
+        | Interviews
+        |--------------------------------------------------------------------------
+        */
+
+        Route::controller(InterviewController::class)->group(function () {
+
+            Route::get('/', 'index')
+                ->name('index');
+
+            Route::get('/create', 'create')
+                ->name('create');
+
+            Route::post('/', 'store')
+                ->name('store');
+
+            Route::get('/{interview}', 'show')
+                ->name('show');
+
+            Route::get('/{interview}/edit', 'edit')
+                ->name('edit');
+
+            Route::put('/{interview}', 'update')
+                ->name('update');
+
+            Route::delete('/{interview}', 'destroy')
+                ->name('destroy');
         });
 
-    Route::prefix('{interview}/participants')
-        ->name('participants.')
-        ->controller(ParticipantController::class)
-        ->group(function () {
-            Route::get('/', 'index')->name('index');
-            Route::post('/', 'store')->name('store');
-        });
-    Route::delete('participants/{participant}', [ParticipantController::class, 'destroy'])->name('participants.destroy');
+        /*
+        |--------------------------------------------------------------------------
+        | Interview Participants
+        |--------------------------------------------------------------------------
+        */
 
-    Route::prefix('{interview}/questions')
-        ->name('questions.')
-        ->controller(QuestionController::class)
-        ->group(function () {
-            Route::get('/', 'index')->name('index');
-            Route::get('/create', 'create')->name('create');
-            Route::post('/', 'store')->name('store');
-            Route::put('/reorder', 'reorder')->name('reorder');
-        });
+        Route::prefix('{interview}/participants')
+            ->name('participants.')
+            ->controller(ParticipantController::class)
+            ->group(function () {
 
-    Route::prefix('questions')
-        ->name('questions.')
-        ->controller(QuestionController::class)
-        ->group(function () {
-            Route::get('/{question}/edit', 'edit')->name('edit');
-            Route::put('/{question}', 'update')->name('update');
-            Route::delete('/{question}', 'destroy')->name('destroy');
-        });
+                Route::get('/', 'index')
+                    ->name('index');
 
-    Route::prefix('questions/{question}/answers')
-        ->name('questions.answers.')
-        ->controller(AnswerController::class)
-        ->group(function () {
-            Route::get('/create', 'create')->name('create');
-            Route::post('/', 'store')->name('store');
-        });
-    Route::prefix('answers')
-        ->name('questions.answers.')
-        ->controller(AnswerController::class)
-        ->group(function () {
-            Route::get('/{answer}/edit', 'edit')->name('edit');
-            Route::put('/{answer}', 'update')->name('update');
-            Route::delete('/{answer}', 'destroy')->name('destroy');
-        });
+                Route::post('/', 'store')
+                    ->name('store');
 
-    Route::prefix('{interview}/media')
-        ->name('media.')
-        ->controller(InterviewMediaController::class)
-        ->group(function () {
-            Route::get('/', 'index')->name('index');
-            Route::post('/', 'store')->name('store');
-        });
-});
+                Route::delete('/{participant}', 'destroy')
+                    ->name('destroy');
+            });
+
+        /*
+        |--------------------------------------------------------------------------
+        | Interview Questions
+        |--------------------------------------------------------------------------
+        */
+
+        Route::prefix('{interview}/questions')
+            ->name('questions.')
+            ->controller(QuestionController::class)
+            ->group(function () {
+
+                Route::get('/', 'index')
+                    ->name('index');
+
+                Route::get('/create', 'create')
+                    ->name('create');
+
+                Route::post('/', 'store')
+                    ->name('store');
+
+                Route::put('/reorder', 'reorder')
+                    ->name('reorder');
+
+                Route::get('/{question}/edit', 'edit')
+                    ->name('edit');
+
+                Route::put('/{question}', 'update')
+                    ->name('update');
+
+                Route::delete('/{question}', 'destroy')
+                    ->name('destroy');
+            });
+
+        /*
+        |--------------------------------------------------------------------------
+        | Question Answers
+        |--------------------------------------------------------------------------
+        */
+
+        Route::prefix('{interview}/questions/{question}/answers')
+            ->name('questions.answers.')
+            ->controller(AnswerController::class)
+            ->group(function () {
+
+                Route::get('/create', 'create')
+                    ->name('create');
+
+                Route::post('/', 'store')
+                    ->name('store');
+
+                Route::get('/{answer}/edit', 'edit')
+                    ->name('edit');
+
+                Route::put('/{answer}', 'update')
+                    ->name('update');
+
+                Route::delete('/{answer}', 'destroy')
+                    ->name('destroy');
+            });
+    });

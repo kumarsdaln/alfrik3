@@ -1,12 +1,12 @@
 <script setup lang="ts">
     import { Head, Link, router } from '@inertiajs/vue3'
-    import { ArrowLeft, Plus } from 'lucide-vue-next'
+    import { ArrowLeft, Plus } from '@lucide/vue'
 
     import AppButton from '@/components/ui/AppButton.vue'
     import AppTable from '@/components/ui/AppTable.vue'
     import AppTableActions from '@/components/ui/AppTableActions.vue'
     import Heading from '@/components/Heading.vue'
-    import TableLayout from '@/layouts/table/Layout.vue'
+    import TableLayout from '@/layouts/table/TableLayout.vue'
 
     import {
         create,
