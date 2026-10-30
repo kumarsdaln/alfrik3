@@ -15,11 +15,7 @@ class ResearchEvidenceResource extends JsonResource
             'research_id' => $this->research_id,
             'finding_id' => $this->finding_id,
 
-            'type' => [
-                'value' => $this->type->value,
-                'label' => $this->type->label(),
-                'color' => $this->type->color(),
-            ],
+            'type' => $this->type->option(),
 
             'reference_id' => $this->reference_id,
 

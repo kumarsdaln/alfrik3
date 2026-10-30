@@ -1,10 +1,24 @@
 <script setup lang="ts">
-import { Link } from '@inertiajs/vue3';
-import { BookOpen, BookOpenCheck, Cctv, ClipboardList, FolderGit2, LayoutGrid, MessagesSquare, NotebookPen, Users } from '@lucide/vue';
-import AppLogo from '@/components/AppLogo.vue';
-import NavFooter from '@/components/NavFooter.vue';
-import NavMain from '@/components/NavMain.vue';
-import NavUser from '@/components/NavUser.vue';
+import { Link } from '@inertiajs/vue3'
+import {
+    BookOpen,
+    BookOpenCheck,
+    ClipboardList,
+    FolderGit2,
+    LayoutGrid,
+    MessagesSquare,
+    NotebookPen,
+    ShieldCheck,
+    Tags,
+    UserCog,
+    Users,
+    FileText,
+} from '@lucide/vue'
+
+import AppLogo from '@/components/AppLogo.vue'
+import NavUser from '@/components/NavUser.vue'
+import NavMain from '@/components/NavMain.vue'
+
 import {
     Sidebar,
     SidebarContent,
@@ -13,18 +27,27 @@ import {
     SidebarMenu,
     SidebarMenuButton,
     SidebarMenuItem,
-} from '@/components/ui/sidebar';
-import type { NavItem } from '@/types';
+} from '@/components/ui/sidebar'
 
-import { dashboard } from '@/routes';
-import { index as users } from '@/routes/admin/users';
-import { index as interviews } from '@/routes/admin/interviews';
-import { index as magazines } from '@/routes/admin/magazines';
-import {index as categories } from '@/actions/App/Http/Controllers/Admin/Category/CategoryController';
-import {index as tags } from '@/actions/App/Http/Controllers/Admin/Tag/TagController';
-import { index as research } from '@/routes/admin/research';
-import { index as reports } from '@/routes/admin/report';
-import { index as surveys } from '@/routes/admin/survey';
+import type { NavItem } from '@/types'
+
+import { dashboard } from '@/routes'
+import { index as users } from '@/routes/admin/users'
+import { index as roles } from '@/routes/admin/roles'
+import { index as permissions } from '@/routes/admin/permissions'
+import { index as interviews } from '@/routes/admin/interviews'
+import { index as magazines } from '@/routes/admin/magazines'
+import { index as research } from '@/routes/admin/research'
+import { index as reports } from '@/routes/admin/report'
+import { index as surveys } from '@/routes/admin/survey'
+
+import {
+    index as categories,
+} from '@/actions/App/Http/Controllers/Admin/Category/CategoryController'
+
+import {
+    index as tags,
+} from '@/actions/App/Http/Controllers/Admin/Tag/TagController'
 
 const mainNavItems: NavItem[] = [
     {
@@ -35,12 +58,22 @@ const mainNavItems: NavItem[] = [
     {
         title: 'Categories',
         href: categories(),
-        icon: Users,
+        icon: FolderGit2,
     },
     {
         title: 'Tags',
         href: tags(),
-        icon: Users,
+        icon: Tags,
+    },
+    {
+        title: 'Roles',
+        href: roles(),
+        icon: ShieldCheck,
+    },
+    {
+        title: 'Permissions',
+        href: permissions(),
+        icon: UserCog,
     },
     {
         title: 'Users',
@@ -52,16 +85,11 @@ const mainNavItems: NavItem[] = [
         href: interviews(),
         icon: MessagesSquare,
     },
-     {
+    {
         title: 'Magazines',
         href: magazines(),
         icon: BookOpenCheck,
     },
-    // {
-    //     title: 'Events',
-    //     href: events(),
-    //     icon: LayoutGrid,
-    // },
     {
         title: 'Research',
         href: research(),
@@ -70,14 +98,14 @@ const mainNavItems: NavItem[] = [
     {
         title: 'Reports',
         href: reports(),
-        icon: ClipboardList,
+        icon: FileText,
     },
     {
         title: 'Surveys',
         href: surveys(),
-        icon: Cctv,
+        icon: ClipboardList,
     },
-];
+]
 </script>
 
 <template>
@@ -99,9 +127,9 @@ const mainNavItems: NavItem[] = [
         </SidebarContent>
 
         <SidebarFooter>
-            <!-- <NavFooter :items="footerNavItems" /> -->
             <NavUser />
         </SidebarFooter>
     </Sidebar>
+
     <slot />
 </template>

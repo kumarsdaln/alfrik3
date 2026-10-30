@@ -3,7 +3,6 @@
 use App\Http\Controllers\Public\Survey\SurveyController;
 use Illuminate\Support\Facades\Route;
 
-
 Route::prefix('surveys')
     ->name('surveys.')
     ->controller(SurveyController::class)
@@ -11,12 +10,12 @@ Route::prefix('surveys')
         Route::get('/', 'index')
             ->name('index');
 
-        Route::get('/{survey}', 'show')
+        Route::get('/{survey:slug}', 'show')
             ->name('show');
 
-        Route::post('/{survey}/submit', 'submit')
+        Route::post('/{survey:slug}/submit', 'submit')
             ->name('submit');
 
-        Route::get('/{survey}/thank-you', 'thankYou')
+        Route::get('/{survey:slug}/thank-you', 'thankYou')
             ->name('thank-you');
     });

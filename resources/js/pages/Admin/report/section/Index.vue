@@ -1,160 +1,218 @@
 <script setup lang="ts">
-    import { Head, Link, router } from '@inertiajs/vue3'
-    import { ArrowLeft, Plus } from '@lucide/vue'
+import { Link, router } from '@inertiajs/vue3'
+import { Eye, Pencil, Plus, Trash2 } from '@lucide/vue'
 
-    import AppButton from '@/components/ui/AppButton.vue'
-    import AppTable from '@/components/ui/AppTable.vue'
-    import AppTableActions from '@/components/ui/AppTableActions.vue'
-    import Heading from '@/components/Heading.vue'
-    import TableLayout from '@/layouts/table/TableLayout.vue'
+import AppPagination from '@/components/ui/AppPagination.vue'
+import AppTable from '@/components/ui/AppTable.vue'
+import AppTableActions from '@/components/ui/AppTableActions.vue'
+import Button from '@/components/ui/button/Button.vue'
+import Heading from '@/components/Heading.vue'
+import BackButton from '@/components/ui/BackButton.vue'
+import TableLayout from '@/layouts/table/TableLayout.vue'
 
-    import {
-        create,
-        edit,
-        destroy,
-    } from '@/routes/admin/report/sections'
+import {
+    create,
+    show,
+    edit,
+    destroy,
+} from '@/routes/admin/report/sections'
 
-    import { show as reportShow } from '@/routes/admin/report'
+import { index as manageBlock } from '@/routes/admin/report/sections/blocks'
 
-    import type { Report, ReportSection } from '@/types/report'
+import type { Pagination, Report, ReportSection } from '@/types'
 
-    interface Props {
-        report: Report
-        sections: {
-            data: ReportSection[]
-        }
+interface Props {
+    report: {
+        data: Report
     }
+    sections: Pagination<ReportSection>
+}
 
-    const props = defineProps<Props>()
+const props = defineProps<Props>()
 
-    const deleteSection = (section: ReportSection) => {
-        if (
-            !confirm(
-                `Are you sure you want to delete "${section.title}"?`,
-            )
-        ) {
-            return
-        }
+const columns = [
+    {
+        key: 'position',
+        label: '#',
+        width: '80px',
+        align: 'center' as const,
+    },
+    {
+        key: 'title',
+        label: 'Title',
+    },
+    {
+        key: 'subtitle',
+        label: 'Subtitle',
+    },
+    {
+        key: 'actions',
+        label: '',
+        width: '64px',
+        align: 'right' as const,
+    },
+]
 
-        router.delete(
-            destroy.url({
-                report: props.report.id,
-                section: section.id,
-            }),
+function deleteSection(section: ReportSection) {
+    if (
+        !confirm(
+            `Are you sure you want to delete "${section.title}"?`,
         )
+    ) {
+        return
     }
+
+    router.delete(
+        destroy({
+            report: props.report.data.id,
+            section: section.id,
+        }).url,
+        {
+            preserveScroll: true,
+        },
+    )
+}
+
+function getSectionActions(
+    section: ReportSection,
+) {
+    return [
+        {
+            label: 'View',
+            icon: Eye,
+            href: show({
+                report: props.report.data.id,
+                section: section.id,
+            }).url,
+        },
+        {
+            label: 'Edit',
+            icon: Pencil,
+            href: edit({
+                report: props.report.data.id,
+                section: section.id,
+            }).url,
+        },
+        {
+            label: 'Manage Block',
+            icon: Pencil,
+            href: manageBlock({
+                report: props.report.data.id,
+                section: section.id,
+            }).url,
+        },
+        {
+            label: 'Delete',
+            icon: Trash2,
+            danger: true,
+            onClick: () => deleteSection(section),
+        },
+    ]
+}
 </script>
 
 <template>
-
-    <Head :title="`${report.title} - Sections`" />
-
     <TableLayout>
-        <div class="space-y-6">
-            <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <div class="flex items-center gap-3">
-                    <Link :href="reportShow.url({
-                        report: report.id,
-                    })
-                        ">
-                        <AppButton variant="ghost" size="icon" type="button">
-                            <ArrowLeft class="size-4" />
-                        </AppButton>
-                    </Link>
+        <template #header>
+            <div
+                class="flex items-center justify-between gap-4 py-5"
+            >
+                <div class="flex gap-4">
+                    <BackButton />
 
-                    <Heading title="Report Sections" :description="report.title" />
+                    <Heading
+                        title="Report Sections"
+                        :description="report.data.title"
+                    />
                 </div>
 
-                <Link :href="create.url({
-                    report: report.id,
-                })
-                    ">
-                    <AppButton>
-                        <Plus class="mr-2 size-4" />
+                <Button as-child class="gap-2">
+                    <Link :href="create(report.data.id).url">
+                        <Plus class="size-4" />
                         Add Section
-                    </AppButton>
-                </Link>
+                    </Link>
+                </Button>
             </div>
+        </template>
 
-            <div class="rounded-lg border bg-background">
-                <AppTable :columns="[
-                    {
-                        key: 'position',
-                        label: '#',
-                        width: '80px',
-                        align: 'center',
-                    },
-                    {
-                        key: 'title',
-                        label: 'Title',
-                    },
-                    {
-                        key: 'subtitle',
-                        label: 'Subtitle',
-                    },
-                    {
-                        key: 'actions',
-                        label: 'Actions',
-                        align: 'right',
-                        width: '120px',
-                    },
-                ]" :data="sections.data">
-                    <template #cell-position="{ row }">
-                        <span class="text-sm text-muted-foreground">
-                            {{ row.position + 1 }}
-                        </span>
-                    </template>
+        <div class="py-6">
+            <AppTable
+                :columns="columns"
+                :data="sections.data"
+            >
+                <template #cell-position="{ row }">
+                    <span class="text-sm text-muted-foreground">
+                        {{ row.position + 1 }}
+                    </span>
+                </template>
 
-                    <template #cell-title="{ row }">
-                        <div class="min-w-0">
-                            <div class="font-medium">
-                                {{ row.title }}
-                            </div>
+                <template #cell-title="{ row }">
+                    <div class="min-w-0">
+                        <Link
+                            :href="
+                                show({
+                                    report: props.report.data.id,
+                                    section: row.id,
+                                }).url
+                            "
+                            class="block truncate font-medium hover:text-primary"
+                        >
+                            {{ row.title }}
+                        </Link>
 
-                            <div v-if="row.content" class="mt-1 line-clamp-1 text-sm text-muted-foreground">
-                                {{ row.content }}
-                            </div>
+                        <div
+                            v-if="row.content"
+                            class="mt-1 line-clamp-1 text-sm text-muted-foreground"
+                        >
+                            {{ row.content }}
                         </div>
-                    </template>
+                    </div>
+                </template>
 
-                    <template #cell-subtitle="{ row }">
-                        <span v-if="row.subtitle" class="text-sm text-muted-foreground">
-                            {{ row.subtitle }}
-                        </span>
+                <template #cell-subtitle="{ row }">
+                    <span
+                        v-if="row.subtitle"
+                        class="text-sm text-muted-foreground"
+                    >
+                        {{ row.subtitle }}
+                    </span>
 
-                        <span v-else class="text-sm text-muted-foreground">
-                            —
-                        </span>
-                    </template>
+                    <span
+                        v-else
+                        class="text-sm text-muted-foreground"
+                    >
+                        —
+                    </span>
+                </template>
 
-                    <template #cell-actions="{ row }">
-                        <AppTableActions :edit-url="edit.url({
-                            report: report.id,
-                            section: row.id,
-                        })
-                            " @delete="deleteSection(row)" />
-                    </template>
-                </AppTable>
-            </div>
+                <template #cell-actions="{ row }">
+                    <AppTableActions
+                        :actions="getSectionActions(row)"
+                    />
+                </template>
+            </AppTable>
 
-            <div v-if="sections.data.length === 0" class="rounded-lg border bg-background px-6 py-12 text-center">
+            <div
+                v-if="sections.data.length === 0"
+                class="py-12 text-center"
+            >
                 <p class="font-medium">
                     No sections yet
                 </p>
 
                 <p class="mt-1 text-sm text-muted-foreground">
-                    Add the first section to start building this report.
+                    Add the first section to start building this report.data.
                 </p>
 
-                <Link class="mt-4 inline-flex" :href="create.url({
-                    report: report.id,
-                })
-                    ">
-                    <AppButton>
+                <Button
+                    as-child
+                    class="mt-4"
+                >
+                    <Link :href="create(report.data.id).url">
                         <Plus class="mr-2 size-4" />
                         Add Section
-                    </AppButton>
-                </Link>
+                    </Link>
+                </Button>
             </div>
         </div>
     </TableLayout>

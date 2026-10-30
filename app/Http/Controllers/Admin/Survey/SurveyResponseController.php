@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Admin\Survey;
 
 use App\Actions\Survey\DeleteSurveyResponse;
 use App\Http\Controllers\Controller;
-use App\Http\Resources\Survey\SurveyAnswerResource;
+use App\Http\Resources\Survey\SurveyQuestionResource;
 use App\Http\Resources\Survey\SurveyResponseResource;
 use App\Models\Survey\Survey;
 use App\Models\Survey\SurveyResponse;
@@ -45,7 +45,7 @@ class SurveyResponseController extends Controller
             ->paginate(20)
             ->withQueryString();
 
-        return Inertia::render('admin/survey/Responses', [
+        return Inertia::render('admin/survey/response/Index', [
             'survey' => [
                 'id' => $survey->id,
                 'title' => $survey->title,

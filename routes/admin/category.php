@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::prefix('admin/categories')
     ->name('admin.categories.')
-    ->middleware(['auth', 'role:admin'])
+    ->middleware('auth')
     ->group(function () {
 
         /*
@@ -24,22 +24,28 @@ Route::prefix('admin/categories')
         Route::controller(CategoryController::class)->group(function () {
 
             Route::get('/', 'index')
-                ->name('index');
+                ->name('index')
+                ->middleware('permission:categories.view');
 
             Route::get('/create', 'create')
-                ->name('create');
+                ->name('create')
+                ->middleware('permission:categories.create');
 
             Route::post('/', 'store')
-                ->name('store');
+                ->name('store')
+                ->middleware('permission:categories.create');
 
             Route::get('/{category}/edit', 'edit')
-                ->name('edit');
+                ->name('edit')
+                ->middleware('permission:categories.edit');
 
             Route::put('/{category}', 'update')
-                ->name('update');
+                ->name('update')
+                ->middleware('permission:categories.edit');
 
             Route::delete('/{category}', 'destroy')
-                ->name('destroy');
+                ->name('destroy')
+                ->middleware('permission:categories.delete');
         });
 
         /*
@@ -54,9 +60,11 @@ Route::prefix('admin/categories')
             ->group(function () {
 
                 Route::get('/', 'index')
-                    ->name('index');
+                    ->name('index')
+                    ->middleware('permission:categories.assign');
 
                 Route::put('/', 'update')
-                    ->name('update');
+                    ->name('update')
+                    ->middleware('permission:categories.assign');
             });
     });

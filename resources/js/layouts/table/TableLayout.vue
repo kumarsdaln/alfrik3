@@ -2,7 +2,7 @@
 </script>
 
 <template>
-    <div class="flex h-[calc(100vh-64px)] min-h-0 flex-col">
+    <div class="flex h-[calc(100vh-80px)] min-h-0 flex-col">
         <!-- Page Header -->
         <header class="shrink-0">
             <slot name="header" />

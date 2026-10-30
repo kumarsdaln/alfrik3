@@ -1,8 +1,8 @@
 <?php
 
+use App\Http\Controllers\Admin\Report\ReportContentBlockController;
 use App\Http\Controllers\Admin\Report\ReportController;
 use App\Http\Controllers\Admin\Report\ReportSectionController;
-use App\Http\Controllers\Admin\Report\ReportContentBlockController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::prefix('admin/report')
     ->name('admin.report.')
-    ->middleware(['auth', 'role:admin'])
+    ->middleware('auth')
     ->scopeBindings()
     ->group(function () {
 
@@ -24,26 +24,34 @@ Route::prefix('admin/report')
         */
 
         Route::controller(ReportController::class)->group(function () {
+
             Route::get('/', 'index')
-                ->name('index');
+                ->name('index')
+                ->middleware('permission:reports.view');
 
             Route::get('/create', 'create')
-                ->name('create');
+                ->name('create')
+                ->middleware('permission:reports.create');
 
             Route::post('/', 'store')
-                ->name('store');
+                ->name('store')
+                ->middleware('permission:reports.create');
 
             Route::get('/{report}', 'show')
-                ->name('show');
+                ->name('show')
+                ->middleware('permission:reports.view');
 
             Route::get('/{report}/edit', 'edit')
-                ->name('edit');
+                ->name('edit')
+                ->middleware('permission:reports.edit');
 
             Route::put('/{report}', 'update')
-                ->name('update');
+                ->name('update')
+                ->middleware('permission:reports.edit');
 
             Route::delete('/{report}', 'destroy')
-                ->name('destroy');
+                ->name('destroy')
+                ->middleware('permission:reports.delete');
         });
 
         /*
@@ -58,22 +66,32 @@ Route::prefix('admin/report')
             ->group(function () {
 
                 Route::get('/', 'index')
-                    ->name('index');
+                    ->name('index')
+                    ->middleware('permission:reports.sections.view');
 
                 Route::get('/create', 'create')
-                    ->name('create');
+                    ->name('create')
+                    ->middleware('permission:reports.sections.create');
 
                 Route::post('/', 'store')
-                    ->name('store');
+                    ->name('store')
+                    ->middleware('permission:reports.sections.create');
+
+                Route::get('/{section}', 'show')
+                    ->name('show')
+                    ->middleware('permission:reports.sections.show');
 
                 Route::get('/{section}/edit', 'edit')
-                    ->name('edit');
+                    ->name('edit')
+                    ->middleware('permission:reports.sections.edit');
 
                 Route::put('/{section}', 'update')
-                    ->name('update');
+                    ->name('update')
+                    ->middleware('permission:reports.sections.edit');
 
                 Route::delete('/{section}', 'destroy')
-                    ->name('destroy');
+                    ->name('destroy')
+                    ->middleware('permission:reports.sections.delete');
             });
 
         /*
@@ -88,21 +106,31 @@ Route::prefix('admin/report')
             ->group(function () {
 
                 Route::get('/', 'index')
-                    ->name('index');
+                    ->name('index')
+                    ->middleware('permission:reports.blocks.view');
 
                 Route::get('/create', 'create')
-                    ->name('create');
+                    ->name('create')
+                    ->middleware('permission:reports.blocks.create');
 
                 Route::post('/', 'store')
-                    ->name('store');
+                    ->name('store')
+                    ->middleware('permission:reports.blocks.create');
+
+                Route::get('/{block}', 'show')
+                    ->name('show')
+                    ->middleware('permission:reports.blocks.show');
 
                 Route::get('/{block}/edit', 'edit')
-                    ->name('edit');
+                    ->name('edit')
+                    ->middleware('permission:reports.blocks.edit');
 
                 Route::put('/{block}', 'update')
-                    ->name('update');
+                    ->name('update')
+                    ->middleware('permission:reports.blocks.edit');
 
                 Route::delete('/{block}', 'destroy')
-                    ->name('destroy');
+                    ->name('destroy')
+                    ->middleware('permission:reports.blocks.delete');
             });
     });

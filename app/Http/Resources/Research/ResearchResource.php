@@ -15,6 +15,12 @@ class ResearchResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
+            /*
+            |--------------------------------------------------------------------------
+            | Research
+            |--------------------------------------------------------------------------
+            */
+
             'id' => $this->id,
 
             'title' => $this->title,
@@ -23,16 +29,9 @@ class ResearchResource extends JsonResource
             'description' => $this->description,
             'summary' => $this->summary,
 
-            'type' => [
-                'value' => $this->type->value,
-                'label' => $this->type->label(),
-            ],
+            'type' => $this->type->option(),
 
-            'status' => [
-                'value' => $this->status->value,
-                'label' => $this->status->label(),
-                'color' => $this->status->color(),
-            ],
+            'status' => $this->status->option(),
 
             'author' => $this->whenLoaded(
                 'author',
@@ -44,10 +43,50 @@ class ResearchResource extends JsonResource
 
             'featured' => $this->featured,
 
-            'published_at' => $this->published_at?->toISOString(),
+            'published_at' =>
+                $this->published_at?->toISOString(),
 
-            'created_at' => $this->created_at?->toISOString(),
-            'updated_at' => $this->updated_at?->toISOString(),
+            /*
+            |--------------------------------------------------------------------------
+            | Research Relationships
+            |--------------------------------------------------------------------------
+            */
+
+            'methodology' => new ResearchMethodologyResource(
+                $this->whenLoaded('methodology')
+            ),
+
+            'sources' => ResearchSourceResource::collection(
+                $this->whenLoaded('sources')
+            ),
+
+            'questions' => ResearchQuestionResource::collection(
+                $this->whenLoaded('questions')
+            ),
+
+            'findings' => ResearchFindingResource::collection(
+                $this->whenLoaded('findings')
+            ),
+
+            'evidence' => ResearchEvidenceResource::collection(
+                $this->whenLoaded('evidence')
+            ),
+
+            'members' => ResearchMemberResource::collection(
+                $this->whenLoaded('members')
+            ),
+
+            /*
+            |--------------------------------------------------------------------------
+            | Timestamps
+            |--------------------------------------------------------------------------
+            */
+
+            'created_at' =>
+                $this->created_at?->toISOString(),
+
+            'updated_at' =>
+                $this->updated_at?->toISOString(),
         ];
     }
 }

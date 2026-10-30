@@ -26,11 +26,7 @@ class ResearchInvitationResource extends JsonResource
 
             'email' => $this->email,
 
-            'role' => [
-                'value' => $this->role->value,
-                'label' => $this->role->label(),
-                'color' => $this->role->color(),
-            ],
+            'role' => $this->role->option(),
 
             'status' => $status,
 

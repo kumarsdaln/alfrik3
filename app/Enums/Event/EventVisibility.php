@@ -6,8 +6,8 @@ use App\Traits\Enums\HasDropdown;
 
 enum EventVisibility: string
 {
-    use HasDropdown; 
-    
+    use HasDropdown;
+
     case PUBLIC = 'public';
     case PRIVATE = 'private';
 
@@ -22,7 +22,7 @@ enum EventVisibility: string
     public function color(): string
     {
         return match ($this) {
-            self::PUBLIC => '#22C55E',
+            self::PUBLIC => '#16A34A',
             self::PRIVATE => '#6B7280',
         };
     }

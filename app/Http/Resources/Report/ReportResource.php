@@ -32,9 +32,9 @@ class ReportResource extends JsonResource
 
             'summary' => $this->summary,
 
-            'type' => $this->type->value->option(),
+            'type' => $this->type->option(),
 
-            'status' => $this->status->value->option(),
+            'status' => $this->status->option(),
 
             'author_id' => $this->author_id,
 

@@ -1,45 +1,80 @@
 <?php
 
 use App\Http\Controllers\Admin\Event\EventController;
+use App\Http\Controllers\Admin\Event\EventRegistrationController;
 use Illuminate\Support\Facades\Route;
-
-
 
 Route::prefix('admin/events')
     ->name('admin.events.')
-    ->middleware(['auth', 'role:admin'])
+    ->middleware(['auth'])
     ->group(function () {
-
         /*
         |--------------------------------------------------------------------------
-        | Events
+        | Event Listing and Creation
         |--------------------------------------------------------------------------
         */
 
         Route::get('/', [EventController::class, 'index'])
-            ->name('index');
+            ->name('index')
+            ->middleware('permission:events.index');
 
         Route::get('/create', [EventController::class, 'create'])
-            ->name('create');
+            ->name('create')
+            ->middleware('permission:events.create');
 
         Route::post('/', [EventController::class, 'store'])
-            ->name('store');
-
-        Route::get('/{event}/edit', [EventController::class, 'edit'])
-            ->name('edit');
-
-        Route::put('/{event}', [EventController::class, 'update'])
-            ->name('update');
-
-        Route::delete('/{event}', [EventController::class, 'destroy'])
-            ->name('destroy');
+            ->name('store')
+            ->middleware('permission:events.create');
 
         /*
         |--------------------------------------------------------------------------
-        | View
+        | Event Registrations
+        |--------------------------------------------------------------------------
+        */
+
+        Route::prefix('registrations')
+            ->name('registrations.')
+            ->group(function () {
+                Route::get('/scanner', [
+                    EventRegistrationController::class,
+                    'scanner',
+                ])
+                    ->name('scanner')
+                    ->middleware('permission:events.registrations.view');
+
+                Route::post('/scan', [
+                    EventRegistrationController::class,
+                    'scan',
+                ])
+                    ->name('scan')
+                    ->middleware('permission:events.registrations.checkin');
+            });
+
+        /*
+        |--------------------------------------------------------------------------
+        | Event Editing
+        |--------------------------------------------------------------------------
+        */
+
+        Route::get('/{event}/edit', [EventController::class, 'edit'])
+            ->name('edit')
+            ->middleware('permission:events.update');
+
+        Route::put('/{event}', [EventController::class, 'update'])
+            ->name('update')
+            ->middleware('permission:events.update');
+
+        Route::delete('/{event}', [EventController::class, 'destroy'])
+            ->name('destroy')
+            ->middleware('permission:events.delete');
+
+        /*
+        |--------------------------------------------------------------------------
+        | Event Details
         |--------------------------------------------------------------------------
         */
 
         Route::get('/{event}', [EventController::class, 'show'])
-            ->name('show');
+            ->name('show')
+            ->middleware('permission:events.view');
     });

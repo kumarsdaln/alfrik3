@@ -2,7 +2,7 @@
     import MetaItem from './MetaItem.vue'
 
     export interface MetaInfoItem {
-        value: string
+        value: string | number
         label?: string
         icon?: object
         href?: string

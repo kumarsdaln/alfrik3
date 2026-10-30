@@ -28,19 +28,22 @@ import type {
 
 
 interface Props {
-    report: Report
+    report: {
+        data: Report
+    }
     statusOptions: FormOption<ReportStatus>[]
     typeOptions: FormOption<ReportType>[]
     authorOptions: FormOption<number>[]
 }
 
-defineProps<Props>()
+const props = defineProps<Props>()
+console.log(props.report)
 </script>
 
 
 <template>
 
-    <Head :title="`Edit ${report.title}`" />
+    <Head :title="`Edit ${report.data.title}`" />
 
     <div class="space-y-6">
 
@@ -52,7 +55,7 @@ defineProps<Props>()
 
             <BackButton />
 
-            <Heading title="Edit Report" :description="`Update ${report.title}`" />
+            <Heading title="Edit Report" :description="`Update ${report.data.title}`" />
 
         </div>
 
@@ -61,9 +64,7 @@ defineProps<Props>()
         <!-- Form -->
         <!-- ========================================================= -->
 
-        <Form v-slot="{ errors, processing }" v-bind="update.form({
-            report: report.id,
-        })" :options="{
+        <Form v-slot="{ errors, processing }" v-bind="update.form(report.data)" :options="{
                 preserveScroll: true,
             }" class="space-y-6">
 
@@ -107,21 +108,21 @@ defineProps<Props>()
                             <!-- Title -->
 
                             <AppFormControl label="Title" required :error="errors.title">
-                                <AppInput name="title" :default-value="report.title" placeholder="Enter report title" />
+                                <AppInput name="title" :default-value="report.data.title" placeholder="Enter report title" />
                             </AppFormControl>
 
 
                             <!-- Slug -->
 
                             <AppFormControl label="Slug" required :error="errors.slug">
-                                <AppInput name="slug" :default-value="report.slug" placeholder="report-slug" />
+                                <AppInput name="slug" :default-value="report.data.slug" placeholder="report-slug" />
                             </AppFormControl>
 
 
                             <!-- Subtitle -->
 
                             <AppFormControl label="Subtitle" :error="errors.subtitle">
-                                <AppInput name="subtitle" :default-value="report.subtitle ?? ''"
+                                <AppInput name="subtitle" :default-value="report.data.subtitle ?? ''"
                                     placeholder="Enter report subtitle" />
                             </AppFormControl>
 
@@ -129,7 +130,7 @@ defineProps<Props>()
                             <!-- Description -->
 
                             <AppFormControl label="Description" :error="errors.description">
-                                <AppTextarea name="description" :default-value="report.description ?? ''
+                                <AppTextarea name="description" :default-value="report.data.description ?? ''
                                     " placeholder="Describe the report..." :rows="7" />
                             </AppFormControl>
 
@@ -137,7 +138,7 @@ defineProps<Props>()
                             <!-- Summary -->
 
                             <AppFormControl label="Summary" :error="errors.summary">
-                                <AppTextarea name="summary" :default-value="report.summary ?? ''
+                                <AppTextarea name="summary" :default-value="report.data.summary ?? ''
                                     " placeholder="Write a short summary of the report..." :rows="5" />
                             </AppFormControl>
 
@@ -177,8 +178,8 @@ defineProps<Props>()
                             <!-- Report Date -->
 
                             <AppFormControl label="Report Date" :error="errors.report_date">
-                                <AppInput name="report_date" type="date" :default-value="report.report_date
-                                    ? report.report_date.substring(
+                                <AppInput name="report_date" type="date" :default-value="report.data.report_date
+                                    ? report.data.report_date.substring(
                                         0,
                                         10,
                                     )
@@ -190,8 +191,8 @@ defineProps<Props>()
                             <!-- Published At -->
 
                             <AppFormControl label="Published At" :error="errors.published_at">
-                                <AppInput name="published_at" type="datetime-local" :default-value="report.published_at
-                                    ? report.published_at.substring(
+                                <AppInput name="published_at" type="datetime-local" :default-value="report.data.published_at
+                                    ? report.data.published_at.substring(
                                         0,
                                         16,
                                     )
@@ -242,19 +243,19 @@ defineProps<Props>()
 
                             <!-- Report Type -->
                             <AppFormControl label="Report Type" required :error="errors.type">
-                                <AppSelect name="type" :options="typeOptions" :default-value="report.type.value
+                                <AppSelect name="type" :options="typeOptions" :default-value="report.data.type.value
                                     " placeholder="Select report type" />
                             </AppFormControl>
 
                             <!-- Status -->
                             <AppFormControl label="Status" required :error="errors.status">
-                                <AppSelect name="status" :options="statusOptions" :default-value="report.status.value
+                                <AppSelect name="status" :options="statusOptions" :default-value="report.data.status.value
                                     " placeholder="Select status" />
                             </AppFormControl>
 
                             <!-- Author -->
                             <AppFormControl label="Author" :error="errors.author_id">
-                                <AppSelect name="author_id" :options="authorOptions" :default-value="report.author_id
+                                <AppSelect name="author_id" :options="authorOptions" :default-value="report.data.author_id
                                     " placeholder="Select author" clearable />
                             </AppFormControl>
 
@@ -288,7 +289,7 @@ defineProps<Props>()
 
 
                         <AppFormControl :error="errors.featured">
-                            <AppCheckbox name="featured" :default-value="report.featured" true-value="1" false-value="0"
+                            <AppCheckbox name="featured" :default-value="report.data.featured" true-value="1" false-value="0"
                                 label="Feature this report" />
                         </AppFormControl>
 
@@ -308,7 +309,7 @@ defineProps<Props>()
 
                             <Button type="button" variant="outline" as-child>
                                 <Link :href="show({
-                                    report: report.id,
+                                    report: report.data.id,
                                 })
                                     ">
                                     Cancel

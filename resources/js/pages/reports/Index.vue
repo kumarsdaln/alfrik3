@@ -2,43 +2,29 @@
 import { computed } from 'vue'
 import { Head, InfiniteScroll } from '@inertiajs/vue3'
 
-import AppHeading from '@/components/ui/AppHeading.vue'
-import AppText from '@/components/ui/AppText.vue'
 import ReportCard from '@/components/reports/ReportCard.vue'
 import ReportHero from '@/components/reports/ReportHero.vue'
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 
 import FilterControl from '@/components/filters/FilterControl.vue'
 import AppSelect from '@/components/form/AppSelect.vue'
+import Empty from '@/components/datadisplay/empty/Empty.vue'
 
 import { useFilters } from '@/composables/useFilters'
 
 import {
+    index as reportsIndex,
     show as reportShow,
 } from '@/routes/reports'
 
 import type {
+    Pagination,
     Report,
-    ReportType,
     ReportTypeOption,
 } from '@/types'
 
-
-/*
-|--------------------------------------------------------------------------
-| Types
-|--------------------------------------------------------------------------
-*/
-
-interface PaginatedReports {
-    data: Report[]
-    current_page?: number
-    last_page?: number
-    total?: number
-}
-
 interface Props {
-    reports: PaginatedReports
+    reports: Pagination<Report>
 
     featured: {
         data: Report
@@ -46,7 +32,7 @@ interface Props {
 
     types: ReportTypeOption[]
 
-    qfilters?: {
+    filters?: {
         search?: string
         type?: string
     }
@@ -63,17 +49,23 @@ const props = defineProps<Props>()
 
 const {
     filters,
+    filterCount,
     applyFilters,
     clearFilters,
-} = useFilters({
-    search: props.qfilters?.search ?? '',
-    type: props.qfilters?.type ?? '',
-})
+} = useFilters(
+    {
+        search: props.filters?.search ?? '',
+        type: props.filters?.type ?? '',
+    },
+    {
+        url: reportsIndex().url,
+    },
+)
 
 
 /*
 |--------------------------------------------------------------------------
-| Type options
+| Type Options
 |--------------------------------------------------------------------------
 */
 
@@ -87,18 +79,7 @@ const typeOptions = computed(() =>
 
 /*
 |--------------------------------------------------------------------------
-| Filter count
-|--------------------------------------------------------------------------
-*/
-
-const filterCount = computed(() => {
-    return filters.type ? 1 : 0
-})
-
-
-/*
-|--------------------------------------------------------------------------
-| Featured report
+| Featured Report
 |--------------------------------------------------------------------------
 */
 
@@ -109,7 +90,7 @@ const featuredReport = computed(() =>
 
 /*
 |--------------------------------------------------------------------------
-| Helpers
+| Date
 |--------------------------------------------------------------------------
 */
 
@@ -126,24 +107,13 @@ const dateLabel = (date?: string | null) => {
 }
 
 
-const typeLabel = (report: Report) => {
-    return report.type?.label ?? ''
-}
-
-
 /*
 |--------------------------------------------------------------------------
 | Cover
 |--------------------------------------------------------------------------
-|
-| The new Report model does not have cover_image.
-| Keep a stable placeholder until report media is connected.
-|
 */
 
-const cover = () => {
-    return '/frontend/images/placeholder.jpg'
-}
+const cover = '/frontend/images/placeholder.jpg'
 </script>
 
 
@@ -156,27 +126,28 @@ const cover = () => {
     </Head>
 
 
-    <!-- ================================================================== -->
+    <!-- ================================================================ -->
     <!-- Featured Report -->
-    <!-- ================================================================== -->
+    <!-- ================================================================ -->
 
     <ReportHero
         v-if="featuredReport"
         :report="featuredReport"
         :report-url="reportShow(featuredReport.slug).url"
-        :cover-url="cover()"
+        :cover-url="cover"
         :date-label="
             dateLabel(
-                featuredReport.published_at ||
+                featuredReport.published_at ??
+                featuredReport.report_date ??
                 featuredReport.created_at
             )
         "
     />
 
 
-    <!-- ================================================================== -->
+    <!-- ================================================================ -->
     <!-- Filters -->
-    <!-- ================================================================== -->
+    <!-- ================================================================ -->
 
     <section>
         <FilterControl
@@ -199,75 +170,45 @@ const cover = () => {
     </section>
 
 
-    <!-- ================================================================== -->
+    <!-- ================================================================ -->
     <!-- Reports -->
-    <!-- ================================================================== -->
+    <!-- ================================================================ -->
 
     <section class="pb-20 pt-10">
-        <InfiniteScroll
-            data="reports"
-            :key="[filters.search, filters.type].join('-')"
-            class="
-                grid
-                grid-cols-1
-                gap-x-8
-                gap-y-14
-                sm:grid-cols-2
-                lg:grid-cols-3
-                lg:gap-x-10
-                lg:gap-y-16
-            "
-        >
-            <ReportCard
-                v-for="report in reports.data"
-                :key="report.id"
-                :report="report"
-                :href="reportShow(report.slug).url"
-            />
-
-            <template #loading>
-                <div class="col-span-full flex justify-center py-16">
-                    <LoadingSpinner :loading="true" />
-                </div>
-            </template>
-        </InfiniteScroll>
-
-
-        <!-- ============================================================ -->
-        <!-- Empty -->
-        <!-- ============================================================ -->
-
-        <div
-            v-if="!reports.data.length"
-            class="
-                border
-                border-dashed
-                border-border-light
-                px-6
-                py-24
-                text-center
-                dark:border-border-dark
-            "
-        >
-            <AppHeading
-                tag="h2"
-                font="prata"
-                size="lg"
-                weight="normal"
-                align="center"
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <InfiniteScroll
+                data="reports"
+                class="
+                    grid
+                    grid-cols-1
+                    gap-x-8
+                    gap-y-14
+                    sm:grid-cols-2
+                    lg:grid-cols-3
+                    lg:gap-x-10
+                    lg:gap-y-16
+                "
             >
-                No reports found
-            </AppHeading>
+                <ReportCard
+                    v-for="report in reports.data"
+                    :key="report.id"
+                    :report="report"
+                    :href="reportShow(report.slug).url"
+                />
 
-            <AppText
-                tag="p"
-                size="sm"
-                color="muted"
-                align="center"
-                class="mx-auto mt-2 max-w-md"
-            >
-                Try adjusting your search or selecting a different report type.
-            </AppText>
+                <template #loading>
+                    <div class="col-span-full flex justify-center py-16">
+                        <LoadingSpinner :loading="true" />
+                    </div>
+                </template>
+            </InfiniteScroll>
+
+
+            <!-- ======================================================== -->
+            <!-- Empty -->
+            <!-- ======================================================== -->
+            <Empty v-if="!reports.data.length" title="No reports found."
+            description="Try changing your filters or search keywords." />
         </div>
     </section>
 </template>

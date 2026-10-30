@@ -1,15 +1,15 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3'
 
-import AppHeading from '@/Components/Ui/AppHeading.vue'
-import AppText from '@/Components/Ui/AppText.vue'
-import { MetaInfo } from '@/Components/Ui/MetaInfo'
+import AppHeading from '@/components/ui/AppHeading.vue'
+import AppText from '@/components/ui/AppText.vue'
+import { MetaInfo } from '@/components/ui/metainfo'
 
-import type { ResearchPaper } from '@/types'
+import type { Research } from '@/types'
 
 withDefaults(
     defineProps<{
-        paper: ResearchPaper
+        research: Research
         href: string
         compact?: boolean
     }>(),
@@ -48,30 +48,16 @@ const yearOf = (date?: string | null): string => {
             dark:bg-surface-dark
         "
     >
-        <!-- Area -->
+        <!-- Type -->
 
-        <div
-            v-if="paper.area"
-            class="
+        <div v-if="research.type" class="
                 mb-5
                 flex
                 items-center
                 gap-2
-            "
-        >
-            <span
-                class="h-px w-6"
-                aria-hidden="true"
-            />
-
-            <AppText
-                tag="span"
-                size="xs"
-                weight="bold"
-                tracking="wide"
-                uppercase
-            >
-                {{ paper.area.name }}
+            ">
+            <AppText tag="span" size="xs" weight="bold" tracking="wide" uppercase>
+                {{ research.type.label ?? research.type.value ?? research.type }}
             </AppText>
         </div>
 
@@ -85,13 +71,13 @@ const yearOf = (date?: string | null): string => {
             leading="tight"
             :clamp="3"
         >
-            {{ paper.title }}
+            {{ research.title }}
         </AppHeading>
 
-        <!-- Authors -->
+        <!-- Subtitle -->
 
         <AppText
-            v-if="paper.authors"
+            v-if="research.subtitle"
             tag="p"
             font="lora"
             size="xs"
@@ -100,7 +86,7 @@ const yearOf = (date?: string | null): string => {
             :clamp="2"
             class="mt-4 italic"
         >
-            {{ paper.authors }}
+            {{ research.subtitle }}
         </AppText>
 
         <!-- Bottom Meta -->
@@ -116,16 +102,12 @@ const yearOf = (date?: string | null): string => {
                 pt-5
                 dark:border-border-dark
             "
-            :class="paper.authors ? 'mt-6' : ''"
+            :class="research.subtitle ? 'mt-6' : ''"
         >
             <MetaInfo
                 :items="[
-                    ...(paper.institution
-                        ? [{ value: paper.institution }]
-                        : []),
-
-                    ...(yearOf(paper.published_at)
-                        ? [{ value: yearOf(paper.published_at) }]
+                    ...(yearOf(research.published_at)
+                        ? [{ value: yearOf(research.published_at) }]
                         : []),
                 ]"
             />
@@ -166,41 +148,9 @@ const yearOf = (date?: string | null): string => {
             duration-300
             dark:border-border-dark
             dark:bg-surface-dark
-            sm:grid-cols-[200px_1fr]
         "
     >
-        <!-- Cover -->
-
-        <div
-            v-if="paper.cover_image"
-            class="
-                relative
-                overflow-hidden
-                bg-muted
-                sm:border-r
-                sm:border-border-light
-                dark:sm:border-border-dark
-            "
-        >
-            <div class="aspect-[4/3] h-full sm:aspect-auto">
-                <img
-                    :src="paper.cover_image"
-                    :alt="paper.title"
-                    class="
-                        h-full
-                        w-full
-                        object-cover
-                        transition-transform
-                        duration-700
-                        ease-out
-                        group-hover:scale-[1.025]
-                    "
-                />
-            </div>
-        </div>
-
         <!-- Content -->
-
         <div
             class="
                 flex
@@ -213,35 +163,20 @@ const yearOf = (date?: string | null): string => {
                 lg:px-10
             "
         >
-            <!-- Area -->
+            <!-- Type -->
 
-            <div
-                v-if="paper.area"
-                class="
+            <div v-if="research.type" class="
                     mb-4
                     flex
                     items-center
                     gap-2
-                "
-            >
-                <span
-                    class="h-px w-7"
-                    aria-hidden="true"
-                />
-
-                <AppText
-                    tag="span"
-                    size="xs"
-                    weight="bold"
-                    tracking="wide"
-                    uppercase
-                >
-                    {{ paper.area.name }}
+                ">
+                <AppText tag="span" size="xs" weight="bold" tracking="wide" color="brand" uppercase>
+                    {{ research.type.label ?? research.type.value ?? research.type }}
                 </AppText>
             </div>
 
             <!-- Title -->
-
             <AppHeading
                 tag="h3"
                 font="prata"
@@ -250,13 +185,12 @@ const yearOf = (date?: string | null): string => {
                 leading="tight"
                 :clamp="3"
             >
-                {{ paper.title }}
+                {{ research.title }}
             </AppHeading>
 
-            <!-- Authors -->
-
+            <!-- Subtitle -->
             <AppText
-                v-if="paper.authors"
+                v-if="research.subtitle"
                 tag="p"
                 font="lora"
                 size="sm"
@@ -265,13 +199,12 @@ const yearOf = (date?: string | null): string => {
                 :clamp="2"
                 class="mt-3 italic"
             >
-                {{ paper.authors }}
+                {{ research.subtitle }}
             </AppText>
 
-            <!-- Abstract -->
-
+            <!-- Summary -->
             <AppText
-                v-if="paper.abstract"
+                v-if="research.summary"
                 tag="p"
                 font="lora"
                 size="sm"
@@ -280,11 +213,10 @@ const yearOf = (date?: string | null): string => {
                 :clamp="3"
                 class="mt-4 max-w-3xl"
             >
-                {{ paper.abstract }}
+                {{ research.summary }}
             </AppText>
 
             <!-- Metadata -->
-
             <div
                 class="
                     mt-7
@@ -293,17 +225,12 @@ const yearOf = (date?: string | null): string => {
                     border-t
                     border-border-light
                     pt-5
-                    dark:border-border-dark
                 "
             >
                 <MetaInfo
                     :items="[
-                        ...(paper.institution
-                            ? [{ value: paper.institution }]
-                            : []),
-
-                        ...(yearOf(paper.published_at)
-                            ? [{ value: yearOf(paper.published_at) }]
+                        ...(yearOf(research.published_at)
+                            ? [{ value: yearOf(research.published_at) }]
                             : []),
                     ]"
                 />

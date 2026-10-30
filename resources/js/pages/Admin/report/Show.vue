@@ -1,13 +1,10 @@
 <script setup lang="ts">
     import { Head, Link } from '@inertiajs/vue3'
     import {
-        ArrowLeft,
-        Edit,
+        Edit2,
         FileText,
         Plus,
     } from '@lucide/vue'
-
-    import AppButton from '@/components/ui/AppButton.vue'
     import Badge from '@/components/ui/badge/Badge.vue'
     import Heading from '@/components/Heading.vue'
     import TableLayout from '@/layouts/table/TableLayout.vue'
@@ -23,9 +20,13 @@
         Report,
         ReportContentBlock,
     } from '@/types/report'
+import BackButton from '@/components/ui/BackButton.vue'
+import Button from '@/components/ui/button/Button.vue'
 
     interface Props {
-        report: Report
+        report: {
+            data: Report
+        }
     }
 
     const props = defineProps<Props>()
@@ -76,36 +77,29 @@
 
 <template>
 
-    <Head :title="report.title" />
+    <Head :title="report.data.title" />
 
     <TableLayout>
         <div class="space-y-8">
             <!-- HEADER -->
+             <div class="flex items-center justify-between gap-4 py-5">
+                <div class="flex gap-4">
+                    <BackButton />
 
-            <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                <div class="flex items-start gap-3">
-                    <Link href="/admin/report">
-                        <AppButton variant="ghost" size="icon" type="button">
-                            <ArrowLeft class="size-4" />
-                        </AppButton>
-                    </Link>
-
-                    <Heading :title="report.title" :description="report.subtitle ??
-                        'Report details'
-                        " />
+                    <Heading
+                        :title="report.data.title"
+                        :description="report.data.subtitle ?? 'Report details'"
+                    />
                 </div>
 
-                <div class="flex gap-2">
+                <Button variant="outline" as-child class="gap-2">
                     <Link :href="reportEdit.url({
-                        report: report.id,
-                    })
-                        ">
-                        <AppButton variant="outline">
-                            <Edit class="mr-2 size-4" />
-                            Edit
-                        </AppButton>
+                        report: report.data.id,
+                    })">
+                        <Edit2 class="size-4" />
+                        Edit Report
                     </Link>
-                </div>
+                </Button>
             </div>
 
             <!-- META -->
@@ -118,9 +112,9 @@
 
                     <div class="mt-2">
                         <Badge :style="{
-                            color: report.type.color,
+                            color: report.data.type.color,
                         }">
-                            {{ report.type.label }}
+                            {{ report.data.type.label }}
                         </Badge>
                     </div>
                 </div>
@@ -131,9 +125,9 @@
                     </p>
 
                     <div class="mt-2">
-                        <Badge :variant="report.status.color
+                        <Badge :variant="report.data.status.color
                             ">
-                            {{ report.status.label }}
+                            {{ report.data.status.label }}
                         </Badge>
                     </div>
                 </div>
@@ -144,7 +138,7 @@
                     </p>
 
                     <p class="mt-2 text-sm font-medium">
-                        {{ report.author?.name ?? '—' }}
+                        {{ report.data.author?.name ?? '—' }}
                     </p>
                 </div>
 
@@ -154,20 +148,20 @@
                     </p>
 
                     <p class="mt-2 text-sm font-medium">
-                        {{ report.sections?.length ?? 0 }}
+                        {{ report.data.sections?.length ?? 0 }}
                     </p>
                 </div>
             </div>
 
             <!-- SUMMARY -->
 
-            <div v-if="report.summary" class="rounded-lg border bg-background p-6">
+            <div v-if="report.data.summary" class="rounded-lg border bg-background p-6">
                 <h2 class="text-base font-semibold">
                     Executive Summary
                 </h2>
 
                 <p class="mt-3 whitespace-pre-line text-sm leading-7 text-muted-foreground">
-                    {{ report.summary }}
+                    {{ report.data.summary }}
                 </p>
             </div>
 
@@ -187,30 +181,30 @@
 
                     <div class="flex gap-2">
                         <Link :href="sectionsIndex.url({
-                            report: report.id,
+                            report: report.data.id,
                         })
                             ">
-                            <AppButton variant="outline">
+                            <Button variant="outline">
                                 Manage Sections
-                            </AppButton>
+                            </Button>
                         </Link>
 
                         <Link :href="createSection.url({
-                            report: report.id,
+                            report: report.data.id,
                         })
                             ">
-                            <AppButton>
+                            <Button>
                                 <Plus class="mr-2 size-4" />
                                 Add Section
-                            </AppButton>
+                            </Button>
                         </Link>
                     </div>
                 </div>
 
                 <div v-if="
-                    report.sections?.length
+                    report.data.sections?.length
                 " class="space-y-4">
-                    <div v-for="section in report.sections" :key="section.id" class="rounded-lg border bg-background">
+                    <div v-for="section in report.data.sections" :key="section.id" class="rounded-lg border bg-background">
                         <div class="flex items-start justify-between gap-4 border-b p-5">
                             <div class="flex gap-4">
                                 <div
@@ -230,12 +224,12 @@
                             </div>
 
                             <Link :href="sectionsIndex.url({
-                                report: report.id,
+                                report: report.data.id,
                             })
                                 ">
-                                <AppButton variant="ghost" size="sm">
+                                <Button variant="ghost" size="sm">
                                     Manage
-                                </AppButton>
+                                </Button>
                             </Link>
                         </div>
 
@@ -295,13 +289,13 @@
                     </p>
 
                     <Link class="mt-4 inline-flex" :href="createSection.url({
-                        report: report.id,
+                        report: report.data.id,
                     })
                         ">
-                        <AppButton>
+                        <Button>
                             <Plus class="mr-2 size-4" />
                             Add Section
-                        </AppButton>
+                        </Button>
                     </Link>
                 </div>
             </div>

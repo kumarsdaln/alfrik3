@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Public\Event;
 
 use App\Http\Controllers\Controller;
 use App\Models\Event\Event;
-use App\Models\Event\EventCategory;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -13,255 +12,184 @@ class EventController extends Controller
 {
     public function index(Request $request): Response
     {
-        /*
-    |--------------------------------------------------------------------------
-    | Featured Event
-    |--------------------------------------------------------------------------
-    */
+        $filters = $request->validate([
+            'search' => ['nullable', 'string', 'max:150'],
+            'type' => ['nullable', 'in:online,offline,hybrid'],
+            'period' => ['nullable', 'in:upcoming,past,all'],
+        ]);
 
-        $featured = Event::query()
-            ->with('categories')
-            ->where('status', 'published')
-            ->where('visibility', 'public')
-            ->where('end_date', '>=', now())
-            ->orderBy('start_date')
-            ->first();
+        $period = $filters['period'] ?? 'upcoming';
 
-        /*
-    |--------------------------------------------------------------------------
-    | Events Query
-    |--------------------------------------------------------------------------
-    */
+        $events = Event::query()
+            ->published()
+            ->public()
+            ->when(
+                ! empty($filters['search']),
+                function ($query) use ($filters) {
+                    $search = trim($filters['search']);
 
-        $query = Event::query()
-            ->with('categories')
-            ->where('status', 'published')
-            ->where('visibility', 'public');
-
-        /*
-    |--------------------------------------------------------------------------
-    | Search
-    |--------------------------------------------------------------------------
-    */
-
-        if ($request->filled('search')) {
-            $search = $request->string('search')->toString();
-
-            $query->where(function ($query) use ($search) {
-                $query
-                    ->where('title', 'like', "%{$search}%")
-                    ->orWhere('description', 'like', "%{$search}%")
-                    ->orWhere('location_name', 'like', "%{$search}%");
-            });
-        }
-
-        /*
-    |--------------------------------------------------------------------------
-    | Category
-    |--------------------------------------------------------------------------
-    */
-
-        if ($request->filled('category')) {
-            $query->whereHas('categories', function ($query) use ($request) {
-                $query->where(
-                    'slug',
-                    $request->string('category')->toString()
-                );
-            });
-        }
-
-        /*
-    |--------------------------------------------------------------------------
-    | Status
-    |--------------------------------------------------------------------------
-    */
-
-        if ($request->input('status') === 'upcoming') {
-            $query->where('start_date', '>=', now());
-        }
-
-        if ($request->input('status') === 'past') {
-            $query->where('start_date', '<', now());
-        }
-
-        /*
-    |--------------------------------------------------------------------------
-    | Events
-    |--------------------------------------------------------------------------
-    */
-
-        $events = $query
-            ->orderBy('start_date')
+                    $query->where(function ($query) use ($search) {
+                        $query
+                            ->where('title', 'like', "%{$search}%")
+                            ->orWhere('description', 'like', "%{$search}%")
+                            ->orWhere('location_name', 'like', "%{$search}%")
+                            ->orWhere('city', 'like', "%{$search}%");
+                    });
+                }
+            )
+            ->when(
+                ! empty($filters['type']),
+                fn($query) => $query->where(
+                    'event_type',
+                    $filters['type']
+                )
+            )
+            ->when(
+                $period === 'upcoming',
+                fn($query) => $query->upcoming()
+            )
+            ->when(
+                $period === 'past',
+                fn($query) => $query->past()
+            )
+            ->withCount([
+                'registrations as confirmed_registrations_count' =>
+                fn($query) => $query->where('status', 'confirmed'),
+            ])
+            ->orderBy('start_date', $period === 'past' ? 'desc' : 'asc')
             ->paginate(12)
-            ->withQueryString();
-
-        /*
-    |--------------------------------------------------------------------------
-    | Categories
-    |--------------------------------------------------------------------------
-    */
-
-        $categories = EventCategory::query()
-            ->orderBy('name')
-            ->get([
-                'id',
-                'name',
-                'slug',
+            ->withQueryString()
+            ->through(fn(Event $event) => [
+                'id' => $event->id,
+                'title' => $event->title,
+                'slug' => $event->slug,
+                'description' => $event->description,
+                'event_type' => $event->event_type->value,
+                'start_date' => $event->start_date?->toIso8601String(),
+                'end_date' => $event->end_date?->toIso8601String(),
+                'location_name' => $event->location_name,
+                'city' => $event->city,
+                'state' => $event->state,
+                'country' => $event->country,
+                'max_attendees' => $event->max_attendees,
+                'confirmed_registrations_count' =>
+                $event->confirmed_registrations_count,
             ]);
 
         return Inertia::render('event/Index', [
             'events' => $events,
-
-            'featured' => $featured,
-
-            'categories' => $categories,
-
-            'qfilters' => [
-                'search' => $request->input('search', ''),
-                'category' => $request->input('category', ''),
-                'status' => $request->input('status', ''),
+            'filters' => [
+                'search' => $filters['search'] ?? '',
+                'type' => $filters['type'] ?? '',
+                'period' => $period,
             ],
         ]);
     }
 
-    public function show(Event $event): Response
+    public function show(string $slug): Response
     {
-        abort_unless(
-            $event->status === 'published',
-            404
-        );
+        $event = Event::query()
+            ->published()
+            ->public()
+            ->where('slug', $slug)
+            ->with([
+                'creator:id,name',
 
-        abort_unless(
-            $event->visibility === 'public',
-            404
-        );
+            'participants' => fn($query) => $query
+                ->whereIn('role', ['organizer', 'host', 'speaker'])
+                ->with('user:id,name'),
 
-        /*
-        |--------------------------------------------------------------------------
-        | Event
-        |--------------------------------------------------------------------------
-        */
+                'sessions' => fn($query) => $query
+                    ->orderBy('position')
+                    ->with('speakers:id,name'),
 
-        $event->load([
-            'categories',
+                'tickets' => fn($query) => $query
+                    ->where('is_visible', true)
+                    ->where('is_active', true)
+                    ->orderBy('position'),
+            ])
+            ->withCount([
+                'registrations as confirmed_registrations_count' =>
+                fn($query) => $query->where('status', 'confirmed'),
+                'reviews',
+            ])
+            ->withAvg('reviews', 'rating')
+            ->firstOrFail();
 
-            'sessions' => fn($query) => $query
-                ->orderBy('position')
-                ->orderBy('start_time'),
+        $user = request()->user();
 
-            'sessions.speakers',
-
-            'tickets' => fn($query) => $query
-                ->where('is_active', true)
-                ->where('is_visible', true)
-                ->orderBy('position'),
-
-            'media' => fn($query) => $query
-                ->orderBy('position'),
-
-            'reviews' => fn($query) => $query
-                ->with('user')
-                ->latest(),
-        ]);
-
-        /*
-        |--------------------------------------------------------------------------
-        | Registration / Participants
-        |--------------------------------------------------------------------------
-        */
-
-        $registrationsCount = $event->registrations()->count();
-
-        $isRegistered = auth()->check()
+        $registration = $user
             ? $event->registrations()
-            ->where('user_id', auth()->id())
-            ->exists()
-            : false;
-
-        $spotsLeft = $event->max_attendees
-            ? max(
-                0,
-                $event->max_attendees - $registrationsCount
-            )
+            ->where('user_id', $user->id)
+            ->whereIn('status', ['pending', 'confirmed'])
+            ->with('ticket')
+            ->latest('id')
+            ->first()
             : null;
 
-        /*
-        |--------------------------------------------------------------------------
-        | Participants
-        |--------------------------------------------------------------------------
-        |
-        | We only expose registered users if the event's registration
-        | relationship has a user relationship.
-        |
-        */
-
-        $participants = $event->registrations()
-            ->with('user')
-            ->latest()
-            ->take(24)
-            ->get()
-            ->map(fn($registration) => $registration->user)
-            ->filter()
-            ->values();
-
-        /*
-        |--------------------------------------------------------------------------
-        | Related Events
-        |--------------------------------------------------------------------------
-        */
-
-        $related = Event::query()
-            ->where('id', '!=', $event->id)
-            ->where('status', 'published')
-            ->where('visibility', 'public')
-            ->where(function ($query) use ($event) {
-                $query->whereHas('categories', function ($query) use ($event) {
-                    $query->whereIn(
-                        'event_categories.id',
-                        $event->categories->pluck('id')
-                    );
-                });
-            })
-            ->with('categories')
+        $relatedEvents = Event::query()
+            ->published()
+            ->public()
+            ->whereKeyNot($event->getKey())
+            ->where('start_date', '>=', now())
+            ->when(
+                $event->event_type,
+                fn($query) => $query->where(
+                    'event_type',
+                    $event->event_type->value
+                )
+            )
+            ->withCount([
+                'registrations as confirmed_registrations_count' =>
+                fn($query) => $query->where('status', 'confirmed'),
+            ])
             ->orderBy('start_date')
-            ->take(3)
-            ->get();
-
-        /*
-        |--------------------------------------------------------------------------
-        | Review Stats
-        |--------------------------------------------------------------------------
-        */
-
-        $reviewStats = [
-            'average' => round(
-                (float) $event->reviews()->avg('rating'),
-                1
-            ),
-
-            'count' => $event->reviews()->count(),
-        ];
-
-        /*
-        |--------------------------------------------------------------------------
-        | Response
-        |--------------------------------------------------------------------------
-        */
+            ->limit(4)
+            ->get()
+            ->map(fn(Event $related) => [
+                'id' => $related->id,
+                'title' => $related->title,
+                'slug' => $related->slug,
+                'description' => $related->description,
+                'event_type' => $related->event_type->value,
+                'start_date' => $related->start_date?->toIso8601String(),
+                'end_date' => $related->end_date?->toIso8601String(),
+                'location_name' => $related->location_name,
+                'city' => $related->city,
+                'state' => $related->state,
+                'country' => $related->country,
+                'confirmed_registrations_count' =>
+                $related->confirmed_registrations_count,
+            ]);
 
         return Inertia::render('event/Show', [
-            'event' => $event,
-
-            'registration' => [
-                'registrations_count' => $registrationsCount,
-                'is_registered' => $isRegistered,
-                'spots_left' => $spotsLeft,
+            'event' => [
+                'id' => $event->id,
+                'title' => $event->title,
+                'slug' => $event->slug,
+                'description' => $event->description,
+                'event_type' => $event->event_type->value,
+                'start_date' => $event->start_date?->toIso8601String(),
+                'end_date' => $event->end_date?->toIso8601String(),
+                'location_name' => $event->location_name,
+                'address' => $event->address,
+                'city' => $event->city,
+                'state' => $event->state,
+                'country' => $event->country,
+                'meeting_url' => $event->meeting_url,
+                'max_attendees' => $event->max_attendees,
+                'confirmed_registrations_count' =>
+                $event->confirmed_registrations_count,
+                'creator' => $event->creator,
+                'participants' => $event->participants,
+                'sessions' => $event->sessions,
+                'tickets' => $event->tickets,
+                'reviews_count' => $event->reviews_count,
+                'average_rating' => round((float) ($event->reviews_avg_rating ?? 0), 1),
             ],
-
-            'participants' => $participants,
-
-            'reviewStats' => $reviewStats,
-
-            'related' => $related,
+            'registration' => $registration,
+            'related' => $relatedEvents,
+            'isAuthenticated' => $user !== null,
         ]);
     }
 }

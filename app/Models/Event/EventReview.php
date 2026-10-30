@@ -15,8 +15,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 ])]
 class EventReview extends Model
 {
-
     protected $casts = [
+        'event_id' => 'integer',
+        'user_id' => 'integer',
         'rating' => 'integer',
     ];
 
@@ -28,15 +29,11 @@ class EventReview extends Model
 
     public function event(): BelongsTo
     {
-        return $this->belongsTo(
-            Event::class,
-        );
+        return $this->belongsTo(Event::class);
     }
 
     public function user(): BelongsTo
     {
-        return $this->belongsTo(
-            User::class,
-        );
+        return $this->belongsTo(User::class);
     }
 }

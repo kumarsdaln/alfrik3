@@ -7,6 +7,11 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 class SurveySectionResource extends JsonResource
 {
+    /**
+     * Transform the resource into an array.
+     *
+     * @return array<string, mixed>
+     */
     public function toArray(Request $request): array
     {
         return [
@@ -18,6 +23,22 @@ class SurveySectionResource extends JsonResource
             'description' => $this->description,
 
             'position' => $this->position,
+
+            /*
+            |--------------------------------------------------------------------------
+            | Questions
+            |--------------------------------------------------------------------------
+            */
+
+            'questions' => SurveyQuestionResource::collection(
+                $this->whenLoaded('questions')
+            ),
+
+            /*
+            |--------------------------------------------------------------------------
+            | Timestamps
+            |--------------------------------------------------------------------------
+            */
 
             'created_at' => $this->created_at?->toISOString(),
             'updated_at' => $this->updated_at?->toISOString(),

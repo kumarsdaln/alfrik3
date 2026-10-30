@@ -41,13 +41,15 @@ class SeoController extends Controller
                 'id' => $model->id,
                 'title' => $this->modelTitle($model),
             ],
+
             'localeOptions' => SeoLocale::dropdown(),
             'schemaTypeOptions' => SeoSchemaType::dropdown(),
             'ogTypeOptions' => SeoOgType::dropdown(),
             'twitterCardOptions' => SeoTwitterCard::dropdown(),
+
             'seo' => $seo
-                ? new SeoMetadataResource($seo)
-                : null,
+                    ? new SeoMetadataResource($seo)
+                    : null,
         ]);
     }
 
@@ -56,8 +58,7 @@ class SeoController extends Controller
         string $type,
         int $id,
         SaveSeoMetadata $action,
-    ): RedirectResponse 
-    {
+    ): RedirectResponse {
         $model = ModelResolver::resolve($type, $id);
 
         abort_unless(

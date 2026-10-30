@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Requests\Admin\Report;
+namespace App\Http\Requests\Report;
 
 use App\Enums\Report\ReportContentBlockType;
 use Illuminate\Foundation\Http\FormRequest;

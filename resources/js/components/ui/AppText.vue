@@ -29,6 +29,7 @@ type TextSize =
     | 'md'
     | 'lg'
     | 'xl'
+    | '2xl'
 
 type TextWeight =
     | 'light'
@@ -117,6 +118,7 @@ const sizeClasses: Record<TextSize, string> = {
     md: 'text-base',
     lg: 'text-lg',
     xl: 'text-xl',
+    '2xl': 'text-2xl',
 }
 
 const weightClasses: Record<TextWeight, string> = {

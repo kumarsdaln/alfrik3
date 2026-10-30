@@ -7,6 +7,11 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 class SurveyResource extends JsonResource
 {
+    /**
+     * Transform the resource into an array.
+     *
+     * @return array<string, mixed>
+     */
     public function toArray(Request $request): array
     {
         return [
@@ -18,11 +23,7 @@ class SurveyResource extends JsonResource
             'slug' => $this->slug,
             'description' => $this->description,
 
-            'status' => [
-                'value' => $this->status->value,
-                'label' => $this->status->label(),
-                'color' => $this->status->color(),
-            ],
+            'status' => $this->status->option(),
 
             'anonymous' => $this->anonymous,
             'multiple_responses' => $this->multiple_responses,
@@ -31,7 +32,32 @@ class SurveyResource extends JsonResource
             'starts_at' => $this->starts_at?->toISOString(),
             'ends_at' => $this->ends_at?->toISOString(),
 
+            'questions_count' => $this->questions_count,
             'response_count' => $this->response_count,
+
+            /*
+            |--------------------------------------------------------------------------
+            | Relationships
+            |--------------------------------------------------------------------------
+            */
+
+            'sections' => SurveySectionResource::collection(
+                $this->whenLoaded('sections')
+            ),
+
+            'questions' => SurveyQuestionResource::collection(
+                $this->whenLoaded('questions')
+            ),
+
+            'responses' => SurveyResponseResource::collection(
+                $this->whenLoaded('responses')
+            ),
+
+            /*
+            |--------------------------------------------------------------------------
+            | Timestamps
+            |--------------------------------------------------------------------------
+            */
 
             'created_at' => $this->created_at?->toISOString(),
             'updated_at' => $this->updated_at?->toISOString(),

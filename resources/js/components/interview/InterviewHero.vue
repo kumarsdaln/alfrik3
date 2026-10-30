@@ -1,103 +1,103 @@
 <script setup lang="ts">
-import {
-    ArrowUpRight,
-    CalendarDays,
-    Headphones,
-    Play,
-    FileText,
-    Gem,
-} from '@lucide/vue'
+    import {
+        ArrowUpRight,
+        CalendarDays,
+        Headphones,
+        Play,
+        FileText,
+        Gem,
+    } from '@lucide/vue'
 
-import Avatar from '@/components/profile/Avatar.vue'
-import Badge from '@/components/ui/badge/Badge.vue'
+    import Avatar from '@/components/profile/Avatar.vue'
+    import Badge from '@/components/ui/badge/Badge.vue'
 
-import type { Interview } from '@/types'
+    import type { Interview } from '@/types'
 
-import { formatDate } from '@/utils/dateUtils'
+    import { formatDate } from '@/utils/dateUtils'
 
-import { show } from '@/routes/interviews'
-import { computed } from 'vue'
-import { Link } from '@inertiajs/vue3'
-
-
-const props = defineProps<{
-    interview: Interview | null
-}>()
-
-console.log(props.interview)
+    import { show } from '@/routes/interviews'
+    import { computed } from 'vue'
+    import { Link } from '@inertiajs/vue3'
 
 
-/*
-|--------------------------------------------------------------------------
-| Format
-|--------------------------------------------------------------------------
-*/
+    const props = defineProps<{
+        interview: Interview | null
+    }>()
 
-const formatConfig = {
-    written: {
-        label: 'Written Interview',
-        icon: FileText,
-    },
-
-    video: {
-        label: 'Video Interview',
-        icon: Play,
-    },
-
-    audio: {
-        label: 'Audio Interview',
-        icon: Headphones,
-    },
-}
+    console.log(props.interview)
 
 
-/*
-|--------------------------------------------------------------------------
-| Media
-|--------------------------------------------------------------------------
-*/
+    /*
+    |--------------------------------------------------------------------------
+    | Format
+    |--------------------------------------------------------------------------
+    */
 
-const getCoverMedia = () => {
-    return (
-        (props.interview?.media ?? []).find(
-            media =>
-                media.mime_type.startsWith('image/') ||
-                media.collection === 'cover' ||
-                media.collection === 'thumbnail',
-        ) ?? null
-    )
-}
+    const formatConfig = {
+        written: {
+            label: 'Written Interview',
+            icon: FileText,
+        },
+
+        video: {
+            label: 'Video Interview',
+            icon: Play,
+        },
+
+        audio: {
+            label: 'Audio Interview',
+            icon: Headphones,
+        },
+    }
 
 
-/*
-|--------------------------------------------------------------------------
-| Participant
-|--------------------------------------------------------------------------
-*/
+    /*
+    |--------------------------------------------------------------------------
+    | Media
+    |--------------------------------------------------------------------------
+    */
 
-const participants = computed(() => {
-    return (props.interview?.participants ?? []).filter(
-        participant => participant.user?.name,
-    )
-})
+    const getCoverMedia = () => {
+        return (
+            (props.interview?.media ?? []).find(
+                media =>
+                    media.mime_type.startsWith('image/') ||
+                    media.collection === 'cover' ||
+                    media.collection === 'thumbnail',
+            ) ?? null
+        )
+    }
 
-const visibleParticipants = computed(() => {
-    return participants.value.slice(0, 3)
-})
 
-const remainingParticipants = computed(() => {
-    return Math.max(
-        participants.value.length - 3,
-        0,
-    )
-})
+    /*
+    |--------------------------------------------------------------------------
+    | Participant
+    |--------------------------------------------------------------------------
+    */
 
-const participantNames = computed(() => {
-    return participants.value
-        .map(participant => participant.user?.name)
-        .filter(Boolean)
-        .join(', ')
-})
+    const participants = computed(() => {
+        return (props.interview?.participants ?? []).filter(
+            participant => participant.user?.name,
+        )
+    })
+
+    const visibleParticipants = computed(() => {
+        return participants.value.slice(0, 3)
+    })
+
+    const remainingParticipants = computed(() => {
+        return Math.max(
+            participants.value.length - 3,
+            0,
+        )
+    })
+
+    const participantNames = computed(() => {
+        return participants.value
+            .map(participant => participant.user?.name)
+            .filter(Boolean)
+            .join(', ')
+    })
 </script>
 
 
@@ -226,21 +226,19 @@ const participantNames = computed(() => {
                 <article v-if="interview" class="lg:pt-4">
                     <Link :href="show(interview.slug).url" :aria-label="interview.title" class="block">
 
-                    <!-- Image -->
-                    <div class="
+                        <!-- Image -->
+                        <div class="
                                 relative
                                 overflow-hidden
                                 bg-muted
                             ">
-                        <div class="
-                                    aspect-[4/3]
+                            <div class="
+                                    aspect-video
                                     overflow-hidden
-                                    sm:aspect-[16/10]
-                                    lg:aspect-[4/3]
                                 ">
-                            <img v-if="getCoverMedia()?.url" :src="getCoverMedia()?.url" :alt="getCoverMedia()?.alt ??
-                                interview.title
-                                " class="
+                                <img v-if="getCoverMedia()?.url" :src="getCoverMedia()?.url" :alt="getCoverMedia()?.alt ??
+                                    interview.title
+                                    " class="
                                         h-full
                                         w-full
                                         object-cover
@@ -249,7 +247,7 @@ const participantNames = computed(() => {
                                         group-hover:scale-[1.02]
                                     " />
 
-                            <div v-else class="
+                                <div v-else class="
                                         flex
                                         h-full
                                         w-full
@@ -257,33 +255,33 @@ const participantNames = computed(() => {
                                         justify-center
                                         bg-muted
                                     ">
-                                <FileText :size="36" :stroke-width="1" class="text-muted-foreground/40" />
+                                    <FileText :size="36" :stroke-width="1" class="text-muted-foreground/40" />
+                                </div>
                             </div>
-                        </div>
 
-                        <!-- Featured Badge -->
+                            <!-- Featured Badge -->
 
-                        <div class="
+                            <div class="
                                     absolute
                                     left-3
                                     top-3
                                 ">
-                            <Badge variant="secondary">
-                                <Gem :size="13" :stroke-width="1.8" />
+                                <Badge variant="secondary">
+                                    <Gem :size="13" :stroke-width="1.8" />
 
-                                Featured
-                            </Badge>
+                                    Featured
+                                </Badge>
+                            </div>
                         </div>
-                    </div>
 
 
-                    <!-- Content -->
+                        <!-- Content -->
 
-                    <div class="py-5 sm:py-6">
+                        <div class="py-5 sm:py-6">
 
-                        <!-- Format + Date -->
+                            <!-- Format + Date -->
 
-                        <div class="
+                            <div class="
                                     mb-4
                                     flex
                                     flex-wrap
@@ -291,7 +289,7 @@ const participantNames = computed(() => {
                                     justify-between
                                     gap-3
                                 ">
-                            <span class="
+                                <span class="
                                         flex
                                         items-center
                                         gap-1.5
@@ -301,20 +299,20 @@ const participantNames = computed(() => {
                                         tracking-[0.15em]
                                         text-foreground
                                     ">
-                                <component :is="formatConfig[
-                                    interview.interview_type.value
-                                ]?.icon ?? FileText
-                                    " :size="13" :stroke-width="1.8" />
-
-                                {{
-                                    formatConfig[
+                                    <component :is="formatConfig[
                                         interview.interview_type.value
-                                    ]?.label ?? 'Written Interview'
-                                }}
-                            </span>
+                                    ]?.icon ?? FileText
+                                        " :size="13" :stroke-width="1.8" />
+
+                                    {{
+                                        formatConfig[
+                                            interview.interview_type.value
+                                        ]?.label ?? 'Written Interview'
+                                    }}
+                                </span>
 
 
-                            <span v-if="interview.published_at" class="
+                                <span v-if="interview.published_at" class="
                                         flex
                                         items-center
                                         gap-1.5
@@ -323,36 +321,36 @@ const participantNames = computed(() => {
                                         tracking-[0.12em]
                                         text-muted-foreground
                                     ">
-                                <CalendarDays :size="12" :stroke-width="1.7" />
+                                    <CalendarDays :size="12" :stroke-width="1.7" />
 
-                                {{
-                                    formatDate(
-                                        interview.published_at,
-                                    )
-                                }}
-                            </span>
-                        </div>
+                                    {{
+                                        formatDate(
+                                            interview.published_at,
+                                        )
+                                    }}
+                                </span>
+                            </div>
 
 
-                        <!-- Participants -->
+                            <!-- Participants -->
 
-                        <!-- Participants -->
+                            <!-- Participants -->
 
-                        <div v-if="participants.length" class="
+                            <div v-if="participants.length" class="
         mb-4
         flex
         min-w-0
         items-center
         gap-3
     ">
-                            <!-- Avatar Stack -->
+                                <!-- Avatar Stack -->
 
-                            <div class="flex shrink-0 -space-x-2">
-                                <Avatar v-for="participant in visibleParticipants" :key="participant.id"
-                                    :name="participant.user?.name" :image="participant.user?.avatar" size="size-8"
-                                    text-size="text-[10px]" rounded="full" class="ring-2 ring-white" />
+                                <div class="flex shrink-0 -space-x-2">
+                                    <Avatar v-for="participant in visibleParticipants" :key="participant.id"
+                                        :name="participant.user?.name" :image="participant.user?.avatar" size="size-8"
+                                        text-size="text-[10px]" rounded="full" class="ring-2 ring-white" />
 
-                                <div v-if="remainingParticipants" class="
+                                    <div v-if="remainingParticipants" class="
                 flex
                 size-8
                 shrink-0
@@ -366,27 +364,27 @@ const participantNames = computed(() => {
                 ring-2
                 ring-white
             ">
-                                    +{{ remainingParticipants }}
+                                        +{{ remainingParticipants }}
+                                    </div>
                                 </div>
-                            </div>
 
-                            <!-- Names -->
+                                <!-- Names -->
 
-                            <p class="
+                                <p class="
             min-w-0
             truncate
             text-[11px]
             leading-5
             text-muted-foreground
         " :title="participantNames">
-                                {{ participantNames }}
-                            </p>
-                        </div>
+                                    {{ participantNames }}
+                                </p>
+                            </div>
 
 
-                        <!-- Title -->
+                            <!-- Title -->
 
-                        <h2 class="
+                            <h2 class="
                                     max-w-[650px]
                                     text-[22px]
                                     font-medium
@@ -398,13 +396,13 @@ const participantNames = computed(() => {
                                     group-hover:text-muted-foreground
                                     sm:text-[25px]
                                 ">
-                            {{ interview.title }}
-                        </h2>
+                                {{ interview.title }}
+                            </h2>
 
 
-                        <!-- Description -->
+                            <!-- Description -->
 
-                        <p v-if="interview.description" class="
+                            <p v-if="interview.description" class="
                                     mt-3
                                     max-w-[620px]
                                     line-clamp-2
@@ -412,10 +410,10 @@ const participantNames = computed(() => {
                                     leading-6
                                     text-muted-foreground
                                 ">
-                            {{ interview.description }}
-                        </p>
+                                {{ interview.description }}
+                            </p>
 
-                    </div>
+                        </div>
                     </Link>
                 </article>
 

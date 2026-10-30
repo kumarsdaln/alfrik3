@@ -32,6 +32,7 @@ class ResearchMethodologyController extends Controller
             data: $request->validated(),
         );
 
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Research Methodology Updated.')]);
         return back();
     }
 }

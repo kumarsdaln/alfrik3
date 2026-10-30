@@ -16,36 +16,48 @@ class MagazineController extends Controller
      */
     public function index(Request $request): Response
     {
+        $search = trim(
+            (string) $request->query('search', '')
+        );
+
+        /*
+        |--------------------------------------------------------------------------
+        | Magazines
+        |--------------------------------------------------------------------------
+        */
+
         $magazines = Magazine::query()
             ->published()
             ->with([
-                'category:id,name,slug',
+                'author:id,name',
             ])
             ->withCount([
                 'issues as published_issues_count' => fn ($query) => $query
                     ->published(),
             ])
             ->when(
-                $request->filled('search'),
-                fn ($query) => $query->where(function ($query) use ($request) {
-                    $search = $request->string('search');
-
+                $search !== '',
+                fn ($query) => $query->where(function ($query) use ($search) {
                     $query
-                        ->where('title', 'ilike', "%{$search}%")
-                        ->orWhere('subtitle', 'ilike', "%{$search}%");
+                        ->where(
+                            'title',
+                            'ilike',
+                            "%{$search}%"
+                        )
+                        ->orWhere(
+                            'subtitle',
+                            'ilike',
+                            "%{$search}%"
+                        )
+                        ->orWhere(
+                            'description',
+                            'ilike',
+                            "%{$search}%"
+                        );
                 })
             )
-            ->when(
-                $request->filled('category'),
-                fn ($query) => $query->whereHas(
-                    'category',
-                    fn ($query) => $query->where(
-                        'slug',
-                        $request->string('category')
-                    )
-                )
-            )
-            ->latest('published_at')
+            ->orderByDesc('published_at')
+            ->orderByDesc('created_at')
             ->paginate(12)
             ->withQueryString();
 
@@ -55,46 +67,58 @@ class MagazineController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        $featured = Magazine::query()
-            ->published()
-            ->featured()
-            ->with([
-                'category:id,name,slug',
-            ])
-            ->withCount([
-                'issues as published_issues_count' => fn ($query) => $query
-                    ->published(),
-            ])
-            ->latest('published_at')
-            ->first();
+        $featured = null;
+
+        if ($search === '') {
+            $featured = Magazine::query()
+                ->published()
+                ->featured()
+                ->with([
+                    'author:id,name',
+                ])
+                ->withCount([
+                    'issues as published_issues_count' => fn ($query) => $query
+                        ->published(),
+                ])
+                ->orderByDesc('published_at')
+                ->orderByDesc('created_at')
+                ->first();
+
+            /*
+            |--------------------------------------------------------------------------
+            | Fallback to latest published magazine
+            |--------------------------------------------------------------------------
+            */
+
+            if (! $featured) {
+                $featured = Magazine::query()
+                    ->published()
+                    ->with([
+                        'author:id,name',
+                    ])
+                    ->withCount([
+                        'issues as published_issues_count' => fn ($query) => $query
+                            ->published(),
+                    ])
+                    ->orderByDesc('published_at')
+                    ->orderByDesc('created_at')
+                    ->first();
+            }
+        }
 
         /*
         |--------------------------------------------------------------------------
-        | Categories
+        | Response
         |--------------------------------------------------------------------------
         */
-
-        $categories = \App\Models\Magazine\MagazineCategory::query()
-            ->active()
-            ->orderBy('position')
-            ->orderBy('name')
-            ->get([
-                'id',
-                'name',
-                'slug',
-                'icon',
-            ]);
 
         return Inertia::render('magazine/Index', [
             'magazines' => $magazines,
 
             'featured' => $featured,
 
-            'categories' => $categories,
-
             'qfilters' => [
-                'search' => $request->input('search'),
-                'category' => $request->input('category'),
+                'search' => $search,
             ],
 
             'breadcrumbs' => BreadcrumbBuilder::make()
@@ -109,17 +133,19 @@ class MagazineController extends Controller
      */
     public function show(Magazine $magazine): Response
     {
-        abort_unless(
-            $magazine->status &&
-            (
-                ! $magazine->published_at ||
-                $magazine->published_at->isPast()
-            ),
-            404
-        );
+        // abort_unless(
+        //     $this->isLive($magazine),
+        //     404
+        // );
+
+        /*
+        |--------------------------------------------------------------------------
+        | Magazine
+        |--------------------------------------------------------------------------
+        */
 
         $magazine->load([
-            'category:id,name,slug',
+            'author:id,name',
 
             'issues' => fn ($query) => $query
                 ->published()
@@ -127,8 +153,15 @@ class MagazineController extends Controller
                     'articles as published_articles_count' => fn ($query) => $query
                         ->published(),
                 ])
-                ->latest('published_at'),
+                ->orderByDesc('published_at')
+                ->orderByDesc('created_at'),
         ]);
+
+        /*
+        |--------------------------------------------------------------------------
+        | Response
+        |--------------------------------------------------------------------------
+        */
 
         return Inertia::render('magazine/Show', [
             'magazine' => $magazine,
@@ -142,15 +175,47 @@ class MagazineController extends Controller
                 ->add($magazine->title)
                 ->toArray(),
 
+            /*
+            |--------------------------------------------------------------------------
+            | SEO
+            |--------------------------------------------------------------------------
+            */
+
             'meta_data' => [
-                'meta_title' => $magazine->meta_title
-                    ?: $magazine->title . ' — Alfrik',
+                'meta_title' => $magazine->title
+                    . ' — Alfrik',
 
-                'meta_description' => $magazine->meta_description
-                    ?: $magazine->subtitle,
+                'meta_description' => $magazine->subtitle
+                    ?: $magazine->description,
 
-                'meta_keywords' => $magazine->meta_keywords,
+                'canonical_url' => null,
+
+                'og_title' => $magazine->title,
+
+                'og_description' => $magazine->subtitle
+                    ?: $magazine->description,
+
+                'og_image' => null,
+
+                'twitter_title' => $magazine->title,
+
+                'twitter_description' => $magazine->subtitle
+                    ?: $magazine->description,
+
+                'twitter_image' => null,
             ],
         ]);
+    }
+
+    /**
+     * Determine whether a magazine is publicly available.
+     */
+    private function isLive(Magazine $magazine): bool
+    {
+        return $magazine->status === 'published'
+            && (
+                $magazine->published_at === null
+                || $magazine->published_at->lte(now())
+            );
     }
 }

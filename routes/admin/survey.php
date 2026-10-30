@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::prefix('admin/survey')
     ->name('admin.survey.')
-    ->middleware(['auth', 'role:admin'])
+    ->middleware('auth')
     ->scopeBindings()
     ->group(function () {
 
@@ -28,28 +28,36 @@ Route::prefix('admin/survey')
         Route::controller(SurveyController::class)->group(function () {
 
             Route::get('/', 'index')
-                ->name('index');
+                ->name('index')
+                ->middleware('permission:surveys.view');
 
             Route::get('/create', 'create')
-                ->name('create');
+                ->name('create')
+                ->middleware('permission:surveys.create');
 
             Route::post('/', 'store')
-                ->name('store');
+                ->name('store')
+                ->middleware('permission:surveys.create');
 
             Route::get('/{survey}', 'show')
-                ->name('show');
+                ->name('show')
+                ->middleware('permission:surveys.view');
 
             Route::get('/{survey}/edit', 'edit')
-                ->name('edit');
+                ->name('edit')
+                ->middleware('permission:surveys.edit');
 
             Route::put('/{survey}', 'update')
-                ->name('update');
+                ->name('update')
+                ->middleware('permission:surveys.edit');
 
             Route::delete('/{survey}', 'destroy')
-                ->name('destroy');
+                ->name('destroy')
+                ->middleware('permission:surveys.delete');
 
             Route::get('/{survey}/analytics', 'analytics')
-                ->name('analytics');
+                ->name('analytics')
+                ->middleware('permission:surveys.analytics');
         });
 
         /*
@@ -64,19 +72,28 @@ Route::prefix('admin/survey')
             ->group(function () {
 
                 Route::get('/', 'index')
-                    ->name('index');
+                    ->name('index')
+                    ->middleware('permission:surveys.sections.view');
+
+                Route::get('/create', 'create')
+                    ->name('create')
+                    ->middleware('permission:surveys.sections.create');
 
                 Route::post('/', 'store')
-                    ->name('store');
+                    ->name('store')
+                    ->middleware('permission:surveys.sections.create');
 
                 Route::get('/{section}/edit', 'edit')
-                    ->name('edit');
+                    ->name('edit')
+                    ->middleware('permission:surveys.sections.edit');
 
                 Route::put('/{section}', 'update')
-                    ->name('update');
+                    ->name('update')
+                    ->middleware('permission:surveys.sections.edit');
 
                 Route::delete('/{section}', 'destroy')
-                    ->name('destroy');
+                    ->name('destroy')
+                    ->middleware('permission:surveys.sections.delete');
             });
 
         /*
@@ -91,19 +108,28 @@ Route::prefix('admin/survey')
             ->group(function () {
 
                 Route::get('/', 'index')
-                    ->name('index');
+                    ->name('index')
+                    ->middleware('permission:surveys.questions.view');
+
+                Route::get('/create', 'create')
+                    ->name('create')
+                    ->middleware('permission:surveys.questions.create');
 
                 Route::post('/', 'store')
-                    ->name('store');
+                    ->name('store')
+                    ->middleware('permission:surveys.questions.create');
 
                 Route::get('/{question}/edit', 'edit')
-                    ->name('edit');
+                    ->name('edit')
+                    ->middleware('permission:surveys.questions.edit');
 
                 Route::put('/{question}', 'update')
-                    ->name('update');
+                    ->name('update')
+                    ->middleware('permission:surveys.questions.edit');
 
                 Route::delete('/{question}', 'destroy')
-                    ->name('destroy');
+                    ->name('destroy')
+                    ->middleware('permission:surveys.questions.delete');
             });
 
         /*
@@ -118,19 +144,28 @@ Route::prefix('admin/survey')
             ->group(function () {
 
                 Route::get('/', 'index')
-                    ->name('index');
+                    ->name('index')
+                    ->middleware('permission:surveys.options.view');
+
+                Route::get('/create', 'create')
+                    ->name('create')
+                    ->middleware('permission:surveys.options.create');
 
                 Route::post('/', 'store')
-                    ->name('store');
+                    ->name('store')
+                    ->middleware('permission:surveys.options.create');
 
                 Route::get('/{option}/edit', 'edit')
-                    ->name('edit');
+                    ->name('edit')
+                    ->middleware('permission:surveys.options.edit');
 
                 Route::put('/{option}', 'update')
-                    ->name('update');
+                    ->name('update')
+                    ->middleware('permission:surveys.options.edit');
 
                 Route::delete('/{option}', 'destroy')
-                    ->name('destroy');
+                    ->name('destroy')
+                    ->middleware('permission:surveys.options.delete');
             });
 
         /*
@@ -145,12 +180,15 @@ Route::prefix('admin/survey')
             ->group(function () {
 
                 Route::get('/', 'index')
-                    ->name('index');
+                    ->name('index')
+                    ->middleware('permission:surveys.responses.view');
 
                 Route::get('/{response}', 'show')
-                    ->name('show');
+                    ->name('show')
+                    ->middleware('permission:surveys.responses.view');
 
                 Route::delete('/{response}', 'destroy')
-                    ->name('destroy');
+                    ->name('destroy')
+                    ->middleware('permission:surveys.responses.delete');
             });
     });

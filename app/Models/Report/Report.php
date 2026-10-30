@@ -5,6 +5,7 @@ namespace App\Models\Report;
 use App\Enums\Report\ReportStatus;
 use App\Enums\Report\ReportType;
 use App\Models\Category;
+use App\Models\ContentParticipant;
 use App\Models\Media;
 use App\Models\Research\Research;
 use App\Models\Tag;
@@ -19,6 +20,8 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Database\Eloquent\Relations\MorphToMany;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Scope;
+use Illuminate\Database\Eloquent\Builder;
 
 #[Fillable([
     'research_id',
@@ -50,11 +53,30 @@ class Report extends Model
         ];
     }
 
+    #[Scope]
+    public function published(Builder $query)
+    {
+        $query->where('status', ReportStatus::Published);
+    }
+
+    #[Scope]
+    public function featured(Builder $query)
+    {
+        $query->where('featured', true);
+    }
+
     /*
     |--------------------------------------------------------------------------
     | Relationships
     |--------------------------------------------------------------------------
     */
+    public function participants(): MorphMany
+    {
+        return $this->morphMany(
+            ContentParticipant::class,
+            'participantable'
+        )->orderBy('position');
+    }
 
     public function research(): BelongsTo
     {

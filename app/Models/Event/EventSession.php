@@ -20,8 +20,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 ])]
 class EventSession extends Model
 {
-
     protected $casts = [
+        'event_id' => 'integer',
         'start_time' => 'datetime',
         'end_time' => 'datetime',
         'position' => 'integer',
@@ -35,9 +35,7 @@ class EventSession extends Model
 
     public function event(): BelongsTo
     {
-        return $this->belongsTo(
-            Event::class,
-        );
+        return $this->belongsTo(Event::class);
     }
 
     public function speakers(): BelongsToMany
@@ -47,7 +45,9 @@ class EventSession extends Model
             'session_speakers',
             'session_id',
             'user_id',
-        )->withPivot('position')
-            ->orderBy('position');
+        )
+            ->withPivot('position')
+            ->withTimestamps()
+            ->orderByPivot('position');
     }
 }

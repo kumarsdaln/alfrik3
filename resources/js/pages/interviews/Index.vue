@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { computed } from 'vue'
 import { InfiniteScroll } from '@inertiajs/vue3'
 
 import InterviewCard from '@/components/interview/InterviewCard.vue'
@@ -7,10 +6,7 @@ import InterviewHero from '@/components/interview/InterviewHero.vue'
 import FilterControl from '@/components/filters/FilterControl.vue'
 import AppSelect from '@/components/form/AppSelect.vue'
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
-
-import {
-    show as interviewShow,
-} from '@/actions/App/Http/Controllers/Public/Interview/InterviewController'
+import Empty from '@/components/datadisplay/empty/Empty.vue'
 
 import { useFilters } from '@/composables/useFilters'
 import { Interview, Pagination } from '@/types'
@@ -136,4 +132,6 @@ const {
             </template>
         </InfiniteScroll>
     </div>
+
+    <Empty v-if="!interviews.data.length" title="No interviews found." description="Try changing your filters or search keywords." />
 </template>

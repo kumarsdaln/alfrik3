@@ -1,3 +1,4 @@
+
 <?php
 
 use App\Http\Controllers\Public\Event\EventController;
@@ -11,66 +12,90 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 */
 
-Route::get('/events', [
-    EventController::class,
-    'index',
-])->name('events.index');
+Route::prefix('events')
+    ->name('events.')
+    ->group(function () {
+        Route::get('/', [
+            EventController::class,
+            'index',
+        ])->name('index');
 
-Route::get('/events/{event:slug}', [
-    EventController::class,
-    'show',
-])->name('events.show');
-
+        Route::get('/{event:slug}', [
+            EventController::class,
+            'show',
+        ])->name('show');
+    });
 
 /*
 |--------------------------------------------------------------------------
-| Event Registration
+| Authenticated Event Registration and Reviews
 |--------------------------------------------------------------------------
 */
 
 Route::middleware('auth')->group(function () {
-    Route::get('/events/{event}/register', [
-        EventRegistrationController::class,
-        'create',
-    ])->name('events.register');
-
-    Route::post('/events/{event}/register', [
-        EventRegistrationController::class,
-        'store',
-    ])->name('events.registrations.store');
-
-    Route::get('/event-registrations/{registration}', [
-        EventRegistrationController::class,
-        'show',
-    ])->name('events.registrations.show');
-
-    Route::post(
-        '/event-registrations/{registration}/cancel',
-        [
-            EventRegistrationController::class,
-            'cancel',
-        ]
-    )->name('events.registrations.cancel');
-
 
     /*
     |--------------------------------------------------------------------------
-    | Reviews
+    | Event Registration
     |--------------------------------------------------------------------------
     */
 
-    Route::post('/events/{event}/reviews', [
-        EventReviewController::class,
-        'store',
-    ])->name('events.reviews.store');
+    Route::prefix('events/{event:slug}')
+        ->name('events.')
+        ->group(function () {
+            Route::get('/register', [
+                EventRegistrationController::class,
+                'create',
+            ])->name('register');
 
-    Route::put('/event-reviews/{review}', [
-        EventReviewController::class,
-        'update',
-    ])->name('events.reviews.update');
+            Route::post('/register', [
+                EventRegistrationController::class,
+                'store',
+            ])->name('registrations.store');
 
-    Route::delete('/event-reviews/{review}', [
-        EventReviewController::class,
-        'destroy',
-    ])->name('events.reviews.destroy');
+            Route::post('/reviews', [
+                EventReviewController::class,
+                'store',
+            ])->name('reviews.store');
+        });
+
+    /*
+    |--------------------------------------------------------------------------
+    | Manage an Existing Registration
+    |--------------------------------------------------------------------------
+    */
+
+    Route::prefix('event-registrations/{registration}')
+        ->name('events.registrations.')
+        ->group(function () {
+            Route::get('/', [
+                EventRegistrationController::class,
+                'show',
+            ])->name('show');
+
+            Route::post('/cancel', [
+                EventRegistrationController::class,
+                'cancel',
+            ])->name('cancel');
+        });
+
+    /*
+    |--------------------------------------------------------------------------
+    | Manage an Existing Review
+    |--------------------------------------------------------------------------
+    */
+
+    Route::prefix('event-reviews/{review}')
+        ->name('events.reviews.')
+        ->group(function () {
+            Route::put('/', [
+                EventReviewController::class,
+                'update',
+            ])->name('update');
+
+            Route::delete('/', [
+                EventReviewController::class,
+                'destroy',
+            ])->name('destroy');
+        });
 });

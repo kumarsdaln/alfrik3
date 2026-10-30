@@ -68,6 +68,10 @@ class TagAssignmentController extends Controller
                     )
                 ),
             ],
+
+            'filters' => [
+                'search' => $request->input('search')
+            ]
         ]);
     }
 

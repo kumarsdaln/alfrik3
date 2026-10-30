@@ -7,7 +7,7 @@ use App\Traits\Enums\HasDropdown;
 enum EventStatus: string
 {
     use HasDropdown;
-    
+
     case DRAFT = 'draft';
     case PUBLISHED = 'published';
     case CANCELLED = 'cancelled';

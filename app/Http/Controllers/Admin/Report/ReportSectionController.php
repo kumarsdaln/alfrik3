@@ -67,6 +67,34 @@ class ReportSectionController extends Controller
             );
     }
 
+    public function show(
+        Report $report,
+        ReportSection $section,
+    ): Response {
+        abort_unless(
+            $section->report_id === $report->id,
+            404
+        );
+
+        $section->load([
+            'contentBlocks',
+        ]);
+
+        return Inertia::render(
+            'admin/report/section/Show',
+            [
+                'report' => [
+                    'id' => $report->id,
+                    'title' => $report->title,
+                ],
+
+                'section' => new ReportSectionResource(
+                    $section
+                ),
+            ]
+        );
+    }
+
     public function edit(
         Report $report,
         ReportSection $section,

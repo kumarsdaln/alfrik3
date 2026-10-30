@@ -2,13 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
 use App\Models\Event\Event;
 use App\Models\Interview\Interview;
 use App\Models\Magazine\Magazine;
 use App\Models\Report\Report;
-use App\Models\Research\ResearchArea;
-use App\Models\Research\ResearchPaper;
+use App\Models\Research\Research;
 use App\Models\Survey\Survey;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -24,18 +22,15 @@ class WelcomeController extends Controller
         |--------------------------------------------------------------------------
         | Editor's Choice
         |--------------------------------------------------------------------------
-        |
-        | Prefer explicitly featured research/report content.
-        | Fall back to the latest published research if nothing is featured.
-        |
         */
 
-        $featuredResearch = ResearchPaper::query()
-            ->published()
-            ->featured()
+        $featuredResearch = Research::query()
+            ->where('status', 'published')
+            ->where('featured', true)
             ->with([
-                'area',
                 'author',
+                'categories',
+                'media',
             ])
             ->latest('published_at')
             ->first();
@@ -44,7 +39,7 @@ class WelcomeController extends Controller
             ->published()
             ->featured()
             ->with([
-                'category',
+                'categories',
                 'author',
             ])
             ->latest('published_at')
@@ -58,15 +53,32 @@ class WelcomeController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        $research = ResearchPaper::query()
-            ->published()
+        $research = Research::query()
+            ->where('status', 'published')
             ->with([
-                'area',
+                'categories',
                 'author',
+                'media',
             ])
             ->latest('published_at')
             ->take(4)
             ->get();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Research Categories
+        |--------------------------------------------------------------------------
+        |
+        | Derive discovery categories from the research records loaded above.
+        | No ResearchArea or ResearchPaper model is required.
+        |
+        */
+
+        $categories = $research
+            ->pluck('categories')
+            ->flatten(1)
+            ->unique('id')
+            ->values();
 
         /*
         |--------------------------------------------------------------------------
@@ -77,7 +89,7 @@ class WelcomeController extends Controller
         $reports = Report::query()
             ->published()
             ->with([
-                'category',
+                'categories',
                 'author',
             ])
             ->latest('published_at')
@@ -92,10 +104,8 @@ class WelcomeController extends Controller
 
         $surveys = Survey::query()
             ->published()
-            ->with([
-                'author',
-            ])
-            ->latest('published_at')
+            ->with('author')
+            ->latest()
             ->take(3)
             ->get();
 
@@ -108,7 +118,7 @@ class WelcomeController extends Controller
         $magazines = Magazine::query()
             ->published()
             ->with([
-                'category',
+                'categories',
                 'author',
             ])
             ->latest('published_at')
@@ -122,17 +132,17 @@ class WelcomeController extends Controller
         */
 
         $interviews = Interview::query()
+            ->where('status', 'published')
             ->with([
                 'participants.user',
             ])
-            ->whereIn('status', ['published'])
             ->latest('published_at')
             ->take(3)
             ->get();
 
         /*
         |--------------------------------------------------------------------------
-        | Upcoming Events
+        | Upcoming Public Events
         |--------------------------------------------------------------------------
         */
 
@@ -140,62 +150,26 @@ class WelcomeController extends Controller
             ->published()
             ->public()
             ->upcoming()
-            ->with([
-                'categories',
-            ])
+            ->with('categories')
             ->orderBy('start_date')
             ->take(3)
             ->get();
 
         /*
         |--------------------------------------------------------------------------
-        | Areas of Work
+        | Render Homepage
         |--------------------------------------------------------------------------
-        */
-
-        $areas = ResearchArea::query()
-            ->withCount([
-                'papers' => fn ($query) => $query->published(),
-            ])
-            ->orderBy('name')
-            ->get([
-                'id',
-                'name',
-                'slug',
-                'description',
-            ]);
-
-        /*
-        |--------------------------------------------------------------------------
-        | Latest from Alfrik
-        |--------------------------------------------------------------------------
-        |
-        | Keep the individual content collections separate because each model
-        | has different fields and relationships. The frontend can combine
-        | them into the editorial feed.
-        |
         */
 
         return Inertia::render('Welcome', [
-            /*
-            | Editor's Choice
-            */
             'featured' => $featured,
-
-            /*
-            | Individual content streams
-            */
             'research' => $research,
             'reports' => $reports,
             'surveys' => $surveys,
             'magazines' => $magazines,
             'interviews' => $interviews,
             'events' => $events,
-
-            /*
-            | Discovery
-            */
-            'areas' => $areas,
+            'categories' => $categories,
         ]);
     }
 }

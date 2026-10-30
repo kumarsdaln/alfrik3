@@ -23,8 +23,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 ])]
 class EventTicket extends Model
 {
-
     protected $casts = [
+        'event_id' => 'integer',
         'price' => 'decimal:2',
         'capacity' => 'integer',
         'sales_start' => 'datetime',
@@ -42,9 +42,7 @@ class EventTicket extends Model
 
     public function event(): BelongsTo
     {
-        return $this->belongsTo(
-            Event::class,
-        );
+        return $this->belongsTo(Event::class);
     }
 
     public function registrations(): HasMany

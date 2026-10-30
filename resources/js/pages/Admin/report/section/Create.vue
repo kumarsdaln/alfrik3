@@ -49,44 +49,34 @@ defineProps<Props>()
                 preserveScroll: true,
             }" class="space-y-6">
 
-            <div class="rounded-lg border bg-background p-6">
+            <div>
 
                 <div class="mb-6">
-                    <h2 class="text-base font-semibold">
-                        Section Information
-                    </h2>
-
-                    <p class="mt-1 text-sm text-muted-foreground">
-                        Add a section to structure the report content.
-                    </p>
+                    <Heading title="Section Information" description="Add a section to structure the report content." />
                 </div>
 
 
                 <div class="space-y-5">
 
                     <!-- Title -->
-
                     <AppFormControl label="Title" :error="errors.title" required>
                         <AppInput name="title" placeholder="Enter section title" />
                     </AppFormControl>
 
 
                     <!-- Subtitle -->
-
                     <AppFormControl label="Subtitle" :error="errors.subtitle">
                         <AppInput name="subtitle" placeholder="Enter section subtitle" />
                     </AppFormControl>
 
 
                     <!-- Content -->
-
                     <AppFormControl label="Content" :error="errors.content">
                         <AppTextarea name="content" placeholder="Write the section content..." rows="14" />
                     </AppFormControl>
 
 
                     <!-- Position -->
-
                     <AppFormControl label="Position" :error="errors.position"
                         description="Lower numbers appear first in the report.">
                         <AppInput name="position" type="number" min="0" value="0" />
@@ -97,7 +87,6 @@ defineProps<Props>()
 
 
             <!-- Actions -->
-
             <div class="flex justify-end gap-3">
 
                 <Button type="button" variant="outline" as-child>

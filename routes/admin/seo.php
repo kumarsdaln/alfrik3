@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::prefix('admin/seo')
     ->name('admin.seo.')
-    ->middleware(['auth', 'role:admin'])
+    ->middleware('auth')
     ->group(function () {
 
         /*
@@ -21,17 +21,19 @@ Route::prefix('admin/seo')
         */
 
         Route::prefix('{type}/{id}')
-            ->name('resource.')
             ->controller(SeoController::class)
             ->group(function () {
 
                 Route::get('/', 'index')
-                    ->name('index');
+                    ->name('index')
+                    ->middleware('permission:seo.view');
 
                 Route::post('/', 'store')
-                    ->name('store');
+                    ->name('store')
+                    ->middleware('permission:seo.create');
 
                 Route::delete('/{seo}', 'destroy')
-                    ->name('destroy');
+                    ->name('destroy')
+                    ->middleware('permission:seo.delete');
             });
     });

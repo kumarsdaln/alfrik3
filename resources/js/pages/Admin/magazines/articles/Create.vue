@@ -5,18 +5,20 @@
     import AppInput from '@/components/form/AppInput.vue'
     import AppSelect from '@/components/form/AppSelect.vue'
     import AppTextarea from '@/components/form/AppTextarea.vue'
-    import AppHeading from '@/components/ui/AppHeading.vue'
-    import AppText from '@/components/ui/AppText.vue'
+    import Heading from '@/components/Heading.vue'
     import Button from '@/components/ui/button/Button.vue'
-    import TableLayout from '@/layouts/table/TableLayout.vue'
 
-    import { index } from '@/routes/admin/magazines/issues/articles'
+    import {
+        index,
+        store,
+    } from '@/routes/admin/magazines/issues/articles'
 
     import type {
         FormOption,
         Magazine,
         MagazineIssue,
     } from '@/types'
+    import BackButton from '@/components/ui/BackButton.vue'
 
     interface Props {
         magazine: Magazine
@@ -25,26 +27,21 @@
         typeOptions: FormOption[]
     }
 
-    defineProps<Props>()
+    const props = defineProps<Props>()
 </script>
 
 <template>
-    <TableLayout>
-        <template #header>
-            <div>
-                <AppHeading>
-                    Create Magazine Article
-                </AppHeading>
-
-                <AppText class="mt-1">
-                    Create a new article for {{ issue.title }}.
-                </AppText>
-            </div>
-        </template>
+    <div class="space-y-6 py-4">
+        <div class="flex gap-4">
+            <BackButton />
+            <Heading title="Create Magazine Article" :description="`Create a new article for ${props.issue.title}.`" />
+        </div>
 
         <div class="max-w-5xl">
-            <Form :action="`/admin/magazines/${magazine.id}/issues/${issue.id}/articles`" method="post"
-                class="space-y-6" #default="{ errors, processing }">
+            <Form v-bind="store.form({
+                magazine: props.magazine.id,
+                issue: props.issue.id,
+            })" class="space-y-6" #default="{ errors, processing }">
                 <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
                     <AppFormControl label="Title" :error="errors.title" required>
                         <AppInput name="title" placeholder="Enter article title" />
@@ -60,20 +57,20 @@
                 </AppFormControl>
 
                 <AppFormControl label="Excerpt" :error="errors.excerpt">
-                    <AppTextarea name="excerpt" rows="4" placeholder="Short summary of the article..." />
+                    <AppTextarea name="excerpt" :rows="4" placeholder="Short summary of the article..." />
                 </AppFormControl>
 
                 <AppFormControl label="Content" :error="errors.content" required>
-                    <AppTextarea name="content" rows="16" placeholder="Write the article content..." />
+                    <AppTextarea name="content" :rows="16" placeholder="Write the article content..." />
                 </AppFormControl>
 
                 <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
                     <AppFormControl label="Article Type" :error="errors.type" required>
-                        <AppSelect name="type" :options="typeOptions" placeholder="Select article type" />
+                        <AppSelect name="type" :options="props.typeOptions" placeholder="Select article type" />
                     </AppFormControl>
 
                     <AppFormControl label="Status" :error="errors.status" required>
-                        <AppSelect name="status" :options="statusOptions" placeholder="Select status" />
+                        <AppSelect name="status" :options="props.statusOptions" placeholder="Select status" />
                     </AppFormControl>
                 </div>
 
@@ -97,12 +94,15 @@
                     </Button>
 
                     <Button type="button" variant="outline" as-child>
-                        <Link :href="index(magazine.id, issue.id).url">
+                        <Link :href="index({
+                            magazine: props.magazine.id,
+                            issue: props.issue.id,
+                        }).url">
                             Cancel
                         </Link>
                     </Button>
                 </div>
             </Form>
         </div>
-    </TableLayout>
+    </div>
 </template>

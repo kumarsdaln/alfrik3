@@ -31,6 +31,10 @@
                 data: Category[]
             }
         }
+
+        filters: {
+            search: string
+        }
     }
 
     const props = defineProps<Props>()
@@ -54,7 +58,7 @@
         dataKey: 'categories.options',
 
         initialFilters: {
-            search: '',
+            search: props.filters.search,
         },
 
         debounce: 300,

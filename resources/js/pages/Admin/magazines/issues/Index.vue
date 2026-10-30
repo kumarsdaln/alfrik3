@@ -4,20 +4,39 @@
     import { Eye, Pencil, Plus, Trash2 } from '@lucide/vue'
 
     import Date from '@/components/datadisplay/Date.vue'
-    import AppHeading from '@/components/ui/AppHeading.vue'
+    import FilterControl from '@/components/filters/FilterControl.vue'
+    import AppSelect from '@/components/form/AppSelect.vue'
+    import Heading from '@/components/Heading.vue'
+    import BackButton from '@/components/ui/BackButton.vue'
     import AppPagination from '@/components/ui/AppPagination.vue'
     import AppStats from '@/components/ui/AppStats.vue'
     import AppTable from '@/components/ui/AppTable.vue'
     import AppTableActions from '@/components/ui/AppTableActions.vue'
     import AppText from '@/components/ui/AppText.vue'
+    import Badge from '@/components/ui/badge/Badge.vue'
     import Button from '@/components/ui/button/Button.vue'
-    import AppSelect from '@/components/form/AppSelect.vue'
-    import FilterControl from '@/components/filters/FilterControl.vue'
     import TableLayout from '@/layouts/table/TableLayout.vue'
 
     import { useFilters } from '@/composables/useFilters'
 
-    import { create } from '@/routes/admin/magazines/issues'
+    import {
+        create,
+        show,
+        edit,
+        destroy,
+    } from '@/routes/admin/magazines/issues'
+
+    import {
+        index as manageArticles,
+    } from '@/routes/admin/magazines/issues/articles'
+
+    import {
+        index as manageMedia,
+    } from '@/routes/admin/media'
+
+    import {
+        index as manageSeo,
+    } from '@/routes/admin/seo'
 
     import type {
         FormOption,
@@ -27,7 +46,6 @@
     } from '@/types'
 
     import type { TableAction } from '@/components/ui/AppTableActions.vue'
-    import Badge from '@/components/ui/badge/Badge.vue'
 
     interface Props {
         magazine: Magazine
@@ -37,14 +55,69 @@
             search?: string
             status?: string
         }
+        stats: {
+            total: number
+            published: number
+            draft: number
+            this_month: number
+        }
     }
 
     const props = defineProps<Props>()
 
-    const { filters, applyFilters, clearFilters } = useFilters({
-        search: props.filters.search ?? '',
-        status: props.filters.status ?? '',
-    })
+    /*
+    |--------------------------------------------------------------------------
+    | Filters
+    |--------------------------------------------------------------------------
+    */
+
+    const {
+        filters,
+        filterCount,
+        applyFilters,
+        clearFilters,
+    } = useFilters(
+        {
+            search: props.filters.search ?? '',
+            status: props.filters.status ?? '',
+        },
+        {
+            url: window.location.pathname,
+            searchKey: 'search',
+            debounce: 500,
+        },
+    )
+
+    /*
+    |--------------------------------------------------------------------------
+    | Statistics
+    |--------------------------------------------------------------------------
+    */
+
+    const statItems = computed(() => [
+        {
+            label: 'Total Issues',
+            value: props.stats.total,
+        },
+        {
+            label: 'Published',
+            value: props.stats.published,
+        },
+        {
+            label: 'Drafts',
+            value: props.stats.draft,
+        },
+        {
+            label: 'This Month',
+            value: props.stats.this_month,
+        },
+    ])
+
+    /*
+    |--------------------------------------------------------------------------
+    | Table
+    |--------------------------------------------------------------------------
+    */
 
     const columns = [
         {
@@ -82,7 +155,7 @@
             width: '180px',
         },
         {
-            key: 'downloads',
+            key: 'download_count',
             label: 'Downloads',
             width: '120px',
         },
@@ -94,65 +167,105 @@
         },
     ]
 
-    const hasFilters = computed(() => {
-        return Boolean(
-            filters.search ||
-            filters.status
-        )
-    })
+    /*
+    |--------------------------------------------------------------------------
+    | Actions
+    |--------------------------------------------------------------------------
+    */
 
-    const getIssueActions = (issue: MagazineIssue): TableAction[] => [
-        {
-            label: 'View',
-            icon: Eye,
-            onClick: () => {
-                router.visit(`/admin/magazines/${props.magazine.id}/issues/${issue.id}`)
+    function deleteIssue(issue: MagazineIssue) {
+        if (!confirm(`Are you sure you want to delete "${issue.title}"?`)) {
+            return
+        }
+
+        router.delete(
+            destroy({
+                magazine: props.magazine.id,
+                issue: issue.id,
+            }).url,
+            {
+                preserveScroll: true,
             },
-        },
-        {
-            label: 'Edit',
-            icon: Pencil,
-            href: `/admin/magazines/${props.magazine.id}/issues/${issue.id}/edit`,
-        },
-        {
-            label: 'Manage Media',
-            href: `/admin/magazines/${props.magazine.id}/issues/${issue.id}/media`,
-        },
-        {
-            label: 'Manage SEO',
-            href: `/admin/magazines/${props.magazine.id}/issues/${issue.id}/seo`,
-        },
-        {
-            label: 'Delete',
-            icon: Trash2,
-            variant: 'destructive',
-            onClick: () => {
-                if (confirm('Are you sure you want to delete this issue?')) {
-                    router.delete(
-                        `/admin/magazines/${props.magazine.id}/issues/${issue.id}`
-                    )
-                }
+        )
+    }
+
+    function getIssueActions(
+        issue: MagazineIssue,
+    ): TableAction[] {
+        return [
+            {
+                label: 'View',
+                icon: Eye,
+                href: show({
+                    magazine: props.magazine.id,
+                    issue: issue.id,
+                }).url,
             },
-        },
-    ]
+            {
+                label: 'Edit',
+                icon: Pencil,
+                href: edit({
+                    magazine: props.magazine.id,
+                    issue: issue.id,
+                }).url,
+            },
+            {
+                label: 'Manage Media',
+                icon: Pencil,
+                href: manageMedia({
+                    type: 'magazine-issue',
+                    id: issue.id,
+                }).url,
+            },
+            {
+                label: 'Manage SEO',
+                icon: Pencil,
+                href: manageSeo({
+                    type: 'magazine-issue',
+                    id: issue.id,
+                }).url,
+            },
+            {
+                label: 'Manage Articles',
+                icon: Pencil,
+                href: manageArticles({
+                    magazine: props.magazine.id,
+                    issue: issue.id,
+                }).url,
+            },
+            {
+                label: 'Delete',
+                icon: Trash2,
+                danger: true,
+                onClick: () => deleteIssue(issue),
+            },
+        ]
+    }
 </script>
 
 <template>
     <TableLayout>
+        <!-- Header -->
         <template #header>
-            <div class="flex items-center justify-between gap-4">
-                <div>
-                    <AppHeading>
-                        Magazine Issues
-                    </AppHeading>
+            <div class="flex items-center justify-between gap-4 py-5">
+                <div class="flex gap-4">
+                    <BackButton />
 
-                    <AppText class="mt-1">
-                        Manage issues for {{ magazine.title }}.
-                    </AppText>
+                    <Heading
+                        :title="`${magazine.title} Issues`"
+                        :description="`Manage issues for ${magazine.title}.`"
+                    />
                 </div>
 
-                <Button as-child>
-                    <Link :href="create(magazine.id).url">
+                <Button
+                    as-child
+                    class="gap-2"
+                >
+                    <Link
+                        :href="create({
+                            magazine: magazine.id,
+                        }).url"
+                    >
                         <Plus class="size-4" />
                         Add Issue
                     </Link>
@@ -160,86 +273,120 @@
             </div>
         </template>
 
-        <div class="space-y-6">
-            <div class="flex items-center justify-between gap-4">
-                <div>
-                    <AppText class="font-medium">
-                        {{ magazine.title }}
-                    </AppText>
+        <!-- Content -->
+        <div class="py-6">
+            <!-- Magazine -->
+            <section class="mb-8">
+                <AppText class="font-medium">
+                    {{ magazine.title }}
+                </AppText>
 
-                    <AppText class="text-sm text-muted-foreground">
-                        {{ issues.total }} issues
-                    </AppText>
-                </div>
-            </div>
+                <AppText class="text-sm text-muted-foreground">
+                    {{ stats.total }} issues
+                </AppText>
+            </section>
 
-            <div class="flex flex-wrap items-center gap-3">
-                <FilterControl v-model="filters.search" placeholder="Search issues..." @keyup.enter="applyFilters" />
+            <!-- Stats -->
+            <section class="mb-8">
+                <AppStats :items="statItems" />
+            </section>
 
-                <AppSelect v-model="filters.status" :options="statusOptions" placeholder="Status" class="w-[180px]" />
+            <!-- Filters -->
+            <section class="mb-8">
+                <FilterControl
+                    v-model:search="filters.search"
+                    search-placeholder="Search issues..."
+                    :filter-count="filterCount"
+                    @apply="applyFilters"
+                    @clear="clearFilters"
+                >
+                    <div class="space-y-6">
+                        <AppSelect
+                            v-model="filters.status"
+                            name="status"
+                            label="Status"
+                            placeholder="All statuses"
+                            :options="statusOptions"
+                        />
+                    </div>
+                </FilterControl>
+            </section>
 
-                <Button variant="outline" @click="applyFilters">
-                    Filter
-                </Button>
-
-                <Button v-if="hasFilters" variant="ghost" @click="clearFilters">
-                    Clear
-                </Button>
-            </div>
-
-            <AppTable :columns="columns" :data="issues.data">
+            <!-- Table -->
+            <AppTable
+                :columns="columns"
+                :data="props.issues.data"
+            >
+                <!-- Issue -->
                 <template #cell-title="{ row }">
                     <div class="min-w-0">
                         <AppText class="font-medium truncate">
                             {{ row.title }}
                         </AppText>
 
-                        <AppText v-if="row.subtitle" class="text-sm text-muted-foreground truncate">
+                        <AppText
+                            v-if="row.subtitle"
+                            class="text-sm text-muted-foreground truncate"
+                        >
                             {{ row.subtitle }}
                         </AppText>
                     </div>
                 </template>
 
+                <!-- Volume -->
                 <template #cell-volume="{ value }">
-                    <span>
-                        {{ value ?? '—' }}
-                    </span>
+                    {{ value ?? '—' }}
                 </template>
 
+                <!-- Issue Number -->
                 <template #cell-issue_number="{ value }">
-                    <span>
-                        {{ value ?? '—' }}
-                    </span>
+                    {{ value ?? '—' }}
                 </template>
 
+                <!-- Cover Date -->
                 <template #cell-cover_date="{ value }">
-                    <Date v-if="value" :value="value" />
+                    <Date
+                        v-if="value"
+                        :value="value"
+                    />
 
                     <span v-else>—</span>
                 </template>
 
+                <!-- Status -->
                 <template #cell-status="{ value }">
                     <Badge :color="value.color">
                         {{ value.label }}
                     </Badge>
                 </template>
 
+                <!-- Published At -->
                 <template #cell-published_at="{ value }">
-                    <Date v-if="value" :value="value" />
+                    <Date
+                        v-if="value"
+                        :value="value"
+                    />
 
                     <span v-else>—</span>
                 </template>
 
-                <template #cell-downloads="{ row }">
-                    {{ row.download_count }}
+                <!-- Downloads -->
+                <template #cell-download_count="{ value }">
+                    {{ value ?? 0 }}
                 </template>
 
+                <!-- Actions -->
                 <template #cell-actions="{ row }">
-                    <AppTableActions :actions="getIssueActions(row)" />
+                    <AppTableActions
+                        :actions="getIssueActions(row)"
+                    />
                 </template>
             </AppTable>
-
-            <AppPagination :meta="issues.meta" />
         </div>
+
+        <!-- Footer -->
+        <template #footer>
+            <AppPagination :meta="props.issues.meta" />
+        </template>
     </TableLayout>
 </template>

@@ -8,6 +8,8 @@
     import { AppInput, AppCheckbox } from '@/components/form'
     import { update } from '@/routes/admin/tags/assignment'
     import BackButton from '@/components/ui/BackButton.vue'
+    import { useInfiniteFilters } from '@/composables/useInfiniteFilters'
+    import { index } from '@/routes/admin/tags/assignment'
 
     interface Props {
         model: Model
@@ -17,15 +19,21 @@
             }
             options: Pagination<Tag>
         }
+        filters: {
+            search: string
+        }
     }
 
     const props = defineProps<Props>()
 
+    const indexUrl = index({
+        type: props.model.type,
+        id: props.model.id,
+    }).url
+
     const selectedIds = ref<number[]>(
         props.tags.assigned.data.map(tag => tag.id)
     )
-
-    const search = ref('')
 
     const isSelected = (id: number): boolean => {
         return selectedIds.value.includes(id)
@@ -47,6 +55,19 @@
         () => selectedIds.value.length
     )
 
+    const {
+        filters,
+    } = useInfiniteFilters({
+        url: indexUrl,
+
+        dataKey: 'tags.options',
+
+        initialFilters: {
+            search: props.filters.search,
+        },
+
+        debounce: 300,
+    })
 </script>
 
 <template>
@@ -65,11 +86,11 @@
                 </div>
 
                 <div class="mt-4">
-                    <AppInput v-model="search" placeholder="Search tags..." />
+                    <AppInput v-model="filters.search" placeholder="Search tags..." />
                 </div>
             </div>
 
-            <Form v-bind="update.form({type:model.type, id:model.id})" #default="{ processing }">
+            <Form v-bind="update.form({ type: model.type, id: model.id })" #default="{ processing }">
                 <div v-if="tags.options.data.length" class="max-h-[500px] overflow-y-auto divide-y">
                     <InfiniteScroll data="tags.options" only-next :buffer="200" preserve-url>
                         <label v-for="tag in tags.options.data" :key="tag.id"
@@ -102,11 +123,9 @@
                 </div>
 
                 <div class="flex justify-end gap-3 border-t px-6 py-4">
-                    <Link :href="indexUrl">
-                        <Button type="button" variant="outline">
-                            Cancel
-                        </Button>
-                    </Link>
+                    <Button @click="" type="button" variant="outline">
+                        Cancel
+                    </Button>
 
                     <Button type="submit" :disabled="processing">
                         {{ processing ? 'Saving...' : 'Save Tags' }}

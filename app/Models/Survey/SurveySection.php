@@ -27,12 +27,12 @@ class SurveySection extends Model
 
     public function survey(): BelongsTo
     {
-        return $this->belongsTo(Survey::class);
+        return $this->belongsTo(Survey::class, 'survey_id', 'id');
     }
 
     public function questions(): HasMany
     {
-        return $this->hasMany(SurveyQuestion::class)
+        return $this->hasMany(SurveyQuestion::class, 'section_id', 'id')
             ->orderBy('position');
     }
 }

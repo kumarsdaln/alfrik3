@@ -23,7 +23,7 @@ class ResearchSourceController extends Controller
             'sources',
         ]);
 
-        return Inertia::render('admin/research/Sources', [
+        return Inertia::render('admin/research/source/Index', [
             'research' => [
                 'id' => $research->id,
                 'title' => $research->title,
@@ -42,6 +42,8 @@ class ResearchSourceController extends Controller
             research: $research,
             data: $request->validated(),
         );
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Research source created.')]);
 
         return back();
     }
@@ -80,6 +82,8 @@ class ResearchSourceController extends Controller
             source: $source,
             data: $request->validated(),
         );
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Research source updated.')]);
 
         return back();
     }

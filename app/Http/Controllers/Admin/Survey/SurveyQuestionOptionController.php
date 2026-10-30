@@ -6,9 +6,11 @@ use App\Actions\Survey\CreateSurveyQuestionOption;
 use App\Actions\Survey\DeleteSurveyQuestionOption;
 use App\Actions\Survey\UpdateSurveyQuestionOption;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Admin\Survey\StoreSurveyQuestionOptionRequest;
-use App\Http\Requests\Admin\Survey\UpdateSurveyQuestionOptionRequest;
-use App\Http\Resources\Admin\Survey\SurveyQuestionOptionResource;
+use App\Http\Requests\Survey\StoreSurveyQuestionOptionRequest;
+use App\Http\Requests\Survey\UpdateSurveyQuestionOptionRequest;
+use App\Http\Resources\Survey\SurveyQuestionOptionResource;
+use App\Http\Resources\Survey\SurveyQuestionResource;
+use App\Models\Survey\Survey;
 use App\Models\Survey\SurveyQuestion;
 use App\Models\Survey\SurveyQuestionOption;
 use Illuminate\Http\RedirectResponse;
@@ -17,7 +19,7 @@ use Inertia\Response;
 
 class SurveyQuestionOptionController extends Controller
 {
-    public function index(SurveyQuestion $question): Response
+    public function index(Survey $survey, SurveyQuestion $question): Response
     {
         $question->load('survey');
 
@@ -25,17 +27,8 @@ class SurveyQuestionOptionController extends Controller
             ->orderBy('position')
             ->get();
 
-        return Inertia::render('admin/survey/question/Options', [
-            'question' => [
-                'id' => $question->id,
-                'survey_id' => $question->survey_id,
-                'question' => $question->question,
-                'type' => [
-                    'value' => $question->type->value,
-                    'label' => $question->type->label(),
-                    'color' => $question->type->color(),
-                ],
-            ],
+        return Inertia::render('admin/survey/question/option/Index', [
+            'question' => SurveyQuestionResource::make($question),
 
             'survey' => [
                 'id' => $question->survey->id,
@@ -46,8 +39,23 @@ class SurveyQuestionOptionController extends Controller
         ]);
     }
 
+    public function create(Survey $survey, SurveyQuestion $question): Response
+    {
+        $question->load('survey');
+
+        return Inertia::render('admin/survey/question/option/Create', [
+            'question' => SurveyQuestionResource::make($question),
+
+            'survey' => [
+                'id' => $question->survey->id,
+                'title' => $question->survey->title,
+            ],
+        ]);
+    }
+
     public function store(
         StoreSurveyQuestionOptionRequest $request,
+        Survey $survey,
         SurveyQuestion $question,
         CreateSurveyQuestionOption $action,
     ): RedirectResponse {
@@ -74,11 +82,7 @@ class SurveyQuestionOptionController extends Controller
         $question->load('survey');
 
         return Inertia::render('admin/survey/question/option/Edit', [
-            'question' => [
-                'id' => $question->id,
-                'survey_id' => $question->survey_id,
-                'question' => $question->question,
-            ],
+            'question' => SurveyQuestionResource::make($question),
 
             'survey' => [
                 'id' => $question->survey->id,

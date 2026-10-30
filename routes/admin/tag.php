@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::prefix('admin/tags')
     ->name('admin.tags.')
-    ->middleware(['auth', 'role:admin'])
+    ->middleware('auth')
     ->group(function () {
 
         /*
@@ -24,22 +24,28 @@ Route::prefix('admin/tags')
         Route::controller(TagController::class)->group(function () {
 
             Route::get('/', 'index')
-                ->name('index');
+                ->name('index')
+                ->middleware('permission:tags.view');
 
             Route::get('/create', 'create')
-                ->name('create');
+                ->name('create')
+                ->middleware('permission:tags.create');
 
             Route::post('/', 'store')
-                ->name('store');
+                ->name('store')
+                ->middleware('permission:tags.create');
 
             Route::get('/{tag}/edit', 'edit')
-                ->name('edit');
+                ->name('edit')
+                ->middleware('permission:tags.edit');
 
             Route::put('/{tag}', 'update')
-                ->name('update');
+                ->name('update')
+                ->middleware('permission:tags.edit');
 
             Route::delete('/{tag}', 'destroy')
-                ->name('destroy');
+                ->name('destroy')
+                ->middleware('permission:tags.delete');
         });
 
         /*
@@ -54,9 +60,11 @@ Route::prefix('admin/tags')
             ->group(function () {
 
                 Route::get('/', 'index')
-                    ->name('index');
+                    ->name('index')
+                    ->middleware('permission:tags.assign');
 
                 Route::put('/', 'update')
-                    ->name('update');
+                    ->name('update')
+                    ->middleware('permission:tags.assign');
             });
     });

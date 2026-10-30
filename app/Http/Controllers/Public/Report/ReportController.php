@@ -34,10 +34,7 @@ class ReportController extends Controller
         */
 
         $query = Report::query()
-            ->where(
-                'status',
-                ReportStatus::Published
-            )
+            ->where('status', ReportStatus::Published)
             ->with([
                 'research:id,title',
                 'author:id,name',
@@ -79,8 +76,7 @@ class ReportController extends Controller
         | Featured Report
         |--------------------------------------------------------------------------
         |
-        | Only show the featured report when the user is browsing the
-        | main reports page without search or type filters.
+        | The featured area is only displayed on the unfiltered reports page.
         |
         */
 
@@ -88,10 +84,7 @@ class ReportController extends Controller
 
         if ($activeType === '' && $search === '') {
             $featured = Report::query()
-                ->where(
-                    'status',
-                    ReportStatus::Published
-                )
+                ->where('status', ReportStatus::Published)
                 ->where('featured', true)
                 ->with([
                     'research:id,title',
@@ -104,16 +97,17 @@ class ReportController extends Controller
 
             /*
             |--------------------------------------------------------------------------
-            | Fallback to latest published report
+            | Fallback
             |--------------------------------------------------------------------------
+            |
+            | If no report is explicitly featured, use the latest published
+            | report instead.
+            |
             */
 
             if (! $featured) {
                 $featured = Report::query()
-                    ->where(
-                        'status',
-                        ReportStatus::Published
-                    )
+                    ->where('status', ReportStatus::Published)
                     ->with([
                         'research:id,title',
                         'author:id,name',
@@ -144,17 +138,11 @@ class ReportController extends Controller
                 ? new ReportResource($featured)
                 : null,
 
-            /*
-            |--------------------------------------------------------------------------
-            | Report Types
-            |--------------------------------------------------------------------------
-            */
-
             'types' => ReportType::dropdown(),
 
-            'qfilters' => [
-                'type' => $activeType,
+            'filters' => [
                 'search' => $search,
+                'type' => $activeType,
             ],
 
             'breadcrumbs' => BreadcrumbBuilder::make()
@@ -200,15 +188,8 @@ class ReportController extends Controller
         */
 
         $related = Report::query()
-            ->where(
-                'status',
-                ReportStatus::Published
-            )
-            ->where(
-                'id',
-                '!=',
-                $report->id
-            )
+            ->where('status', ReportStatus::Published)
+            ->whereKeyNot($report->id)
             ->when(
                 $report->type,
                 fn ($query) => $query->where(
@@ -223,7 +204,7 @@ class ReportController extends Controller
             ])
             ->orderByDesc('published_at')
             ->orderByDesc('created_at')
-            ->take(3)
+            ->limit(3)
             ->get();
 
         /*
@@ -245,7 +226,9 @@ class ReportController extends Controller
                     'Reports',
                     route('reports.index')
                 )
-                ->add($report->title)
+                ->add(
+                    $report->title
+                )
                 ->toArray(),
 
             /*
@@ -263,13 +246,21 @@ class ReportController extends Controller
 
                 'canonical_url' => $report->seo?->canonical_url,
 
-                'og_title' => $report->seo?->og_title,
-                'og_description' => $report->seo?->og_description,
-                'og_image' => $report->seo?->og_image,
+                'og_title' => $report->seo?->og_title
+                    ?: $report->title,
 
-                'twitter_title' => $report->seo?->twitter_title,
-                'twitter_description' => $report->seo?->twitter_description,
-                'twitter_image' => $report->seo?->twitter_image,
+                'og_description' => $report->seo?->og_description
+                    ?: $report->summary,
+
+                'og_image' => $report->seo?->og_image_url,
+
+                'twitter_title' => $report->seo?->twitter_title
+                    ?: $report->title,
+
+                'twitter_description' => $report->seo?->twitter_description
+                    ?: $report->summary,
+
+                'twitter_image' => $report->seo?->twitter_image_url,
             ],
         ]);
     }
@@ -281,7 +272,7 @@ class ReportController extends Controller
     {
         return $report->status === ReportStatus::Published
             && (
-                is_null($report->published_at)
+                $report->published_at === null
                 || $report->published_at->lte(now())
             );
     }

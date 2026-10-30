@@ -14,24 +14,11 @@
     import Button from '@/components/ui/button/Button.vue'
     import AppTable from '@/components/ui/AppTable.vue'
     import AppTableActions from '@/components/ui/AppTableActions.vue'
-    import TableLayout from '@/layouts/table/TableLayout.vue'
+    import { store } from '@/routes/admin/research/findings'
 
     import { Form } from '@inertiajs/vue3'
 
-    import type { FormOption } from '@/types'
-
-    interface ResearchFinding {
-        id: number
-        title: string
-        summary: string | null
-        description: string | null
-        type: {
-            value: string
-            label: string
-        }
-        confidence: number | null
-        position: number
-    }
+    import type { FormOption, ResearchFinding } from '@/types'
 
     interface Props {
         research: {
@@ -89,128 +76,123 @@
 </script>
 
 <template>
-    <TableLayout>
-        <template #header>
-            <div class="flex items-center gap-4 py-5">
-                <BackButton />
+    <div class="flex items-center gap-4 py-5">
+        <BackButton />
 
-                <Heading title="Research Findings"
-                    :description="`Manage findings and insights for ${research.title}.`" />
+        <Heading title="Research Findings" :description="`Manage findings and insights for ${research.title}.`" />
+    </div>
+
+    <div class="space-y-8 py-6">
+        <!-- Add Finding -->
+        <section class="space-y-4">
+            <div>
+                <h2 class="text-base font-semibold">
+                    Add Finding
+                </h2>
+
+                <p class="text-sm text-muted-foreground">
+                    Record a result, insight, observation, conclusion, or recommendation.
+                </p>
             </div>
-        </template>
 
-        <div class="space-y-8 py-6">
-            <!-- Add Finding -->
-            <section class="space-y-4">
-                <div>
-                    <h2 class="text-base font-semibold">
-                        Add Finding
-                    </h2>
+            <Form v-slot="{ errors, processing }" v-bind="store.form(research.id)"
+                class="space-y-4">
+                <AppFormControl label="Title" required :error="errors.title">
+                    <AppInput name="title" placeholder="Enter finding title" />
+                </AppFormControl>
 
-                    <p class="text-sm text-muted-foreground">
-                        Record a result, insight, observation, conclusion, or recommendation.
-                    </p>
+                <AppFormControl label="Summary" :error="errors.summary">
+                    <AppTextarea name="summary" placeholder="Summarize the finding..." />
+                </AppFormControl>
+
+                <AppFormControl label="Description" :error="errors.description">
+                    <AppTextarea name="description" placeholder="Describe the finding in detail..." />
+                </AppFormControl>
+
+                <AppFormControl label="Finding Type" required :error="errors.type">
+                    <AppSelect name="type" placeholder="Select finding type" :options="findingTypeOptions" />
+                </AppFormControl>
+
+                <AppFormControl label="Confidence" :error="errors.confidence">
+                    <AppInput name="confidence" type="number" min="0" max="100" step="0.01" placeholder="0 - 100" />
+                </AppFormControl>
+
+                <div class="flex justify-end">
+                    <Button type="submit" :disabled="processing" class="gap-2">
+                        <Plus class="size-4" />
+
+                        {{ processing ? 'Processing...' : 'Add Finding' }}
+                    </Button>
                 </div>
+            </Form>
+        </section>
 
-                <Form v-slot="{ errors, processing }" :action="`/admin/research/${research.id}/findings`" method="post"
-                    class="space-y-4">
-                    <AppFormControl label="Title" required :error="errors.title">
-                        <AppInput name="title" placeholder="Enter finding title" />
-                    </AppFormControl>
+        <!-- Findings -->
+        <section class="space-y-4 border-t border-border-light pt-8 dark:border-border-dark">
+            <div>
+                <h2 class="text-base font-semibold">
+                    Findings
+                </h2>
 
-                    <AppFormControl label="Summary" :error="errors.summary">
-                        <AppTextarea name="summary" placeholder="Summarize the finding..." />
-                    </AppFormControl>
+                <p class="text-sm text-muted-foreground">
+                    Findings currently defined for this research.
+                </p>
+            </div>
 
-                    <AppFormControl label="Description" :error="errors.description">
-                        <AppTextarea name="description" placeholder="Describe the finding in detail..." />
-                    </AppFormControl>
+            <AppTable :columns="columns" :data="findings">
+                <template #cell-position="{ value }">
+                    {{ value + 1 }}
+                </template>
 
-                    <AppFormControl label="Finding Type" required :error="errors.type">
-                        <AppSelect name="type" placeholder="Select finding type" :options="findingTypeOptions" />
-                    </AppFormControl>
-
-                    <AppFormControl label="Confidence" :error="errors.confidence">
-                        <AppInput name="confidence" type="number" min="0" max="100" step="0.01" placeholder="0 - 100" />
-                    </AppFormControl>
-
-                    <div class="flex justify-end">
-                        <Button type="submit" :disabled="processing" class="gap-2">
-                            <Plus class="size-4" />
-
-                            {{ processing ? 'Processing...' : 'Add Finding' }}
-                        </Button>
-                    </div>
-                </Form>
-            </section>
-
-            <!-- Findings -->
-            <section class="space-y-4 border-t border-border-light pt-8 dark:border-border-dark">
-                <div>
-                    <h2 class="text-base font-semibold">
-                        Findings
-                    </h2>
-
-                    <p class="text-sm text-muted-foreground">
-                        Findings currently defined for this research.
-                    </p>
-                </div>
-
-                <AppTable :columns="columns" :data="findings">
-                    <template #cell-position="{ value }">
-                        {{ value + 1 }}
-                    </template>
-
-                    <template #cell-title="{ row }">
-                        <div class="min-w-0">
-                            <div class="font-medium">
-                                {{ row.title }}
-                            </div>
-
-                            <p v-if="row.summary" class="mt-0.5 truncate text-sm text-muted-foreground">
-                                {{ row.summary }}
-                            </p>
+                <template #cell-title="{ row }">
+                    <div class="min-w-0">
+                        <div class="font-medium">
+                            {{ row.title }}
                         </div>
-                    </template>
 
-                    <template #cell-type="{ value }">
-                        <Badge variant="outline">
-                            {{ value.label }}
-                        </Badge>
-                    </template>
+                        <p v-if="row.summary" class="mt-0.5 truncate text-sm text-muted-foreground">
+                            {{ row.summary }}
+                        </p>
+                    </div>
+                </template>
 
-                    <template #cell-confidence="{ value }">
-                        <span v-if="value !== null">
-                            {{ value }}%
-                        </span>
+                <template #cell-type="{ value }">
+                    <Badge variant="outline">
+                        {{ value.label }}
+                    </Badge>
+                </template>
 
-                        <span v-else class="text-sm text-muted-foreground">
-                            —
-                        </span>
-                    </template>
+                <template #cell-confidence="{ value }">
+                    <span v-if="value !== null">
+                        {{ value }}%
+                    </span>
 
-                    <template #cell-actions="{ row }">
-                        <AppTableActions :actions="[
-                            {
-                                label: 'View',
-                                icon: Eye,
-                                href: `/admin/research/${research.id}/findings/${row.id}`,
-                            },
-                            {
-                                label: 'Edit',
-                                icon: Pencil,
-                                href: `/admin/research/${research.id}/findings/${row.id}/edit`,
-                            },
-                            {
-                                label: 'Delete',
-                                icon: Trash2,
-                                danger: true,
-                                onClick: () => deleteFinding(row),
-                            },
-                        ]" />
-                    </template>
-                </AppTable>
-            </section>
-        </div>
-    </TableLayout>
+                    <span v-else class="text-sm text-muted-foreground">
+                        —
+                    </span>
+                </template>
+
+                <template #cell-actions="{ row }">
+                    <AppTableActions :actions="[
+                        {
+                            label: 'View',
+                            icon: Eye,
+                            href: `/admin/research/${research.id}/findings/${row.id}`,
+                        },
+                        {
+                            label: 'Edit',
+                            icon: Pencil,
+                            href: `/admin/research/${research.id}/findings/${row.id}/edit`,
+                        },
+                        {
+                            label: 'Delete',
+                            icon: Trash2,
+                            danger: true,
+                            onClick: () => deleteFinding(row),
+                        },
+                    ]" />
+                </template>
+            </AppTable>
+        </section>
+    </div>
 </template>

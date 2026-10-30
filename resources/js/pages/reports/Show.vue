@@ -1,9 +1,9 @@
 <script setup lang="ts">
     import { computed } from 'vue'
-    import { Head, Link } from '@inertiajs/vue3'
+    import { Head } from '@inertiajs/vue3'
+
     import {
         CalendarDays,
-        ArrowLeft,
     } from '@lucide/vue'
 
     import AppHeading from '@/components/ui/AppHeading.vue'
@@ -19,30 +19,16 @@
         Report,
         ReportContentBlock,
         ReportSection,
+        SeoMetadata,
     } from '@/types'
 
 
-    /*
-    |--------------------------------------------------------------------------
-    | Props
-    |--------------------------------------------------------------------------
-    */
-
     interface Props {
-        report: Report
-        related?: Report[]
-
-        meta_data?: {
-            meta_title?: string
-            meta_description?: string
-            canonical_url?: string
-            og_title?: string
-            og_description?: string
-            og_image?: string
-            twitter_title?: string
-            twitter_description?: string
-            twitter_image?: string
+        report: {
+            data: Report
         }
+        related?: Report[]
+        meta_data?: SeoMetadata
     }
 
     const props = defineProps<Props>()
@@ -56,9 +42,9 @@
 
     const dateLabel = computed(() => {
         const date =
-            props.report.published_at ||
-            props.report.report_date ||
-            props.report.created_at
+            props.report.data.published_at ??
+            props.report.data.report_date ??
+            props.report.data.created_at
 
         if (!date) {
             return ''
@@ -79,13 +65,13 @@
     */
 
     const reportUrl = computed(() =>
-        reportShow(props.report.slug).url,
+        reportShow(props.report.data.slug).url,
     )
 
 
     /*
     |--------------------------------------------------------------------------
-    | Helpers
+    | Content Block Helpers
     |--------------------------------------------------------------------------
     */
 
@@ -129,17 +115,30 @@
 
     const sectionBlocks = (
         section: ReportSection,
-    ) => {
+    ): ReportContentBlock[] => {
         return section.content_blocks ?? []
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Section Number
+    |--------------------------------------------------------------------------
+    */
+
+    const sectionNumber = (
+        section: ReportSection,
+    ) => {
+        return String(section.position + 1).padStart(2, '0')
     }
 </script>
 
 
 <template>
 
-    <Head :title="meta_data?.meta_title || report.title">
+    <Head :title="meta_data?.meta_title || report.data.title">
         <meta name="description" :content="meta_data?.meta_description ??
-            report.summary ??
+            report.data.summary ??
             ''
             " />
 
@@ -160,9 +159,9 @@
     </Head>
 
 
-    <!-- ================================================================== -->
+    <!-- ================================================================ -->
     <!-- Report Header -->
-    <!-- ================================================================== -->
+    <!-- ================================================================ -->
 
     <header class="
             border-b
@@ -171,88 +170,72 @@
         ">
         <div class="
                 container
-                mx-auto
-                px-4
                 pb-10
-                pt-12
+                pt-8
                 sm:pb-12
-                sm:pt-16
+                sm:pt-12
                 lg:pb-14
-                lg:pt-20
+                lg:pt-16
             ">
-            <!-- Back -->
-            <Link href="/reports" class="
-                    mb-8
-                    inline-flex
-                    items-center
-                    gap-2
-                    text-xs
-                    font-medium
-                    text-muted-foreground
-                    transition-colors
-                    hover:text-foreground
-                ">
-                <ArrowLeft :size="14" :stroke-width="1.8" />
-
-                Back to reports
-            </Link>
 
 
             <!-- Type -->
-
-            <AppText v-if="report.type" tag="p" size="xs" weight="bold" tracking="wide" uppercase color="primary"
+            <AppText v-if="report.data.type" tag="p" size="xs" weight="bold" tracking="wide" uppercase color="brand"
                 class="mb-3">
-                {{ report.type.label }}
+                {{ report.data.type.label }}
             </AppText>
 
 
             <!-- Title -->
 
-            <AppHeading tag="h1" font="prata" size="5xl" weight="normal" leading="tight" class="max-w-5xl">
-                {{ report.title }}
+            <AppHeading tag="h1" font="prata" size="4xl" weight="normal" leading="tight" class="max-w-4xl sm:text-5xl">
+                {{ report.data.title }}
             </AppHeading>
 
 
             <!-- Subtitle -->
 
-            <AppText v-if="report.subtitle" tag="p" font="lora" size="xl" color="muted" leading="relaxed"
+            <AppText v-if="report.data.subtitle" tag="p" font="lora" size="xl" color="muted" leading="relaxed"
                 class="mt-4 max-w-3xl">
-                {{ report.subtitle }}
+                {{ report.data.subtitle }}
             </AppText>
 
 
             <!-- Summary -->
 
-            <AppText v-if="report.summary" tag="p" font="lora" size="lg" color="muted" leading="relaxed"
-                class="mt-5 max-w-3xl">
-                {{ report.summary }}
+            <AppText v-if="report.data.summary" tag="p" font="lora" size="sm" color="muted" leading="relaxed"
+                class="mt-4 max-w-3xl">
+                {{ report.data.summary }}
             </AppText>
 
 
             <!-- Meta -->
 
-            <MetaInfo class="mt-7" :items="[
-                ...(report.author
+            <MetaInfo class="mt-6" :items="[
+                ...(report.data.author
                     ? [
                         {
                             label: 'By',
-                            value: report.author.name,
+                            value: report.data.author.name,
                         },
                     ]
                     : []),
+
                 ...(dateLabel
                     ? [
                         {
+                            label: 'Published',
                             value: dateLabel,
                             icon: CalendarDays,
                         },
                     ]
                     : []),
-                ...(report.research
+
+                ...(report.data.research
                     ? [
                         {
                             label: 'Research',
-                            value: report.research.title,
+                            value: report.data.research.title,
                         },
                     ]
                     : []),
@@ -261,52 +244,62 @@
     </header>
 
 
-    <!-- ================================================================== -->
+    <!-- ================================================================ -->
     <!-- Report Content -->
-    <!-- ================================================================== -->
+    <!-- ================================================================ -->
 
     <main>
         <div class="
                 container
-                mx-auto
-                px-4
-                py-12
-                sm:py-16
-                lg:py-20
+                py-10
+                sm:py-14
+                lg:py-16
             ">
-            <div class="
-                    mx-auto
-                    max-w-4xl
-                ">
+            <div>
+                <!-- ==================================================== -->
+                <!-- Description -->
+                <!-- ==================================================== -->
 
-                <!-- Report Description -->
-
-                <section v-if="report.description" class="mb-14">
+                <section v-if="report.data.description" class="mb-12">
                     <AppText tag="p" font="lora" size="lg" leading="relaxed" class="whitespace-pre-line">
-                        {{ report.description }}
+                        {{ report.data.description }}
                     </AppText>
                 </section>
 
 
-                <!-- ====================================================== -->
+                <!-- ==================================================== -->
                 <!-- Sections -->
-                <!-- ====================================================== -->
+                <!-- ==================================================== -->
 
-                <div v-if="report.sections?.length" class="space-y-20">
-                    <section v-for="section in report.sections" :key="section.id">
+                <div v-if="report.data.sections?.length" class="space-y-16">
+                    <section v-for="section in report.data.sections" :key="section.id">
                         <!-- Section Header -->
 
-                        <header class="mb-8">
-                            <AppText size="xs" weight="bold" tracking="wide" uppercase color="primary" class="mb-3">
-                                Section {{ section.position + 1 }}
-                            </AppText>
+                        <header class="mb-7">
+                            <div class="
+                                    mb-3
+                                    flex
+                                    items-center
+                                    gap-3
+                                ">
+                                <AppText size="xs" weight="bold" tracking="wide" uppercase color="primary">
+                                    {{ sectionNumber(section) }}
+                                </AppText>
 
-                            <AppHeading tag="h2" font="prata" size="3xl" weight="normal" leading="tight">
+                                <span class="
+                                        h-px
+                                        w-8
+                                        bg-border-light
+                                        dark:bg-border-dark
+                                    " />
+                            </div>
+
+                            <AppHeading tag="h2" font="prata" size="2xl" weight="normal" leading="tight">
                                 {{ section.title }}
                             </AppHeading>
 
-                            <AppText v-if="section.subtitle" tag="p" font="lora" size="lg" color="muted"
-                                leading="relaxed" class="mt-3">
+                            <AppText v-if="section.subtitle" tag="p" font="lora" size="base" color="muted"
+                                leading="relaxed" class="mt-2">
                                 {{ section.subtitle }}
                             </AppText>
                         </header>
@@ -319,7 +312,6 @@
                                 whitespace-pre-line
                                 text-base
                                 leading-8
-                                text-foreground
                             ">
                             {{ section.content }}
                         </div>
@@ -329,7 +321,6 @@
 
                         <div v-if="sectionBlocks(section).length" class="space-y-10">
                             <article v-for="block in sectionBlocks(section)" :key="block.id">
-
                                 <!-- ================================================= -->
                                 <!-- TEXT -->
                                 <!-- ================================================= -->
@@ -338,7 +329,6 @@
                                         whitespace-pre-line
                                         text-base
                                         leading-8
-                                        text-foreground
                                     ">
                                     {{
                                         stringValue(
@@ -360,8 +350,7 @@
                                             blockContent(block).level ?? 2,
                                         ),
                                     ),
-                                )}`
-                                    " v-else-if="
+                                )}`" v-else-if="
                                         blockType(block) === 'heading'
                                     " class="
                                         font-prata
@@ -386,11 +375,11 @@
                                 " class="
                                         border-l-2
                                         border-primary
-                                        pl-6
+                                        pl-5
                                     ">
                                     <blockquote class="
                                             font-lora
-                                            text-xl
+                                            text-lg
                                             italic
                                             leading-relaxed
                                         ">
@@ -405,9 +394,10 @@
                                         blockContent(block).author ||
                                         blockContent(block).source
                                     " class="
-                                            mt-4
+                                            mt-3
                                             text-sm
-                                            text-muted-foreground
+                                            text-content-lightMuted
+                                            dark:text-content-darkMuted
                                         ">
                                         <span v-if="
                                             blockContent(block).author
@@ -446,15 +436,13 @@
                                 <figure v-else-if="
                                     blockType(block) === 'image'
                                 ">
-                                    <img v-if="
-                                        blockContent(block).url
-                                    " :src="stringValue(
-                                            blockContent(block).url,
-                                        )
-                                            " :alt="stringValue(
+                                    <img v-if="blockContent(block).url" :src="stringValue(
+                                        blockContent(block).url,
+                                    )
+                                        " :alt="stringValue(
                                             blockContent(block).alt ||
                                             block.title ||
-                                            report.title,
+                                            report.data.title,
                                         )
                                             " class="
                                             w-full
@@ -466,7 +454,8 @@
                                     " class="
                                             mt-3
                                             text-sm
-                                            text-muted-foreground
+                                            text-content-lightMuted
+                                            dark:text-content-darkMuted
                                         ">
                                         {{
                                             stringValue(
@@ -497,7 +486,7 @@
                                                 )" :key="column" class="
                                                         border-b
                                                         border-border-light
-                                                        px-4
+                                                        px-3
                                                         py-3
                                                         font-semibold
                                                         dark:border-border-dark
@@ -520,7 +509,7 @@ cell,
                                                     ) in row.split(',')" :key="cellIndex" class="
                                                         border-b
                                                         border-border-light
-                                                        px-4
+                                                        px-3
                                                         py-3
                                                         dark:border-border-dark
                                                     ">
@@ -541,14 +530,15 @@ cell,
                                 " class="
                                         border-y
                                         border-border-light
-                                        py-8
+                                        py-7
                                         dark:border-border-dark
                                     ">
                                     <div class="
                                             font-prata
-                                            text-5xl
+                                            text-4xl
                                             font-normal
                                             leading-none
+                                            sm:text-5xl
                                         ">
                                         {{
                                             stringValue(
@@ -589,7 +579,7 @@ cell,
                                 " class="
                                         border
                                         border-border-light
-                                        p-6
+                                        p-5
                                         dark:border-border-dark
                                     ">
                                     <AppText v-if="block.title" tag="h3" size="sm" weight="bold">
@@ -597,7 +587,7 @@ cell,
                                     </AppText>
 
                                     <div class="
-                                            mt-6
+                                            mt-5
                                             grid
                                             gap-3
                                         ">
@@ -608,7 +598,7 @@ label,
                                                         blockContent(block).labels,
                                                     )" :key="label" class="
                                                 grid
-                                                grid-cols-[minmax(100px,1fr)_2fr_auto]
+                                                grid-cols-[minmax(90px,1fr)_2fr_auto]
                                                 items-center
                                                 gap-3
                                                 text-sm
@@ -619,8 +609,8 @@ label,
 
                                             <div class="
                                                     h-2
-                                                    bg-muted
                                                     overflow-hidden
+                                                    bg-muted
                                                 ">
                                                 <div class="
                                                         h-full
@@ -644,7 +634,8 @@ label,
 
                                             <span class="
                                                     tabular-nums
-                                                    text-muted-foreground
+                                                    text-content-lightMuted
+                                                    dark:text-content-darkMuted
                                                 ">
                                                 {{
                                                     stringArray(
@@ -666,7 +657,7 @@ label,
                                 " class="
                                         border-l-2
                                         border-primary
-                                        pl-6
+                                        pl-5
                                     ">
                                     <AppText size="xs" weight="bold" tracking="wide" uppercase color="primary">
                                         Key Finding
@@ -674,7 +665,7 @@ label,
 
                                     <AppText v-if="
                                         blockContent(block).finding
-                                    " font="lora" size="lg" leading="relaxed" class="mt-3">
+                                    " font="lora" size="lg" leading="relaxed" class="mt-2">
                                         {{
                                             stringValue(
                                                 blockContent(block).finding,
@@ -704,7 +695,7 @@ label,
                                 " class="
                                         border
                                         border-border-light
-                                        p-6
+                                        p-5
                                         dark:border-border-dark
                                     ">
                                     <AppText size="xs" weight="bold" tracking="wide" uppercase color="primary">
@@ -712,8 +703,9 @@ label,
                                     </AppText>
 
                                     <AppText v-if="
-                                        blockContent(block).recommendation
-                                    " font="lora" size="lg" leading="relaxed" class="mt-3">
+                                        blockContent(block)
+                                            .recommendation
+                                    " font="lora" size="lg" leading="relaxed" class="mt-2">
                                         {{
                                             stringValue(
                                                 blockContent(block)
@@ -727,7 +719,8 @@ label,
                                     " size="sm" color="muted" leading="relaxed" class="mt-3">
                                         {{
                                             stringValue(
-                                                blockContent(block).rationale,
+                                                blockContent(block)
+                                                    .rationale,
                                             )
                                         }}
                                     </AppText>
@@ -746,21 +739,22 @@ label,
                                         'finding',
                                         'recommendation',
                                     ].includes(blockType(block))
-                                " size="sm" color="muted" leading="relaxed" class="mt-4">
+                                " size="sm" color="muted" leading="relaxed" class="mt-3">
                                     {{ block.description }}
                                 </AppText>
-
                             </article>
                         </div>
                     </section>
                 </div>
 
 
-                <!-- No sections -->
+                <!-- ==================================================== -->
+                <!-- No Content -->
+                <!-- ==================================================== -->
 
                 <section v-else-if="
-                    !report.description &&
-                    !report.summary
+                    !report.data.description &&
+                    !report.data.summary
                 " class="
                         border
                         border-dashed
@@ -773,15 +767,14 @@ label,
                         This report does not have published content yet.
                     </AppText>
                 </section>
-
             </div>
         </div>
     </main>
 
 
-    <!-- ================================================================== -->
+    <!-- ================================================================ -->
     <!-- Related Reports -->
-    <!-- ================================================================== -->
+    <!-- ================================================================ -->
 
     <section v-if="related?.length" class="
             border-t
@@ -793,11 +786,13 @@ label,
                 mx-auto
                 px-4
                 py-12
+                sm:px-6
                 sm:py-14
+                lg:px-8
                 lg:py-16
             ">
             <div class="mb-8">
-                <AppText tag="p" size="xs" weight="bold" tracking="wide" uppercase color="primary" class="mb-3">
+                <AppText tag="p" size="xs" weight="bold" tracking="wide" uppercase color="primary" class="mb-2">
                     Continue reading
                 </AppText>
 
@@ -815,9 +810,10 @@ label,
                     lg:grid-cols-3
                     lg:gap-x-10
                 ">
-                <ReportCard v-for="relatedReport in related" :key="relatedReport.id" :report="relatedReport" :href="reportShow(
-                    relatedReport.slug,
-                ).url" />
+                <ReportCard v-for="relatedReport in related" :key="relatedreport.data.id" :report="relatedReport" :href="reportShow(
+                    relatedreport.data.slug,
+                ).url
+                    " />
             </div>
         </div>
     </section>

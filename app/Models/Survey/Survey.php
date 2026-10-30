@@ -16,6 +16,8 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Database\Eloquent\Relations\MorphToMany;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Scope;
+use Illuminate\Database\Eloquent\Builder;
 
 #[Fillable([
     'research_id',
@@ -51,6 +53,20 @@ class Survey extends Model
         ];
     }
 
+    #[Scope]
+    public function published(Builder $query)
+    {
+        $query->where('status', SurveyStatus::Published);
+    }
+
+    #[Scope]
+    public function featured(Builder $query)
+    {
+        $query->where('featured', true);
+    }
+
+
+    // Relationships
     public function research(): BelongsTo
     {
         return $this->belongsTo(Research::class);
@@ -58,13 +74,13 @@ class Survey extends Model
 
     public function sections(): HasMany
     {
-        return $this->hasMany(SurveySection::class)
+        return $this->hasMany(SurveySection::class, 'survey_id', 'id')
             ->orderBy('position');
     }
 
     public function questions(): HasMany
     {
-        return $this->hasMany(SurveyQuestion::class)
+        return $this->hasMany(SurveyQuestion::class, 'survey_id', 'id')
             ->orderBy('position');
     }
 

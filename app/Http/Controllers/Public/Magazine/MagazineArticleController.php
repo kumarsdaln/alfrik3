@@ -22,7 +22,7 @@ class MagazineArticleController extends Controller
         */
 
         abort_unless(
-            $article->status &&
+            $article->status->value === 'published' &&
             (
                 ! $article->published_at ||
                 $article->published_at->isPast()
@@ -43,25 +43,32 @@ class MagazineArticleController extends Controller
                     'magazine_id',
                     'title',
                     'slug',
+                    'subtitle',
                     'volume',
                     'issue_number',
                     'cover_date',
                     'published_at',
+                    'description',
                 ])
                 ->with([
                     'magazine' => fn ($query) => $query
                         ->select([
                             'id',
-                            'category_id',
                             'title',
                             'slug',
                         ])
                         ->with([
-                            'category:id,name,slug',
+                            'categories:id,name,slug',
                         ]),
                 ]),
 
-            'author:id,name,username',
+            'author:id,name',
+
+            'categories:id,name,slug',
+
+            'media',
+
+            'seo',
         ]);
 
         /*
@@ -78,9 +85,11 @@ class MagazineArticleController extends Controller
             ->where('id', '!=', $article->id)
             ->where('issue_id', $article->issue_id)
             ->with([
-                'author:id,name,username',
+                'author:id,name',
+                'categories:id,name,slug',
+                'media',
             ])
-            ->ordered()
+            ->orderBy('position')
             ->take(4)
             ->get([
                 'id',
@@ -90,10 +99,14 @@ class MagazineArticleController extends Controller
                 'slug',
                 'subtitle',
                 'excerpt',
-                'cover_image',
+                'content',
                 'type',
                 'byline',
+                'position',
+                'featured',
+                'status',
                 'published_at',
+                'views',
                 'reading_time',
             ]);
 
@@ -139,6 +152,14 @@ class MagazineArticleController extends Controller
 
         /*
         |--------------------------------------------------------------------------
+        | SEO
+        |--------------------------------------------------------------------------
+        */
+
+        $seo = $article->seo->first();
+
+        /*
+        |--------------------------------------------------------------------------
         | Response
         |--------------------------------------------------------------------------
         */
@@ -151,14 +172,46 @@ class MagazineArticleController extends Controller
             'breadcrumbs' => $breadcrumbs,
 
             'meta_data' => [
-                'meta_title' => $article->meta_title
+                'meta_title' => $seo?->title
                     ?: $article->title . ' — ' .
                         $article->issue->magazine->title,
 
-                'meta_description' => $article->meta_description
+                'meta_description' => $seo?->description
                     ?: $article->excerpt,
 
-                'meta_keywords' => $article->meta_keywords,
+                'canonical_url' => $seo?->canonical_url,
+
+                'indexable' => $seo?->indexable ?? true,
+
+                'followable' => $seo?->followable ?? true,
+
+                'og_title' => $seo?->og_title
+                    ?: $seo?->title
+                    ?: $article->title,
+
+                'og_description' => $seo?->og_description
+                    ?: $seo?->description
+                    ?: $article->excerpt,
+
+                'og_type' => $seo?->og_type,
+
+                'og_image_url' => $seo?->og_image_url,
+
+                'twitter_card' => $seo?->twitter_card,
+
+                'twitter_title' => $seo?->twitter_title
+                    ?: $seo?->title
+                    ?: $article->title,
+
+                'twitter_description' => $seo?->twitter_description
+                    ?: $seo?->description
+                    ?: $article->excerpt,
+
+                'twitter_image_url' => $seo?->twitter_image_url,
+
+                'locale' => $seo?->locale,
+
+                'schema_type' => $seo?->schema_type,
             ],
         ]);
     }

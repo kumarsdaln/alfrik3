@@ -2,8 +2,10 @@
 
 namespace App\Http\Requests\Media;
 
+use App\Enums\Media\MediaCollection;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 
 class UpdateMediaRequest extends FormRequest
 {
@@ -18,7 +20,7 @@ class UpdateMediaRequest extends FormRequest
             'collection' => [
                 'required',
                 'string',
-                'max:50',
+                Rule::enum(MediaCollection::class),
             ],
 
             'name' => [

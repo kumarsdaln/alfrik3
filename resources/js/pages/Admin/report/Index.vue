@@ -1,367 +1,429 @@
 <script setup lang="ts">
-import { Head, Link, router } from '@inertiajs/vue3'
-import { Eye, FileText, Pencil, Plus, Trash2 } from '@lucide/vue'
+    import { computed } from 'vue'
+    import { Link, router } from '@inertiajs/vue3'
+    import { Eye, Pencil, Plus, Trash2 } from '@lucide/vue'
 
-import AppHeading from '@/components/ui/AppHeading.vue'
-import AppStats from '@/components/ui/AppStats.vue'
-import AppTable from '@/components/ui/AppTable.vue'
-import AppTableActions, { TableAction } from '@/components/ui/AppTableActions.vue'
-import Badge from '@/components/ui/badge/Badge.vue'
-import Date from '@/components/datadisplay/Date.vue'
-import FilterControl from '@/components/filters/FilterControl.vue'
-import AppPagination from '@/components/ui/AppPagination.vue'
-import TableLayout from '@/layouts/table/TableLayout.vue'
+    import Date from '@/components/datadisplay/Date.vue'
+    import AppPagination from '@/components/ui/AppPagination.vue'
+    import AppStats from '@/components/ui/AppStats.vue'
+    import AppTable from '@/components/ui/AppTable.vue'
+    import AppTableActions from '@/components/ui/AppTableActions.vue'
+    import AppSelect from '@/components/form/AppSelect.vue'
+    import FilterControl from '@/components/filters/FilterControl.vue'
+    import Badge from '@/components/ui/badge/Badge.vue'
+    import Button from '@/components/ui/button/Button.vue'
+    import Heading from '@/components/Heading.vue'
+    import BackButton from '@/components/ui/BackButton.vue'
+    import TableLayout from '@/layouts/table/TableLayout.vue'
 
-import {
-    create as reportCreate,
-    edit as reportEdit,
-    show as reportShow,
-    destroy as reportDestroy,
-    index as reportIndex,
-} from '@/routes/admin/report'
+    import { useFilters } from '@/composables/useFilters'
 
-import { index as manageMedia } from '@/routes/admin/media'
-import { index as manageCategory } from '@/routes/admin/categories/assignment'
-import { index as manageTags } from '@/routes/admin/tags/assignment'
+    import {
+        create,
+        show,
+        edit,
+        destroy,
+    } from '@/routes/admin/report'
 
-import type { Pagination, Report } from '@/types'
-import { computed } from 'vue'
+    import { index as manageMedia } from '@/routes/admin/media'
+    import { index as manageCategory } from '@/routes/admin/categories/assignment'
+    import { index as manageTags } from '@/routes/admin/tags/assignment'
+    import { index as manageSeo } from '@/routes/admin/seo'
+    import { index as manageSection } from '@/routes/admin/report/sections'
 
-interface ReportItem extends Report {
-    research?: {
-        id: number
-        title: string
-    } | null
+    import type { Pagination, Report, FormOption } from '@/types'
+    import type { TableAction } from '@/components/ui/AppTableActions.vue'
 
-    author?: {
-        id: number
-        name: string
-    } | null
-}
+    interface ReportItem extends Report {
+        research?: {
+            id: number
+            title: string
+        } | null
 
-interface ReportStats {
-    total: number
-    draft: number
-    published: number
-    featured: number
-}
-
-interface FilterOption {
-    value: string
-    label: string
-}
-
-interface Props {
-    reports: Pagination<ReportItem>
-    stats: ReportStats
-    filters: {
-        search?: string
-        status?: string
-        type?: string
-    }
-    statusOptions: FilterOption[]
-    typeOptions: FilterOption[]
-}
-
-const props = defineProps<Props>()
-
-const statItems = computed(() => [
-    {
-        label: 'Total Interviews',
-        value: props.stats.total,
-    },
-    {
-        label: 'Published',
-        value: props.stats.published,
-    },
-    {
-        label: 'Drafts',
-        value: props.stats.draft,
-    },
-    {
-        label: 'Featured',
-        value: props.stats.featured,
-    },
-])
-
-function filter(
-    key: 'search' | 'status' | 'type',
-    value: string | null,
-) {
-    const params = {
-        ...props.filters,
-        [key]: value || undefined,
+        author?: {
+            id: number
+            name: string
+        } | null
     }
 
-    router.get(
-        reportIndex.url(),
-        params,
+    interface Props {
+        reports: Pagination<ReportItem>
+
+        statusOptions: FormOption[]
+
+        typeOptions: FormOption[]
+
+        filters: {
+            search?: string
+            status?: string
+            type?: string
+        }
+
+        stats: {
+            total: number
+            published: number
+            draft: number
+            featured: number
+        }
+    }
+
+    const props = defineProps<Props>()
+
+    /*
+    |--------------------------------------------------------------------------
+    | Filters
+    |--------------------------------------------------------------------------
+    */
+
+    const {
+        filters,
+        filterCount,
+        applyFilters,
+        clearFilters,
+    } = useFilters(
         {
-            preserveState: true,
-            preserveScroll: true,
-            replace: true,
+            search: props.filters.search ?? '',
+            status: props.filters.status ?? '',
+            type: props.filters.type ?? '',
+        },
+        {
+            url: window.location.pathname,
+            searchKey: 'search',
+            debounce: 500,
         },
     )
-}
 
-function deleteReport(report: ReportItem) {
-    if (
-        !confirm(
-            `Are you sure you want to delete "${report.title}"?`,
-        )
-    ) {
-        return
-    }
+    /*
+    |--------------------------------------------------------------------------
+    | Statistics
+    |--------------------------------------------------------------------------
+    */
 
-    router.delete(
-        reportDestroy(report.id).url,
+    const statItems = computed(() => [
         {
-            preserveScroll: true,
+            label: 'Total Reports',
+            value: props.stats.total,
         },
-    )
-}
+        {
+            label: 'Published',
+            value: props.stats.published,
+        },
+        {
+            label: 'Drafts',
+            value: props.stats.draft,
+        },
+        {
+            label: 'Featured',
+            value: props.stats.featured,
+        },
+    ])
 
-function getInterviewActions(interview: Report): TableAction[] {
-    return [
+    /*
+    |--------------------------------------------------------------------------
+    | Table
+    |--------------------------------------------------------------------------
+    */
+
+    const columns = [
         {
-            label: 'View',
-            icon: Eye,
-            href: reportShow(interview.id).url,
+            key: 'id',
+            label: '#',
+            width: '80px',
         },
         {
-            label: 'Edit',
-            icon: Pencil,
-            href: reportEdit(interview.id).url,
+            key: 'title',
+            label: 'Title',
         },
         {
-            label: 'Manage Category',
-            icon: Pencil,
-            href: manageCategory({ type: 'interview', id: interview.id }).url,
+            key: 'type',
+            label: 'Type',
+            width: '160px',
         },
         {
-            label: 'Manage Tags',
-            icon: Pencil,
-            href: manageTags({ type: 'interview', id: interview.id }).url,
+            key: 'research',
+            label: 'Research',
+            width: '240px',
         },
         {
-            label: 'Manage Media',
-            icon: Pencil,
-            href: manageMedia({ type: 'interview', id: interview.id }).url,
+            key: 'status',
+            label: 'Status',
+            width: '140px',
         },
         {
-            label: 'Delete',
-            icon: Trash2,
-            danger: true,
-            onClick: () => deleteReport(interview),
+            key: 'published_at',
+            label: 'Published At',
+            width: '180px',
+        },
+        {
+            key: 'actions',
+            label: '',
+            width: '64px',
+            align: 'right' as const,
         },
     ]
-}
+
+    /*
+    |--------------------------------------------------------------------------
+    | Actions
+    |--------------------------------------------------------------------------
+    */
+
+    function deleteReport(report: ReportItem) {
+        if (
+            !confirm(
+                `Are you sure you want to delete "${report.title}"?`,
+            )
+        ) {
+            return
+        }
+
+        router.delete(
+            destroy(report.id).url,
+            {
+                preserveScroll: true,
+            },
+        )
+    }
+
+    function getReportActions(
+        report: ReportItem,
+    ): TableAction[] {
+        return [
+            {
+                label: 'View',
+                icon: Eye,
+                href: show(report.id).url,
+            },
+            {
+                label: 'Edit',
+                icon: Pencil,
+                href: edit(report.id).url,
+            },
+            {
+                label: 'Manage Category',
+                icon: Pencil,
+                href: manageCategory({
+                    type: 'report',
+                    id: report.id,
+                }).url,
+            },
+            {
+                label: 'Manage Tags',
+                icon: Pencil,
+                href: manageTags({
+                    type: 'report',
+                    id: report.id,
+                }).url,
+            },
+            {
+                label: 'Manage Media',
+                icon: Pencil,
+                href: manageMedia({
+                    type: 'report',
+                    id: report.id,
+                }).url,
+            },
+            {
+                label: 'Manage Sections',
+                icon: Pencil,
+                href: manageSection(report.id).url,
+            },
+            {
+                label: 'Manage SEO',
+                icon: Pencil,
+                href: manageSeo({
+                    type: 'report',
+                    id: report.id,
+                }).url,
+            },
+            {
+                label: 'Delete',
+                icon: Trash2,
+                danger: true,
+                onClick: () => deleteReport(report),
+            },
+        ]
+    }
 </script>
 
 <template>
-
-    <Head title="Reports" />
-
     <TableLayout>
-        <template #header>
-            <div class="
-                    flex
-                    flex-col
-                    gap-4
-                    sm:flex-row
-                    sm:items-center
-                    sm:justify-between
-                ">
-                <div>
-                    <AppHeading tag="h1" size="2xl" weight="semibold">
-                        Reports
-                    </AppHeading>
+        <!-- Header -->
 
-                    <p class="
-                            mt-1
-                            text-sm
-                            text-muted-foreground
-                        ">
-                        Manage research reports, publications, and
-                        analytical documents.
-                    </p>
+        <template #header>
+            <div class="flex items-center justify-between gap-4 py-5">
+                <div class="flex gap-4">
+                    <BackButton />
+
+                    <Heading
+                        title="Reports"
+                        description="Manage and organize your reports."
+                    />
                 </div>
 
-                <Link :href="reportCreate.url()" class="
-                        inline-flex
-                        w-full
-                        items-center
-                        justify-center
-                        gap-2
-                        border
-                        border-primary
-                        bg-primary
-                        px-4
-                        py-2.5
-                        text-sm
-                        font-medium
-                        text-primary-foreground
-                        transition-colors
-                        hover:bg-primary/90
-                        sm:w-auto
-                    ">
-                    <Plus :size="16" />
-                    New Report
-                </Link>
+                <Button as-child class="gap-2">
+                    <Link :href="create()">
+                        <Plus class="size-4" />
+                        Create Report
+                    </Link>
+                </Button>
             </div>
         </template>
 
-        <!-- ============================================================
-             STATS
-        ============================================================= -->
+        <!-- Content -->
 
-        <div class="
-                grid
-                gap-4
-                sm:grid-cols-2
-                xl:grid-cols-4
-            ">
-            <AppStats :items="statItems" />
-        </div>
+        <div class="py-6">
+            <!-- Stats -->
 
-        <!-- ============================================================
-             FILTERS
-        ============================================================= -->
+            <section class="mb-8">
+                <AppStats :items="statItems" />
+            </section>
 
-        <div class="
-                flex
-                flex-col
-                gap-3
-                sm:flex-row
-                sm:items-center
-                sm:justify-between
-            ">
-            <FilterControl :model-value="props.filters.search ?? ''" placeholder="Search reports..."
-                @update:model-value="
-                    filter('search', $event)
-                    " />
+            <!-- Filters -->
 
-            <div class="
-                    flex
-                    flex-col
-                    gap-3
-                    sm:flex-row
-                ">
-                <FilterControl :model-value="props.filters.status ?? ''" :options="statusOptions"
-                    placeholder="All statuses" @update:model-value="
-                        filter('status', $event)
-                        " />
+            <section class="mb-8">
+                <FilterControl
+                    v-model:search="filters.search"
+                    search-placeholder="Search reports..."
+                    :filter-count="filterCount"
+                    @apply="applyFilters"
+                    @clear="clearFilters"
+                >
+                    <div class="space-y-6">
+                        <AppSelect
+                            v-model="filters.type"
+                            name="type"
+                            label="Type"
+                            placeholder="All types"
+                            :options="typeOptions"
+                        />
 
-                <FilterControl :model-value="props.filters.type ?? ''" :options="typeOptions" placeholder="All types"
-                    @update:model-value="
-                        filter('type', $event)
-                        " />
-            </div>
-        </div>
+                        <AppSelect
+                            v-model="filters.status"
+                            name="status"
+                            label="Status"
+                            placeholder="All statuses"
+                            :options="statusOptions"
+                        />
+                    </div>
+                </FilterControl>
+            </section>
 
-        <!-- ============================================================
-             TABLE
-        ============================================================= -->
+            <!-- Table -->
 
-        <AppTable :columns="[
-            {
-                key: 'title',
-                label: 'Report',
-            },
-            {
-                key: 'type',
-                label: 'Type',
-            },
-            {
-                key: 'research',
-                label: 'Research',
-            },
-            {
-                key: 'status',
-                label: 'Status',
-            },
-            {
-                key: 'published_at',
-                label: 'Published',
-            },
-            {
-                key: 'actions',
-                label: '',
-                align: 'right',
-            },
-        ]" :data="reports.data" empty-message="No reports found.">
-            <template #cell-title="{ row }">
-                <div class="min-w-0 max-w-md">
-                    <Link :href="reportShow(row.id).url" class="
-                            block
-                            truncate
-                            text-sm
-                            font-medium
-                            hover:text-primary
-                        ">
-                        {{ row.title }}
+            <AppTable
+                :columns="columns"
+                :data="props.reports.data"
+            >
+                <!-- Title -->
+
+                <template #cell-title="{ row }">
+                    <div class="min-w-0">
+                        <Link
+                            :href="show(row.id).url"
+                            class="
+                                block
+                                truncate
+                                font-medium
+                                hover:text-primary
+                            "
+                        >
+                            {{ row.title }}
+                        </Link>
+
+                        <div
+                            v-if="row.subtitle"
+                            class="
+                                mt-1
+                                truncate
+                                text-sm
+                                text-muted-foreground
+                            "
+                        >
+                            {{ row.subtitle }}
+                        </div>
+
+                        <Badge
+                            v-if="row.featured"
+                            variant="secondary"
+                            class="mt-2"
+                        >
+                            Featured
+                        </Badge>
+                    </div>
+                </template>
+
+                <!-- Type -->
+
+                <template #cell-type="{ value }">
+                    <Badge :color="value.color">
+                        {{ value.label }}
+                    </Badge>
+                </template>
+
+                <!-- Research -->
+
+                <template #cell-research="{ row }">
+                    <Link
+                        v-if="row.research"
+                        :href="`/admin/research/${row.research.id}`"
+                        class="text-sm hover:text-primary"
+                    >
+                        {{ row.research.title }}
                     </Link>
 
-                    <p v-if="row.subtitle" class="
-                            mt-1
-                            truncate
-                            text-xs
+                    <span
+                        v-else
+                        class="
+                            text-sm
                             text-muted-foreground
-                        ">
-                        {{ row.subtitle }}
-                    </p>
-
-                    <Badge v-if="row.featured" variant="secondary" class="mt-2">
-                        Featured
-                    </Badge>
-                </div>
-            </template>
-
-            <template #cell-type="{ value }">
-                <Badge :color="value.color">
-                    {{ value.label }}
-                </Badge>
-            </template>
-
-            <template #cell-research="{ row }">
-                <Link v-if="row.research" :href="`/admin/research/${row.research.id}`" class="
-                        text-sm
-                        hover:text-primary
-                    ">
-                    {{ row.research.title }}
-                </Link>
-
-                <span v-else class="text-sm text-muted-foreground">
-                    —
-                </span>
-            </template>
-
-            <template #cell-status="{ value }">
-                <Badge :color="value.color">
-                    {{ value.label }}
-                </Badge>
-            </template>
-
-            <template #cell-published_at="{ value }">
-                <Date v-if="value" :value="value" />
-
-                <span v-else class="text-sm text-muted-foreground">
-                    —
-                </span>
-            </template>
-
-            <template #cell-actions="{ row }">
-                <!-- Actions -->
-                <template #cell-actions="{ row }">
-                    <AppTableActions :actions="getInterviewActions(row)" />
+                        "
+                    >
+                        —
+                    </span>
                 </template>
-            </template>
-        </AppTable>
 
-        <!-- ============================================================
-             PAGINATION
-        ============================================================= -->
+                <!-- Status -->
 
-        <AppPagination :meta="reports.meta" />
+                <template #cell-status="{ value }">
+                    <Badge :color="value.color">
+                        {{ value.label }}
+                    </Badge>
+                </template>
+
+                <!-- Published At -->
+
+                <template #cell-published_at="{ value }">
+                    <Date
+                        v-if="value"
+                        :value="value"
+                    />
+
+                    <span
+                        v-else
+                        class="
+                            text-sm
+                            text-muted-foreground
+                        "
+                    >
+                        —
+                    </span>
+                </template>
+
+                <!-- Actions -->
+
+                <template #cell-actions="{ row }">
+                    <AppTableActions
+                        :actions="getReportActions(row)"
+                    />
+                </template>
+            </AppTable>
+        </div>
+
+        <!-- Footer -->
+
+        <template #footer>
+            <AppPagination :meta="props.reports.meta" />
+        </template>
     </TableLayout>
 </template>

@@ -10,6 +10,7 @@ use App\Models\Event\EventParticipant;
 use App\Models\Event\EventRegistration;
 use App\Models\Event\EventReview;
 use App\Models\Event\EventSession;
+use App\Traits\HasRolesAndPermissions;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -55,7 +56,7 @@ use Laravel\Scout\Searchable;
 class User extends Authenticatable implements PasskeyUser
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable, PasskeyAuthenticatable, TwoFactorAuthenticatable, Searchable;
+    use HasFactory, Notifiable, PasskeyAuthenticatable, TwoFactorAuthenticatable, Searchable, HasRolesAndPermissions;
 
     /**
      * Get the attributes that should be cast.
@@ -88,50 +89,6 @@ class User extends Authenticatable implements PasskeyUser
     protected function inactive(Builder $query): Builder
     {
         return $query->where('is_active', false);
-    }
-
-    public function roles(): BelongsToMany
-    {
-        return $this->belongsToMany(Role::class);
-    }
-
-    public function hasRole(string $role): bool
-    {
-        return $this->roles()
-            ->where('slug', $role)
-            ->exists();
-    }
-
-    public function hasAnyRole(array $roles): bool
-    {
-        return $this->roles()
-            ->whereIn('slug', $roles)
-            ->exists();
-    }
-
-    public function hasAllRoles(array $roles): bool
-    {
-        return $this->roles()
-            ->whereIn('slug', $roles)
-            ->count() === count($roles);
-    }
-
-    public function isSuperAdmin(): bool
-    {
-        return $this->hasRole('super-admin');
-    }
-
-    public function hasPermission(string $permission): bool
-    {
-        if ($this->isSuperAdmin()) {
-            return true;
-        }
-
-        return $this->roles()
-            ->whereHas('permissions', function ($query) use ($permission) {
-                $query->where('slug', $permission);
-            })
-            ->exists();
     }
 
     public function country(): BelongsTo
@@ -237,5 +194,11 @@ class User extends Authenticatable implements PasskeyUser
                 'joined_at',
             ])
             ->withTimestamps();
+    }
+
+    // Participants
+    public function contentParticipations(): HasMany
+    {
+        return $this->hasMany(ContentParticipant::class);
     }
 }

@@ -19,8 +19,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 ])]
 class EventCheckin extends Model
 {
-
     protected $casts = [
+        'registration_id' => 'integer',
+        'checked_in_by' => 'integer',
         'checked_in_at' => 'datetime',
         'successful' => 'boolean',
     ];

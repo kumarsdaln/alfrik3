@@ -7,9 +7,9 @@ use App\Actions\Survey\DeleteSurveyQuestion;
 use App\Actions\Survey\UpdateSurveyQuestion;
 use App\Enums\Survey\SurveyQuestionType;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Admin\Survey\StoreSurveyQuestionRequest;
-use App\Http\Requests\Admin\Survey\UpdateSurveyQuestionRequest;
-use App\Http\Resources\Admin\Survey\SurveyQuestionResource;
+use App\Http\Requests\Survey\StoreSurveyQuestionRequest;
+use App\Http\Requests\Survey\UpdateSurveyQuestionRequest;
+use App\Http\Resources\Survey\SurveyQuestionResource;
 use App\Models\Survey\Survey;
 use App\Models\Survey\SurveyQuestion;
 use Illuminate\Http\RedirectResponse;
@@ -34,13 +34,36 @@ class SurveyQuestionController extends Controller
                 'position',
             ]);
 
-        return Inertia::render('admin/survey/Questions', [
+        return Inertia::render('admin/survey/question/Index', [
             'survey' => [
                 'id' => $survey->id,
                 'title' => $survey->title,
             ],
 
             'questions' => SurveyQuestionResource::collection($questions),
+
+            'sections' => $sections,
+
+            'typeOptions' => SurveyQuestionType::dropdown(),
+        ]);
+    }
+
+    public function create(Survey $survey): Response
+    {
+        $sections = $survey->sections()
+            ->orderBy('position')
+            ->get([
+                'id',
+                'survey_id',
+                'title',
+                'position',
+            ]);
+
+        return Inertia::render('admin/survey/question/Create', [
+            'survey' => [
+                'id' => $survey->id,
+                'title' => $survey->title,
+            ],
 
             'sections' => $sections,
 

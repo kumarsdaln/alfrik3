@@ -193,19 +193,19 @@ function getResearchActions(research: Research): TableAction[] {
         {
             label: 'Manage Media',
             icon: Image,
-            href: manageMedia({type:'resource', id:research.id}).url,
+            href: manageMedia({type:'research', id:research.id}).url,
         },
 
         {
             label: 'Manage Categories',
             icon: FolderTree,
-            href: manageCategory({type:'resource', id:research.id}).url,
+            href: manageCategory({type:'research', id:research.id}).url,
         },
 
         {
             label: 'Manage Tags',
             icon: Tags,
-            href: manageTags({type:'resource', id:research.id}).url,
+            href: manageTags({type:'research', id:research.id}).url,
         },
 
         {

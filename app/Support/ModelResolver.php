@@ -2,10 +2,14 @@
 
 namespace App\Support;
 
+use App\Models\Event\Event;
 use App\Models\Interview\Interview;
 use App\Models\Magazine\Magazine;
 use App\Models\Magazine\MagazineArticle;
 use App\Models\Magazine\MagazineIssue;
+use App\Models\Report\Report;
+use App\Models\Research\Research;
+use App\Models\Survey\Survey;
 use Illuminate\Database\Eloquent\Model;
 
 final class ModelResolver
@@ -21,6 +25,18 @@ final class ModelResolver
         'magazine' => Magazine::class,
         'magazine-issue' => MagazineIssue::class,
         'magazine-article' => MagazineArticle::class,
+
+        // Research
+        'research' => Research::class,
+
+        // Report
+        'report' => Report::class,
+
+        // Survey
+        'survey' => Survey::class,
+
+        // Event
+        'event' => Event::class,
     ];
 
     public static function class(string $type): string

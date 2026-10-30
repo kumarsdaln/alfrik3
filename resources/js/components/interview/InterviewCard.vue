@@ -138,7 +138,7 @@ const handleImageError = () => {
 
             <div class="
                     relative
-                    aspect-[4/3]
+                    aspect-video
                     w-full
                     overflow-hidden
                     bg-neutral-100

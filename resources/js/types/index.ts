@@ -7,6 +7,7 @@ export * from './forms';
 export * from './media'
 export * from './taxonomy';
 export * from './seo'
+export * from './participant'
 
 export * from './user';
 export * from './interview'

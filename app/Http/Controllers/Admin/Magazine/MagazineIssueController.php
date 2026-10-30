@@ -11,33 +11,70 @@ use App\Enums\Magazine\MagazineIssueStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Magazine\StoreMagazineIssueRequest;
 use App\Http\Requests\Magazine\UpdateMagazineIssueRequest;
+use App\Http\Resources\Magazine\MagazineIssueResource;
 use App\Models\Magazine\Magazine;
 use App\Models\Magazine\MagazineIssue;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class MagazineIssueController extends Controller
 {
-    public function index(Magazine $magazine): Response
-    {
+    public function index(
+        Request $request,
+        Magazine $magazine,
+    ): Response {
+        $stats = [
+            'total' => $magazine->issues()->count(),
+
+            'published' => $magazine->issues()
+                ->where('status', 'published')
+                ->count(),
+
+            'draft' => $magazine->issues()
+                ->where('status', 'draft')
+                ->count(),
+
+            'this_month' => $magazine->issues()
+                ->whereBetween('created_at', [
+                    now()->startOfMonth(),
+                    now()->endOfMonth(),
+                ])
+                ->count(),
+        ];
+
         $issues = $magazine->issues()
             ->with('media')
+            ->when(
+                $request->filled('search'),
+                fn($query) => $query->where(function ($query) use ($request) {
+                    $query
+                        ->where('title', 'ilike', '%' . $request->search . '%')
+                        ->orWhere('subtitle', 'ilike', '%' . $request->search . '%');
+                })
+            )
+            ->when(
+                $request->filled('status'),
+                fn($query) => $query->where(
+                    'status',
+                    $request->string('status')
+                )
+            )
             ->orderByDesc('published_at')
             ->orderByDesc('id')
-            ->paginate(20)
+            ->paginate($request->integer('per_page', 20))
             ->withQueryString();
 
         return Inertia::render('admin/magazines/issues/Index', [
             'magazine' => $magazine,
-            'issues' => $issues,
-            'statusOptions' => collect(MagazineIssueStatus::cases())
-                ->map(fn (MagazineIssueStatus $status) => [
-                    'value' => $status->value,
-                    'label' => $status->label(),
-                    'color' => $status->color(),
-                ])
-                ->values(),
+            'issues' => MagazineIssueResource::collection($issues),
+            'statusOptions' => $this->statusOptions(),
+            'filters' => [
+                'search' => $request->search,
+                'status' => $request->status,
+            ],
+            'stats' => $stats,
         ]);
     }
 
@@ -45,13 +82,7 @@ class MagazineIssueController extends Controller
     {
         return Inertia::render('admin/magazines/issues/Create', [
             'magazine' => $magazine,
-            'statusOptions' => collect(MagazineIssueStatus::cases())
-                ->map(fn (MagazineIssueStatus $status) => [
-                    'value' => $status->value,
-                    'label' => $status->label(),
-                    'color' => $status->color(),
-                ])
-                ->values(),
+            'statusOptions' => $this->statusOptions(),
         ]);
     }
 
@@ -60,29 +91,50 @@ class MagazineIssueController extends Controller
         Magazine $magazine,
         CreateMagazineIssue $action,
     ): RedirectResponse {
-        $action->handle(
-            $magazine,
-            $request->validated()
+        $issue = $action->handle(
+            magazine: $magazine,
+            data: $request->validated(),
         );
 
-        return to_route('admin.magazines.issues.index', $magazine)
-            ->with('success', 'Magazine issue created successfully.');
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => __('Magazine issue created successfully.'),
+        ]);
+
+        return to_route(
+            'admin.magazines.issues.edit',
+            [
+                'magazine' => $magazine,
+                'issue' => $issue,
+            ],
+        );
+    }
+
+    public function show(
+        Magazine $magazine,
+        MagazineIssue $issue,
+    ): Response {
+        $issue->load([
+            'media',
+            'articles',
+        ]);
+
+        return Inertia::render('admin/magazines/issues/Show', [
+            'magazine' => $magazine,
+            'issue' => new MagazineIssueResource($issue),
+        ]);
     }
 
     public function edit(
         Magazine $magazine,
         MagazineIssue $issue,
     ): Response {
+        $issue->load('media');
+
         return Inertia::render('admin/magazines/issues/Edit', [
             'magazine' => $magazine,
-            'issue' => $issue->load('media'),
-            'statusOptions' => collect(MagazineIssueStatus::cases())
-                ->map(fn (MagazineIssueStatus $status) => [
-                    'value' => $status->value,
-                    'label' => $status->label(),
-                    'color' => $status->color(),
-                ])
-                ->values(),
+            'issue' => new MagazineIssueResource($issue),
+            'statusOptions' => $this->statusOptions(),
         ]);
     }
 
@@ -93,12 +145,19 @@ class MagazineIssueController extends Controller
         UpdateMagazineIssue $action,
     ): RedirectResponse {
         $action->handle(
-            $issue,
-            $request->validated()
+            issue: $issue,
+            data: $request->validated(),
         );
 
-        return to_route('admin.magazines.issues.index', $magazine)
-            ->with('success', 'Magazine issue updated successfully.');
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => __('Magazine issue updated successfully.'),
+        ]);
+
+        return to_route(
+            'admin.magazines.issues.index',
+            $magazine,
+        );
     }
 
     public function destroy(
@@ -108,8 +167,15 @@ class MagazineIssueController extends Controller
     ): RedirectResponse {
         $action->handle($issue);
 
-        return to_route('admin.magazines.issues.index', $magazine)
-            ->with('success', 'Magazine issue deleted successfully.');
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => __('Magazine issue deleted successfully.'),
+        ]);
+
+        return to_route(
+            'admin.magazines.issues.index',
+            $magazine,
+        );
     }
 
     public function publish(
@@ -119,7 +185,12 @@ class MagazineIssueController extends Controller
     ): RedirectResponse {
         $action->handle($issue);
 
-        return back()->with('success', 'Magazine issue published successfully.');
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => __('Magazine issue published successfully.'),
+        ]);
+
+        return back();
     }
 
     public function archive(
@@ -129,6 +200,21 @@ class MagazineIssueController extends Controller
     ): RedirectResponse {
         $action->handle($issue);
 
-        return back()->with('success', 'Magazine issue archived successfully.');
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => __('Magazine issue archived successfully.'),
+        ]);
+
+        return back();
+    }
+
+    private function statusOptions(): array
+    {
+        return collect(MagazineIssueStatus::cases())
+            ->map(
+                fn(MagazineIssueStatus $status) => $status->option()
+            )
+            ->values()
+            ->all();
     }
 }

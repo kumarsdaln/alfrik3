@@ -6,6 +6,7 @@ use App\Enums\Research\ResearchStatus;
 use App\Enums\Research\ResearchType;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Research\ResearchResource;
+use App\Http\Resources\SeoMetadataResource;
 use App\Models\Research\Research;
 use App\Support\Breadcrumbs\BreadcrumbBuilder;
 use Illuminate\Http\Request;
@@ -41,14 +42,14 @@ class ResearchController extends Controller
             ])
             ->when(
                 $activeType !== '',
-                fn ($query) => $query->where(
+                fn($query) => $query->where(
                     'type',
                     $activeType
                 )
             )
             ->when(
                 $search !== '',
-                fn ($query) => $query->where(function ($query) use ($search) {
+                fn($query) => $query->where(function ($query) use ($search) {
                     $query
                         ->where(
                             'title',
@@ -80,7 +81,7 @@ class ResearchController extends Controller
         | Featured Research
         |--------------------------------------------------------------------------
         |
-        | Only show the featured research area when the user is browsing
+        | Only show featured research when the user is browsing
         | the main research page without filters.
         |
         */
@@ -101,7 +102,7 @@ class ResearchController extends Controller
 
             /*
             |--------------------------------------------------------------------------
-            | Fallback to latest published research
+            | Fallback to Latest Published Research
             |--------------------------------------------------------------------------
             */
 
@@ -125,8 +126,8 @@ class ResearchController extends Controller
         */
 
         return Inertia::render('research/Index', [
-            'research' => Inertia::scroll(
-                fn () => ResearchResource::collection(
+            'researches' => Inertia::scroll(
+                fn() => ResearchResource::collection(
                     $query
                         ->paginate(12)
                         ->withQueryString()
@@ -143,9 +144,15 @@ class ResearchController extends Controller
             |--------------------------------------------------------------------------
             */
 
-            'types' => ResearchType::dropdown(),
+            'typeOptions' => ResearchType::dropdown(),
 
-            'qfilters' => [
+            /*
+            |--------------------------------------------------------------------------
+            | Filters
+            |--------------------------------------------------------------------------
+            */
+
+            'filters' => [
                 'type' => $activeType,
                 'search' => $search,
             ],
@@ -175,23 +182,16 @@ class ResearchController extends Controller
 
         $research->load([
             'author:id,name',
-
             'media',
-
             'methodology',
-
-            'sources' => fn ($query) => $query
+            'sources' => fn($query) => $query
                 ->orderBy('position'),
-
-            'questions' => fn ($query) => $query
+            'questions' => fn($query) => $query
                 ->orderBy('position'),
-
-            'findings' => fn ($query) => $query
+            'findings' => fn($query) => $query
                 ->orderBy('position'),
-
-            'evidence' => fn ($query) => $query
+            'evidence' => fn($query) => $query
                 ->orderBy('position'),
-
             'members',
         ]);
 
@@ -199,17 +199,19 @@ class ResearchController extends Controller
         |--------------------------------------------------------------------------
         | Related Research
         |--------------------------------------------------------------------------
+        |
+        | Related research is based on the same research type.
+        |
         */
 
         $related = Research::query()
             ->where('status', ResearchStatus::Published)
             ->where('id', '!=', $research->id)
-            ->when(
-                $research->type,
-                fn ($query) => $query->where(
-                    'type',
-                    $research->type->value
-                )
+            ->where(
+                'type',
+                $research->type instanceof ResearchType
+                    ? $research->type->value
+                    : $research->type
             )
             ->with([
                 'author:id,name',
@@ -248,23 +250,7 @@ class ResearchController extends Controller
             |--------------------------------------------------------------------------
             */
 
-            'meta_data' => [
-                'meta_title' => $research->seo?->title
-                    ?: $research->title,
-
-                'meta_description' => $research->seo?->description
-                    ?: $research->summary,
-
-                'canonical_url' => $research->seo?->canonical_url,
-
-                'og_title' => $research->seo?->og_title,
-                'og_description' => $research->seo?->og_description,
-                'og_image' => $research->seo?->og_image,
-
-                'twitter_title' => $research->seo?->twitter_title,
-                'twitter_description' => $research->seo?->twitter_description,
-                'twitter_image' => $research->seo?->twitter_image,
-            ],
+            'meta_data' => $research->seo ? new SeoMetadataResource($research->seo) : null,
         ]);
     }
 

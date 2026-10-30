@@ -21,7 +21,7 @@ class ResearchQuestionController extends Controller
     {
         $research->load('questions');
 
-        return Inertia::render('admin/research/Questions', [
+        return Inertia::render('admin/research/question/Index', [
             'research' => [
                 'id' => $research->id,
                 'title' => $research->title,
@@ -41,6 +41,7 @@ class ResearchQuestionController extends Controller
             data: $request->validated(),
         );
 
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Research question created.')]);
         return back();
     }
 

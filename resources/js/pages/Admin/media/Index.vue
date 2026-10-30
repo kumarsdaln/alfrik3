@@ -17,12 +17,13 @@
     import Heading from '@/components/Heading.vue'
     import BackButton from '@/components/ui/BackButton.vue'
 
-    import type { Media, Model, Pagination } from '@/types'
+    import type { FormOption, Media, Model, Pagination } from '@/types'
     import { edit } from '@/routes/admin/media'
 
     interface Props {
         model: Model
         media: Pagination<Media>
+        collections: FormOption[]
     }
 
     const props = defineProps<Props>()
@@ -88,7 +89,7 @@
                 <!-- Upload Panel -->
                 <aside>
                     <div class="bg-card lg:sticky lg:top-4">
-                        <MediaUpload :action="mediaUrl" />
+                        <MediaUpload :action="mediaUrl" :collections="collections" />
                     </div>
                 </aside>
 
@@ -176,7 +177,7 @@
                                                 <Link :href="edit.url({
                                                     type: model.type,
                                                     id: model.id,
-                                                    mediaId: item.id,
+                                                    media: item.id,
                                                 })">
                                                     <Pencil class="size-4" />
                                                 </Link>

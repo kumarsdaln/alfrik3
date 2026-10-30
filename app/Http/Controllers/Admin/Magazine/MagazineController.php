@@ -151,13 +151,7 @@ class MagazineController extends Controller
                 ])
                 ->orderBy('name')
                 ->get(),
-
-            'statuses' => collect(MagazineStatus::cases())
-                ->map(fn(MagazineStatus $status) => [
-                    'value' => $status->value,
-                    'label' => str($status->value)->headline()->toString(),
-                ])
-                ->values(),
+            'statusOptions' => MagazineStatus::dropdown(),     
         ]);
     }
 

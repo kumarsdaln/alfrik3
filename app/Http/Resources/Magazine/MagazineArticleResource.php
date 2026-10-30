@@ -1,7 +1,10 @@
 <?php
 
-namespace App\Http\Resources;
+namespace App\Http\Resources\Magazine;
 
+use App\Http\Resources\CategoryResource;
+use App\Http\Resources\MediaResource;
+use App\Http\Resources\TagResource;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 

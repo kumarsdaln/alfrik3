@@ -7,16 +7,16 @@ use App\Traits\Enums\HasDropdown;
 enum EventType: string
 {
     use HasDropdown;
-    
-    case OFFLINE = 'offline';
+
     case ONLINE = 'online';
+    case OFFLINE = 'offline';
     case HYBRID = 'hybrid';
 
     public function label(): string
     {
         return match ($this) {
-            self::OFFLINE => 'Offline',
             self::ONLINE => 'Online',
+            self::OFFLINE => 'Offline',
             self::HYBRID => 'Hybrid',
         };
     }
@@ -24,9 +24,9 @@ enum EventType: string
     public function color(): string
     {
         return match ($this) {
-            self::OFFLINE => '#3B82F6',
-            self::ONLINE => '#8B5CF6',
-            self::HYBRID => '#F59E0B',
+            self::ONLINE => '#2563EB',
+            self::OFFLINE => '#16A34A',
+            self::HYBRID => '#9333EA',
         };
     }
 }

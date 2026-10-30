@@ -11,14 +11,17 @@
     import Input from '@/components/ui/input/Input.vue'
     import Label from '@/components/ui/label/Label.vue'
 
-    import type { Media, Model } from '@/types'
+    import type { FormOption, Media, Model } from '@/types'
     import { update } from '@/routes/admin/media'
+import AppFormControl from '@/components/form/AppFormControl.vue'
+import AppSelect from '@/components/form/AppSelect.vue'
 
     interface Props {
         model: Model
         media: {
             data: Media
         }
+        collections: FormOption[]
     }
 
     const props = defineProps<Props>()
@@ -70,8 +73,9 @@
         <div class="py-4">
             <div class="max-w-3xl">
 
-                <Form v-bind="update.form({ type: model.type, id: model.id, mediaId: media.data.id })"
-                    #default="{ processing, errors }">
+                <Form 
+                    v-bind="update.form({ type: model.type, id: model.id, media: media.data.id })"
+                    v-slot="{ processing, errors }">
                     <div class="space-y-6">
 
                         <!-- Preview -->
@@ -203,22 +207,10 @@
                                 </div>
 
                                 <!-- Collection -->
-                                <div class="space-y-2">
-                                    <Label for="collection">
-                                        Collection
-                                    </Label>
-
-                                    <Input id="collection" name="collection" :default-value="media.data.collection" />
-
-                                    <p v-if="errors.collection" class="text-sm text-destructive">
-                                        {{ errors.collection }}
-                                    </p>
-
-                                    <p class="text-xs text-muted-foreground">
-                                        Use a collection name to organize
-                                        related media files.
-                                    </p>
-                                </div>
+                                <AppFormControl label="Collection" :error="errors.collection" required>
+                                    <AppSelect name="collection" :default-value="media.data.collection" placeholder="Select collection"
+                                        :options="collections" />
+                                </AppFormControl>
 
                                 <!-- Alt Text -->
                                 <div class="space-y-2">

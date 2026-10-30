@@ -7,34 +7,45 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 class SurveyQuestionResource extends JsonResource
 {
+    /**
+     * Transform the resource into an array.
+     *
+     * @return array<string, mixed>
+     */
     public function toArray(Request $request): array
     {
         return [
             'id' => $this->id,
+
             'survey_id' => $this->survey_id,
             'section_id' => $this->section_id,
-
-            'section' => $this->whenLoaded(
-                'section',
-                fn () => [
-                    'id' => $this->section->id,
-                    'title' => $this->section->title,
-                ]
-            ),
 
             'question' => $this->question,
             'description' => $this->description,
 
-            'type' => [
-                'value' => $this->type->value,
-                'label' => $this->type->label(),
-                'color' => $this->type->color(),
-            ],
+            'type' => $this->type->option(),
 
-            'category' => $this->category,
             'required' => $this->required,
+
             'position' => $this->position,
+
             'settings' => $this->settings,
+
+            /*
+            |--------------------------------------------------------------------------
+            | Options
+            |--------------------------------------------------------------------------
+            */
+
+            'options' => SurveyQuestionOptionResource::collection(
+                $this->whenLoaded('options')
+            ),
+
+            /*
+            |--------------------------------------------------------------------------
+            | Timestamps
+            |--------------------------------------------------------------------------
+            */
 
             'created_at' => $this->created_at?->toISOString(),
             'updated_at' => $this->updated_at?->toISOString(),

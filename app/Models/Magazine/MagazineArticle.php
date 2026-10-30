@@ -10,6 +10,7 @@ use App\Models\SeoMetadata;
 use App\Models\Tag;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
@@ -34,6 +35,12 @@ use Illuminate\Database\Eloquent\Relations\MorphToMany;
 ])]
 class MagazineArticle extends Model
 {
+    /*
+    |--------------------------------------------------------------------------
+    | Casts
+    |--------------------------------------------------------------------------
+    */
+
     protected function casts(): array
     {
         return [
@@ -46,6 +53,54 @@ class MagazineArticle extends Model
             'reading_time' => 'integer',
         ];
     }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Scopes
+    |--------------------------------------------------------------------------
+    */
+
+    /**
+     * Scope published articles.
+     */
+    public function scopePublished(Builder $query): Builder
+    {
+        return $query
+            ->where(
+                'status',
+                MagazineArticleStatus::Published
+            )
+            ->where(function (Builder $query) {
+                $query
+                    ->whereNull('published_at')
+                    ->orWhere(
+                        'published_at',
+                        '<=',
+                        now()
+                    );
+            });
+    }
+
+    /**
+     * Scope featured articles.
+     */
+    public function scopeFeatured(Builder $query): Builder
+    {
+        return $query->where(
+            'featured',
+            true
+        );
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Relationships
+    |--------------------------------------------------------------------------
+    */
+
+    /**
+     * Article issue.
+     */
     public function issue(): BelongsTo
     {
         return $this->belongsTo(
@@ -54,6 +109,9 @@ class MagazineArticle extends Model
         );
     }
 
+    /**
+     * Article author.
+     */
     public function author(): BelongsTo
     {
         return $this->belongsTo(
@@ -62,6 +120,9 @@ class MagazineArticle extends Model
         );
     }
 
+    /**
+     * Article media.
+     */
     public function media(): MorphMany
     {
         return $this->morphMany(
@@ -70,6 +131,9 @@ class MagazineArticle extends Model
         );
     }
 
+    /**
+     * Article categories.
+     */
     public function categories(): MorphToMany
     {
         return $this->morphToMany(
@@ -78,6 +142,9 @@ class MagazineArticle extends Model
         );
     }
 
+    /**
+     * Article tags.
+     */
     public function tags(): MorphToMany
     {
         return $this->morphToMany(
@@ -86,6 +153,9 @@ class MagazineArticle extends Model
         );
     }
 
+    /**
+     * Article SEO metadata.
+     */
     public function seo(): MorphMany
     {
         return $this->morphMany(

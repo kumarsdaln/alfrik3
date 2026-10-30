@@ -24,11 +24,7 @@ class ResearchMemberResource extends JsonResource
                 ]
             ),
 
-            'role' => [
-                'value' => $this->role->value,
-                'label' => $this->role->label(),
-                'color' => $this->role->color(),
-            ],
+            'role' =>$this->role->value->option(),
 
             'joined_at' => $this->joined_at?->toISOString(),
 

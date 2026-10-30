@@ -7,8 +7,8 @@ use App\Actions\Report\DeleteReportContentBlock;
 use App\Actions\Report\UpdateReportContentBlock;
 use App\Enums\Report\ReportContentBlockType;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Admin\Report\StoreReportContentBlockRequest;
-use App\Http\Requests\Admin\Report\UpdateReportContentBlockRequest;
+use App\Http\Requests\Report\StoreReportContentBlockRequest;
+use App\Http\Requests\Report\UpdateReportContentBlockRequest;
 use App\Http\Resources\Report\ReportContentBlockResource;
 use App\Models\Report\Report;
 use App\Models\Report\ReportContentBlock;
@@ -107,6 +107,41 @@ class ReportContentBlockController extends Controller
                 'success',
                 'Content block created successfully.'
             );
+    }
+
+    public function show(
+        Report $report,
+        ReportSection $section,
+        ReportContentBlock $block,
+    ): Response {
+        $this->ensureSectionBelongsToReport(
+            $report,
+            $section,
+        );
+
+        abort_unless(
+            $block->report_section_id === $section->id,
+            404
+        );
+
+        return Inertia::render(
+            'admin/report/section/block/Show',
+            [
+                'report' => [
+                    'id' => $report->id,
+                    'title' => $report->title,
+                ],
+
+                'section' => [
+                    'id' => $section->id,
+                    'title' => $section->title,
+                ],
+
+                'block' => new ReportContentBlockResource(
+                    $block
+                ),
+            ]
+        );
     }
 
     public function edit(

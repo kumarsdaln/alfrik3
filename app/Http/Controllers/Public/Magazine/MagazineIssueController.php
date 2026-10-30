@@ -36,13 +36,23 @@ class MagazineIssueController extends Controller
         */
 
         abort_unless(
-            $issue->status &&
-                (
-                    ! $issue->published_at ||
-                    $issue->published_at->isPast()
-                ),
+            $issue->status->value === 'published' &&
+            (
+                ! $issue->published_at ||
+                $issue->published_at->isPast()
+            ),
             404
         );
+
+        /*
+        |--------------------------------------------------------------------------
+        | Load Magazine
+        |--------------------------------------------------------------------------
+        */
+
+        $magazine->load([
+            'categories:id,name,slug',
+        ]);
 
         /*
         |--------------------------------------------------------------------------
@@ -51,15 +61,17 @@ class MagazineIssueController extends Controller
         */
 
         $issue->load([
-            'magazine:id,category_id,title,slug',
-            'magazine.category:id,name,slug',
+            'magazine:id,title,slug',
+            'media',
+            'seo',
 
-            'articles' => fn($query) => $query
+            'articles' => fn ($query) => $query
                 ->published()
                 ->with([
-                    'author:id,name,username',
-                ])
-                ->ordered(),
+                    'author:id,name',
+                    'categories:id,name,slug',
+                    'media',
+                ]),
         ]);
 
         /*
@@ -74,6 +86,9 @@ class MagazineIssueController extends Controller
             ->where('id', '!=', $issue->id)
             ->latest('published_at')
             ->take(3)
+            ->with([
+                'media',
+            ])
             ->get([
                 'id',
                 'magazine_id',
@@ -84,9 +99,23 @@ class MagazineIssueController extends Controller
                 'issue_number',
                 'cover_date',
                 'published_at',
-                'cover_image',
+                'description',
+                'editor',
+                'file_path',
+                'file_size',
+                'file_type',
+                'download_count',
+                'status',
                 'featured',
             ]);
+
+        /*
+        |--------------------------------------------------------------------------
+        | SEO
+        |--------------------------------------------------------------------------
+        */
+
+        $seo = $issue->seo->first();
 
         /*
         |--------------------------------------------------------------------------
@@ -95,9 +124,7 @@ class MagazineIssueController extends Controller
         */
 
         return Inertia::render('magazine/issues/Show', [
-            'magazine' => $magazine->load([
-                'category:id,name,slug',
-            ]),
+            'magazine' => $magazine,
 
             'issue' => $issue,
 
@@ -120,13 +147,45 @@ class MagazineIssueController extends Controller
                 ->toArray(),
 
             'meta_data' => [
-                'meta_title' => $issue->meta_title
+                'meta_title' => $seo?->title
                     ?: $issue->title . ' — ' . $magazine->title,
 
-                'meta_description' => $issue->meta_description
+                'meta_description' => $seo?->description
                     ?: $issue->description,
 
-                'meta_keywords' => $issue->meta_keywords,
+                'canonical_url' => $seo?->canonical_url,
+
+                'indexable' => $seo?->indexable ?? true,
+
+                'followable' => $seo?->followable ?? true,
+
+                'og_title' => $seo?->og_title
+                    ?: $seo?->title
+                    ?: $issue->title,
+
+                'og_description' => $seo?->og_description
+                    ?: $seo?->description
+                    ?: $issue->description,
+
+                'og_type' => $seo?->og_type,
+
+                'og_image_url' => $seo?->og_image_url,
+
+                'twitter_card' => $seo?->twitter_card,
+
+                'twitter_title' => $seo?->twitter_title
+                    ?: $seo?->title
+                    ?: $issue->title,
+
+                'twitter_description' => $seo?->twitter_description
+                    ?: $seo?->description
+                    ?: $issue->description,
+
+                'twitter_image_url' => $seo?->twitter_image_url,
+
+                'locale' => $seo?->locale,
+
+                'schema_type' => $seo?->schema_type,
             ],
         ]);
     }

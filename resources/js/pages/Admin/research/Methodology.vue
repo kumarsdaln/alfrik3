@@ -9,25 +9,16 @@
     import Button from '@/components/ui/button/Button.vue'
     import { Form } from '@inertiajs/vue3'
 
+    import { update } from '@/routes/admin/research/methodology'
+    import { ResearchMethodology } from '@/types'
+
     interface Props {
         research: {
             id: number
             title: string
         }
 
-        methodology: {
-            id: number
-            method: string
-            description: string | null
-            research_design: string | null
-            data_collection_method: string | null
-            sample_size: number | null
-            population: string | null
-            geography: string | null
-            start_date: string | null
-            end_date: string | null
-            limitations: string | null
-        } | null
+        methodology: ResearchMethodology
     }
 
     const props = defineProps<Props>()
@@ -36,12 +27,10 @@
 <template>
     <div class="flex gap-4 py-5">
         <BackButton />
-
         <Heading title="Research Methodology" :description="`Define the methodology used for ${research.title}.`" />
     </div>
 
-    <Form v-slot="{ errors, processing }" :action="`/admin/research/${research.id}/methodology`" method="put"
-        class="space-y-4">
+    <Form v-slot="{ errors, processing }" v-bind="update.form(research.id)" class="space-y-4 pb-4">
         <AppFormControl label="Method" required :error="errors.method">
             <AppInput name="method" placeholder="e.g. Quantitative, Qualitative, Mixed Methods"
                 :default-value="methodology?.method ?? ''" />

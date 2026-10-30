@@ -31,6 +31,10 @@ export interface Survey {
 
     created_at: string
     updated_at: string
+    questions_count?: number | null
+
+    sections?: SurveySection[] | null
+    unsectioned_questions?: SurveyQuestion[] | null
 }
 
 export interface SurveySection {
@@ -45,6 +49,8 @@ export interface SurveySection {
 
     created_at: string
     updated_at: string
+
+    questions?: SurveyQuestion[] | null
 }
 
 export enum SurveyQuestionType {
@@ -100,6 +106,7 @@ export interface SurveyQuestion {
     options?: SurveyQuestionOption[]
     created_at: string
     updated_at: string
+    section?: SurveySection
 }
 
 export enum SurveyResponseStatus {

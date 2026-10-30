@@ -6,23 +6,14 @@
     import AppInput from '@/components/form/AppInput.vue'
     import AppSelect from '@/components/form/AppSelect.vue'
     import Button from '@/components/ui/button/Button.vue'
+    import { FormOption } from '@/types'
 
     interface Props {
         action: string
-        collections?: {
-            label: string
-            value: string
-        }[]
+        collections?: FormOption[]
     }
 
-    withDefaults(defineProps<Props>(), {
-        collections: () => [
-            {
-                label: 'Default',
-                value: 'default',
-            },
-        ],
-    })
+    defineProps<Props>()
 </script>
 
 <template>

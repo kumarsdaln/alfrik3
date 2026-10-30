@@ -16,6 +16,8 @@
         FormOption,
         Magazine,
     } from '@/types'
+    import Heading from '@/components/Heading.vue'
+    import BackButton from '@/components/ui/BackButton.vue'
 
     interface Props {
         magazine: Magazine
@@ -26,18 +28,11 @@
 </script>
 
 <template>
-    <TableLayout>
-        <template #header>
-            <div>
-                <AppHeading>
-                    Create Magazine Issue
-                </AppHeading>
-
-                <AppText class="mt-1">
-                    Create a new issue for {{ magazine.title }}.
-                </AppText>
-            </div>
-        </template>
+    <div class="py-5">
+        <div class="flex items-center gap-4 mb-4">
+            <BackButton />
+            <Heading title="Create Magazine Issue" :description="`Create a new issue for ${magazine.title}.`" />
+        </div>
 
         <div class="max-w-4xl">
             <Form :action="`/admin/magazines/${magazine.id}/issues`" method="post" class="space-y-6"
@@ -101,5 +96,5 @@
                 </div>
             </Form>
         </div>
-    </TableLayout>
+    </div>
 </template>

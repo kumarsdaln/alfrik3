@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::prefix('admin/interviews')
     ->name('admin.interviews.')
-    ->middleware(['auth', 'role:admin'])
+    ->middleware('auth')
     ->scopeBindings()
     ->group(function () {
 
@@ -27,25 +27,32 @@ Route::prefix('admin/interviews')
         Route::controller(InterviewController::class)->group(function () {
 
             Route::get('/', 'index')
-                ->name('index');
+                ->name('index')
+                ->middleware('permission:interviews.view');
 
             Route::get('/create', 'create')
-                ->name('create');
+                ->name('create')
+                ->middleware('permission:interviews.create');
 
             Route::post('/', 'store')
-                ->name('store');
+                ->name('store')
+                ->middleware('permission:interviews.create');
 
             Route::get('/{interview}', 'show')
-                ->name('show');
+                ->name('show')
+                ->middleware('permission:interviews.view');
 
             Route::get('/{interview}/edit', 'edit')
-                ->name('edit');
+                ->name('edit')
+                ->middleware('permission:interviews.edit');
 
             Route::put('/{interview}', 'update')
-                ->name('update');
+                ->name('update')
+                ->middleware('permission:interviews.edit');
 
             Route::delete('/{interview}', 'destroy')
-                ->name('destroy');
+                ->name('destroy')
+                ->middleware('permission:interviews.delete');
         });
 
         /*
@@ -60,13 +67,16 @@ Route::prefix('admin/interviews')
             ->group(function () {
 
                 Route::get('/', 'index')
-                    ->name('index');
+                    ->name('index')
+                    ->middleware('permission:interviews.participants.view');
 
                 Route::post('/', 'store')
-                    ->name('store');
+                    ->name('store')
+                    ->middleware('permission:interviews.participants.create');
 
                 Route::delete('/{participant}', 'destroy')
-                    ->name('destroy');
+                    ->name('destroy')
+                    ->middleware('permission:interviews.participants.delete');
             });
 
         /*
@@ -81,25 +91,32 @@ Route::prefix('admin/interviews')
             ->group(function () {
 
                 Route::get('/', 'index')
-                    ->name('index');
+                    ->name('index')
+                    ->middleware('permission:interviews.questions.view');
 
                 Route::get('/create', 'create')
-                    ->name('create');
+                    ->name('create')
+                    ->middleware('permission:interviews.questions.create');
 
                 Route::post('/', 'store')
-                    ->name('store');
+                    ->name('store')
+                    ->middleware('permission:interviews.questions.create');
 
                 Route::put('/reorder', 'reorder')
-                    ->name('reorder');
+                    ->name('reorder')
+                    ->middleware('permission:interviews.questions.edit');
 
                 Route::get('/{question}/edit', 'edit')
-                    ->name('edit');
+                    ->name('edit')
+                    ->middleware('permission:interviews.questions.edit');
 
                 Route::put('/{question}', 'update')
-                    ->name('update');
+                    ->name('update')
+                    ->middleware('permission:interviews.questions.edit');
 
                 Route::delete('/{question}', 'destroy')
-                    ->name('destroy');
+                    ->name('destroy')
+                    ->middleware('permission:interviews.questions.delete');
             });
 
         /*
@@ -114,18 +131,23 @@ Route::prefix('admin/interviews')
             ->group(function () {
 
                 Route::get('/create', 'create')
-                    ->name('create');
+                    ->name('create')
+                    ->middleware('permission:interviews.answers.create');
 
                 Route::post('/', 'store')
-                    ->name('store');
+                    ->name('store')
+                    ->middleware('permission:interviews.answers.create');
 
                 Route::get('/{answer}/edit', 'edit')
-                    ->name('edit');
+                    ->name('edit')
+                    ->middleware('permission:interviews.answers.edit');
 
                 Route::put('/{answer}', 'update')
-                    ->name('update');
+                    ->name('update')
+                    ->middleware('permission:interviews.answers.edit');
 
                 Route::delete('/{answer}', 'destroy')
-                    ->name('destroy');
+                    ->name('destroy')
+                    ->middleware('permission:interviews.answers.delete');
             });
     });

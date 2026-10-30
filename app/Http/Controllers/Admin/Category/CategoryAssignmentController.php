@@ -68,6 +68,9 @@ class CategoryAssignmentController extends Controller
                     )
                 ),
             ],
+            'filters' => [
+                'search' => $request->input('search')
+            ]
         ]);
     }
 

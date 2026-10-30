@@ -2,13 +2,23 @@
 
 namespace App\Http\Controllers\Admin\User;
 
+use App\Actions\User\CreateUser;
+use App\Actions\User\DeleteUser;
+use App\Actions\User\UpdateUser;
+use App\Actions\User\UpdateUserStatus;
+use App\Enums\User\UserStatus;
 use App\Http\Controllers\Controller;
-use App\Models\User;
+use App\Http\Requests\User\StoreUserRequest;
+use App\Http\Requests\User\UpdateUserRequest;
+use App\Http\Requests\User\UpdateUserStatusRequest;
+use App\Http\Resources\User\UserResource;
+use App\Models\Country;
+use App\Models\Position;
 use App\Models\Role;
+use App\Models\User;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -17,7 +27,7 @@ class UserController extends Controller
     /**
      * Display a listing of users.
      */
-    public function index(Request $request): Response|\Illuminate\Http\JsonResponse
+    public function index(Request $request): Response|JsonResponse
     {
         $users = User::query()
             ->with('roles')
@@ -29,15 +39,16 @@ class UserController extends Controller
                     $query->where(function ($query) use ($search) {
                         $query
                             ->where('name', 'ilike', "%{$search}%")
-                            ->orWhere('email', 'ilike', "%{$search}%");
+                            ->orWhere('email', 'ilike', "%{$search}%")
+                            ->orWhere('username', 'ilike', "%{$search}%");
                     });
                 }
             )
             ->when(
-                $request->filled('status'),
+                $request->has('status') && $request->status !== '',
                 fn($query) => $query->where(
-                    'status',
-                    $request->string('status')->toString()
+                    'is_active',
+                    (bool) $request->integer('status')
                 )
             )
             ->when(
@@ -46,6 +57,7 @@ class UserController extends Controller
                     $allowedSorts = [
                         'name',
                         'email',
+                        'username',
                         'created_at',
                         'updated_at',
                     ];
@@ -67,18 +79,35 @@ class UserController extends Controller
                     $query->orderBy($sort, $direction);
                 }
             )
-            ->latest('id')
+            ->when(
+                ! $request->filled('sort'),
+                fn($query) => $query->latest('id')
+            )
             ->paginate(
                 $request->integer('per_page', 15)
             )
             ->withQueryString();
 
+        $stats = [
+            'total' => User::count(),
+            'active' => User::where('is_active', true)->count(),
+            'inactive' => User::where('is_active', false)->count(),
+        ];
+
         if ($request->expectsJson()) {
             return response()->json($users);
         }
 
-        return Inertia::render('Admin/Users/Index', [
-            'users' => $users,
+        return Inertia::render('admin/user/Index', [
+            'users' => UserResource::collection($users),
+            'statusOptions' => UserStatus::dropdown(),
+            'stats' => $stats,
+            'filters' => [
+                'search' => $request->string('search')->toString(),
+                'status' => $request->string('status')->toString(),
+                'sort' => $request->string('sort')->toString(),
+                'direction' => $request->string('direction')->toString(),
+            ],
         ]);
     }
 
@@ -87,66 +116,23 @@ class UserController extends Controller
      */
     public function create(): Response
     {
-        $roles = Role::query()
-            ->orderBy('name')
-            ->get([
-                'id',
-                'slug',
-                'name',
-            ]);
-
-        return Inertia::render('Admin/Users/Create', [
-            'roles' => $roles,
+        return Inertia::render('admin/user/Create', [
+            'roleOptions' => self::roleOptions(),
+            'countryOptions' => self::countryOptions(),
+            'positionOptions' => self::positionOptions(),
         ]);
     }
 
     /**
      * Store a newly created user.
      */
-    public function store(Request $request): RedirectResponse
-    {
-        $validated = $request->validate([
-            'name' => [
-                'required',
-                'string',
-                'max:255',
-            ],
-
-            'email' => [
-                'required',
-                'string',
-                'email',
-                'max:255',
-                'unique:users,email',
-            ],
-
-            'password' => [
-                'required',
-                'string',
-                'min:8',
-                'confirmed',
-            ],
-
-            'is_active' => [
-                'required',
-                'boolean',
-            ],
-
-            'role' => [
-                'required',
-                'string',
-                'exists:roles,id',
-            ],
-        ]);
-
-        $user = User::create([
-            'name' => $validated['name'],
-            'email' => $validated['email'],
-            'password' => Hash::make($validated['password']),
-            'is_active' => $validated['is_active'],
-        ]);
-
-        $user->roles()->attach($validated['role']);
+    public function store(
+        StoreUserRequest $request,
+        CreateUser $action,
+    ): RedirectResponse {
+        $user = $action->handle(
+            $request->validated()
+        );
 
         Inertia::flash('toast', [
             'type' => 'success',
@@ -154,7 +140,7 @@ class UserController extends Controller
         ]);
 
         return to_route(
-            'admin.users.show',
+            'admin.users.index',
             $user
         );
     }
@@ -164,10 +150,12 @@ class UserController extends Controller
      */
     public function show(User $user): Response
     {
-        $user->load('roles');
+        $user->load([
+            'roles',
+        ]);
 
-        return Inertia::render('Admin/Users/Show', [
-            'user' => $user,
+        return Inertia::render('admin/user/Show', [
+            'user' => new UserResource($user),
         ]);
     }
 
@@ -176,106 +164,51 @@ class UserController extends Controller
      */
     public function edit(User $user): Response
     {
-        $user->load('roles');
-        $roles = Role::query()
-            ->orderBy('name')
-            ->get([
-                'id',
-                'slug',
-                'name',
-            ]);
-        return Inertia::render('Admin/Users/Edit', [
-            'user' => $user,
-            'roles' => $roles,
+        $user->load([
+            'roles',
+        ]);
+
+        return Inertia::render('admin/user/Edit', [
+            'user' => new UserResource($user),
+            'roleOptions' => self::roleOptions(),
+            'countryOptions' => self::countryOptions(),
+            'positionOptions' => self::positionOptions(),
         ]);
     }
-
-
 
     /**
      * Update the specified user.
      */
-
     public function update(
-        Request $request,
+        UpdateUserRequest $request,
         User $user,
+        UpdateUser $updateUser,
     ): RedirectResponse {
-        $validated = $request->validate([
-            'name' => [
-                'required',
-                'string',
-                'max:255',
-            ],
-
-            'username' => [
-                'required',
-                'string',
-                'max:50',
-                'alpha_dash',
-                Rule::unique('users', 'username')
-                    ->ignore($user->id),
-            ],
-
-            'email' => [
-                'required',
-                'string',
-                'email',
-                'max:255',
-                Rule::unique('users', 'email')
-                    ->ignore($user->id),
-            ],
-
-            'is_active' => [
-                'required',
-                'boolean',
-            ],
-
-            'role' => [
-                'required',
-                'integer',
-                'exists:roles,id',
-            ],
-        ]);
-
-        $user->update([
-            'name' => $validated['name'],
-            'username' => $validated['username'],
-            'email' => $validated['email'],
-            'is_active' => $validated['is_active'],
-        ]);
-
-        $user->roles()->sync([
-            $validated['role'],
-        ]);
+        $updateUser->handle(
+            user: $user,
+            data: $request->validated(),
+        );
 
         Inertia::flash('toast', [
             'type' => 'success',
             'message' => __('User updated successfully.'),
         ]);
 
-        return to_route(
-            'admin.users.show',
-            $user,
-        );
+        return back();
     }
 
     /**
      * Update the status of the specified user.
      */
     public function updateStatus(
-        Request $request,
+        UpdateUserStatusRequest $request,
         User $user,
+        UpdateUserStatus $action,
     ): RedirectResponse {
-        $validated = $request->validate([
-            'is_active' => [
-                'required',
-                'boolean',
-            ],
-        ]);
-
-        $user->update([
-            'is_active' => $validated['is_active'],
-        ]);
+        $action->handle(
+            $user,
+            $request->validated()
+        );
 
         Inertia::flash('toast', [
             'type' => 'success',
@@ -290,8 +223,9 @@ class UserController extends Controller
      */
     public function destroy(
         User $user,
+        DeleteUser $action,
     ): RedirectResponse {
-        $user->delete();
+        $action->handle($user);
 
         Inertia::flash('toast', [
             'type' => 'success',
@@ -299,5 +233,62 @@ class UserController extends Controller
         ]);
 
         return to_route('admin.users.index');
+    }
+
+    /**
+     * Get role options.
+     */
+    private static function roleOptions(): array
+    {
+        return Role::query()
+            ->orderBy('name')
+            ->get([
+                'id',
+                'name',
+            ])
+            ->map(fn(Role $role) => [
+                'value' => $role->id,
+                'label' => $role->name,
+            ])
+            ->values()
+            ->all();
+    }
+
+    /**
+     * Get country options.
+     */
+    private static function countryOptions(): array
+    {
+        return Country::query()
+            ->orderBy('name')
+            ->get([
+                'id',
+                'name',
+            ])
+            ->map(fn(Country $country) => [
+                'value' => $country->id,
+                'label' => $country->name,
+            ])
+            ->values()
+            ->all();
+    }
+
+    /**
+     * Get position options.
+     */
+    private static function positionOptions(): array
+    {
+        return Position::query()
+            ->orderBy('name')
+            ->get([
+                'id',
+                'name',
+            ])
+            ->map(fn(Position $position) => [
+                'value' => $position->id,
+                'label' => $position->name,
+            ])
+            ->values()
+            ->all();
     }
 }

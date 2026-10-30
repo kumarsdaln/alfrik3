@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin\Media;
 use App\Actions\Media\CreateMedia;
 use App\Actions\Media\DeleteMedia;
 use App\Actions\Media\UpdateMedia;
+use App\Enums\Media\MediaCollection;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Media\StoreMediaRequest;
 use App\Http\Requests\Media\UpdateMediaRequest;
@@ -39,6 +40,7 @@ class MediaController extends Controller
                 'id' => $model->id,
                 'title' => $this->modelTitle($model),
             ],
+            'collections' => MediaCollection::dropdown(),
 
             'media' => MediaResource::collection($media),
         ]);
@@ -97,6 +99,7 @@ class MediaController extends Controller
                 'id' => $model->id,
                 'title' => $this->modelTitle($model),
             ],
+            'collections' => MediaCollection::dropdown(),
             'media' => new MediaResource($media),
         ]);
     }

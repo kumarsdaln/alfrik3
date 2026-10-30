@@ -26,14 +26,13 @@ const props = withDefaults(defineProps<Props>(), {
     onLabel: 'On',
     offLabel: 'Off',
 })
+console.log(props)
 
 const emit = defineEmits<{
     'update:modelValue': [value: boolean]
 }>()
 
-const checked = ref(
-    props.modelValue ?? props.defaultValue
-)
+const checked = ref(props.defaultValue ?? props.modelValue ?? false)
 
 watch(
     () => props.modelValue,

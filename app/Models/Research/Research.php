@@ -5,6 +5,7 @@ namespace App\Models\Research;
 use App\Enums\Research\ResearchStatus;
 use App\Enums\Research\ResearchType;
 use App\Models\Category;
+use App\Models\ContentParticipant;
 use App\Models\Media;
 use App\Models\Report\Report;
 use App\Models\SeoMetadata;
@@ -51,6 +52,14 @@ class Research extends Model
     public function author(): BelongsTo
     {
         return $this->belongsTo(User::class, 'author_id');
+    }
+
+    public function participants(): MorphMany
+    {
+        return $this->morphMany(
+            ContentParticipant::class,
+            'participantable'
+        )->orderBy('position');
     }
 
     public function media(): MorphMany

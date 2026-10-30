@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Requests\Admin\Survey;
+namespace App\Http\Requests\Survey;
 
 use App\Enums\Survey\SurveyQuestionType;
 use Illuminate\Foundation\Http\FormRequest;

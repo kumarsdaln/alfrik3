@@ -22,7 +22,7 @@
         Profile,
         User,
     } from '@/types'
-import ProfileCell from '@/components/profile/ProfileCell.vue'
+    import ProfileCell from '@/components/profile/ProfileCell.vue'
 
     interface Participant {
         id: number
@@ -210,8 +210,8 @@ import ProfileCell from '@/components/profile/ProfileCell.vue'
 
                     <div class="flex items-center gap-1 overflow-x-auto">
                         <Button v-for="link in users.meta.links" :key="link.label" type="button" size="sm" :variant="link.active
-                                ? 'default'
-                                : 'outline'
+                            ? 'default'
+                            : 'outline'
                             " :disabled="!link.url" @click="goToPage(link.url)">
                             <span v-html="link.label" />
                         </Button>
@@ -257,7 +257,7 @@ import ProfileCell from '@/components/profile/ProfileCell.vue'
                                     {{ participant.role.label }}
                                 </span>
 
-                                <Form :action="participantDestroy(participant.id)" method="delete">
+                                <Form :action="participantDestroy({interview: interview.id, participant: participant.id })" method="delete">
                                     <Button type="submit" variant="destructive" size="sm">
                                         Remove
                                     </Button>

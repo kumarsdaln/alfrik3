@@ -55,18 +55,8 @@ defineProps<Props>()
                 <!-- ===================================================== -->
                 <!-- Basic Information -->
                 <!-- ===================================================== -->
-                <div class="space-y-5 rounded-lg border bg-background p-6">
-
-                    <div class="mb-6">
-                        <h2 class="text-base font-semibold">
-                            Report Information
-                        </h2>
-
-                        <p class="mt-1 text-sm text-muted-foreground">
-                            Define the basic information for this report.
-                        </p>
-                    </div>
-
+                <div class="space-y-5">
+                    <Heading title="Report Information" description=" Define the basic information for this report." />
 
                     <!-- Title -->
                     <AppFormControl label="Title" required :error="errors.title">
@@ -103,19 +93,8 @@ defineProps<Props>()
                 <!-- ===================================================== -->
                 <!-- Publishing -->
                 <!-- ===================================================== -->
-                <div class="space-y-5 rounded-lg border bg-background p-6">
-
-                    <div class="mb-6">
-                        <h2 class="text-base font-semibold">
-                            Publishing
-                        </h2>
-
-                        <p class="mt-1 text-sm text-muted-foreground">
-                            Configure the report type, status, author and
-                            publication information.
-                        </p>
-                    </div>
-
+                <div class="space-y-5">
+                    <Heading title="Publishing" description="Configure the report type, status, author and publication information." />
 
                     <!-- Report Type -->
                     <AppFormControl label="Report Type" required :error="errors.type">

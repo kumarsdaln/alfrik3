@@ -22,6 +22,7 @@ interface Option {
 
 interface Props {
     modelValue?: Array<string | number>
+    defaultValue?: Array<string | number>
     options?: Option[]
     placeholder?: string
     name?: string
@@ -30,7 +31,8 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-    modelValue: () => [],
+    modelValue: undefined,
+    defaultValue: () => [],
     options: () => [],
     placeholder: 'Select options',
     name: undefined,
@@ -42,12 +44,16 @@ const emit = defineEmits<{
     'update:modelValue': [value: Array<string | number>]
 }>()
 
-const model = ref<Array<string | number>>([...props.modelValue])
+const model = ref<Array<string | number>>([
+    ...(props.modelValue ?? props.defaultValue),
+])
 
 watch(
     () => props.modelValue,
     value => {
-        model.value = [...(value ?? [])]
+        if (value !== undefined) {
+            model.value = [...value]
+        }
     },
     { deep: true },
 )
@@ -86,9 +92,7 @@ function removeOption(value: string | number) {
                     border border-border
                     bg-surface
                     px-3 py-1.5
-
                     transition-colors
-
                     focus-within:border-primary
                 "
             >
@@ -126,18 +130,10 @@ function removeOption(value: string | number) {
                         <button
                             type="button"
                             class="
-                                flex
-                                size-4
-                                shrink-0
-                                items-center
-                                justify-center
+                                flex size-4 shrink-0
+                                items-center justify-center
                                 text-content/50
-                                transition-colors
-
                                 hover:text-content
-
-                                focus:outline-none
-                                focus-visible:text-primary
                             "
                             :disabled="disabled"
                             :aria-label="`Remove ${option.label}`"
@@ -149,20 +145,12 @@ function removeOption(value: string | number) {
 
                     <ComboboxInput
                         class="
-                            h-7
-                            min-w-[120px]
-                            flex-1
-                            border-0
-                            bg-transparent
-                            px-0
-                            text-sm
-                            text-content
+                            h-7 min-w-[120px] flex-1
+                            border-0 bg-transparent
+                            px-0 text-sm text-content
                             outline-none
-
                             placeholder:text-content/50
-
-                            focus:outline-none
-                            focus:ring-0
+                            focus:outline-none focus:ring-0
                         "
                         :placeholder="
                             selectedOptions.length
@@ -174,21 +162,11 @@ function removeOption(value: string | number) {
 
                 <ComboboxTrigger
                     class="
-                        ml-2
-                        flex
-                        size-7
-                        shrink-0
-                        items-center
-                        justify-center
+                        ml-2 flex size-7 shrink-0
+                        items-center justify-center
                         text-content/50
-
-                        transition-colors
-
                         hover:text-content
-
                         focus:outline-none
-                        focus-visible:text-primary
-
                         disabled:pointer-events-none
                         disabled:opacity-40
                     "
@@ -204,26 +182,21 @@ function removeOption(value: string | number) {
             <ComboboxContent
                 position="popper"
                 class="
-                    z-50
-                    mt-1
+                    z-50 mt-1
                     w-[var(--reka-combobox-trigger-width)]
                     overflow-hidden
-                    border
-                    border-border
+                    border border-border
                     bg-surface
                     text-content
                     shadow-sm
                 "
             >
-                <ComboboxViewport class="
-                        max-h-64
-                        overflow-y-auto
-                        p-1
-                    ">
+                <ComboboxViewport
+                    class="max-h-64 overflow-y-auto p-1"
+                >
                     <ComboboxEmpty
                         class="
-                            px-3
-                            py-7
+                            px-3 py-7
                             text-center
                             text-sm
                             text-content/50

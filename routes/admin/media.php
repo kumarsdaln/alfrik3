@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::prefix('admin/media')
     ->name('admin.media.')
-    ->middleware(['auth', 'role:admin'])
+    ->middleware('auth')
     ->group(function () {
 
         /*
@@ -25,18 +25,23 @@ Route::prefix('admin/media')
             ->group(function () {
 
                 Route::get('/', 'index')
-                    ->name('index');
+                    ->name('index')
+                    ->middleware('permission:media.view');
 
                 Route::post('/', 'store')
-                    ->name('store');
+                    ->name('store')
+                    ->middleware('permission:media.create');
 
                 Route::get('/{media}/edit', 'edit')
-                    ->name('edit');
+                    ->name('edit')
+                    ->middleware('permission:media.edit');
 
                 Route::put('/{media}', 'update')
-                    ->name('update');
+                    ->name('update')
+                    ->middleware('permission:media.edit');
 
                 Route::delete('/{media}', 'destroy')
-                    ->name('destroy');
+                    ->name('destroy')
+                    ->middleware('permission:media.delete');
             });
     });

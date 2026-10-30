@@ -1,149 +1,129 @@
 <script setup lang="ts">
-import { Link } from '@inertiajs/vue3'
-import { Calendar, MapPin } from '@lucide/vue'
+    import { Link } from '@inertiajs/vue3'
+    import { Calendar, MapPin } from '@lucide/vue'
 
-import AppHeading from '@/components/ui/AppHeading.vue'
-import AppText from '@/components/ui/AppText.vue'
-import { MetaInfo } from '@/components/ui/metainfo'
+    import AppHeading from '@/components/ui/AppHeading.vue'
+    import AppText from '@/components/ui/AppText.vue'
+    import { MetaInfo } from '@/components/ui/metainfo'
+    import { Event } from '@/types'
 
-interface EventCategory {
-    id: number
-    name: string
-    slug: string
-}
+    const props = withDefaults(
+        defineProps<{
+            event: Event
+            href: string
+            compact?: boolean
+        }>(),
+        {
+            compact: false,
+        },
+    )
 
-interface EventItem {
-    id: number
-    title: string
-    slug: string
-    description?: string | null
-    banner?: string | null
-    start_date: string
-    end_date?: string | null
-    location_name?: string | null
-    city?: string | null
-    state?: string | null
-    country?: string | null
-    categories?: EventCategory[]
-}
+    /*
+    |--------------------------------------------------------------------------
+    | Dates
+    |--------------------------------------------------------------------------
+    */
 
-const props = withDefaults(
-    defineProps<{
-        event: EventItem
-        href: string
-        compact?: boolean
-    }>(),
-    {
-        compact: false,
-    },
-)
+    const parseDate = (value?: string | null): Date | null => {
+        if (!value) {
+            return null
+        }
 
-/*
-|--------------------------------------------------------------------------
-| Dates
-|--------------------------------------------------------------------------
-*/
+        const date = new Date(value)
 
-const startDate = () => {
-    if (!props.event.start_date) {
-        return null
+        return Number.isNaN(date.getTime()) ? null : date
     }
 
-    return new Date(props.event.start_date)
-}
+    const startDate = () => parseDate(props.event.start_date)
+    const endDate = () => parseDate(props.event.end_date)
 
-const endDate = () => {
-    if (!props.event.end_date) {
-        return null
+    const day = () => {
+        const date = startDate()
+
+        return date
+            ? new Intl.DateTimeFormat('en', {
+                day: '2-digit',
+            }).format(date)
+            : ''
     }
 
-    return new Date(props.event.end_date)
-}
+    const month = () => {
+        const date = startDate()
 
-const day = () => {
-    const date = startDate()
+        return date
+            ? new Intl.DateTimeFormat('en', {
+                month: 'short',
+            }).format(date)
+            : ''
+    }
 
-    return date
-        ? new Intl.DateTimeFormat('en', {
-            day: '2-digit',
-        }).format(date)
-        : ''
-}
+    const year = () => {
+        const date = startDate()
 
-const month = () => {
-    const date = startDate()
+        return date
+            ? new Intl.DateTimeFormat('en', {
+                year: 'numeric',
+            }).format(date)
+            : ''
+    }
 
-    return date
-        ? new Intl.DateTimeFormat('en', {
+    const time = () => {
+        const date = startDate()
+
+        return date
+            ? new Intl.DateTimeFormat('en', {
+                hour: 'numeric',
+                minute: '2-digit',
+            }).format(date)
+            : ''
+    }
+
+    const dateRange = () => {
+        const start = startDate()
+        const end = endDate()
+
+        if (!start) {
+            return ''
+        }
+
+        const startLabel = new Intl.DateTimeFormat('en', {
             month: 'short',
-        }).format(date)
-        : ''
-}
-
-const year = () => {
-    const date = startDate()
-
-    return date
-        ? new Intl.DateTimeFormat('en', {
+            day: 'numeric',
             year: 'numeric',
-        }).format(date)
-        : ''
-}
+        }).format(start)
 
-const time = () => {
-    const date = startDate()
+        if (!end) {
+            return startLabel
+        }
 
-    return date
-        ? new Intl.DateTimeFormat('en', {
-            hour: 'numeric',
-            minute: '2-digit',
-        }).format(date)
-        : ''
-}
+        const endLabel = new Intl.DateTimeFormat('en', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric',
+        }).format(end)
 
-const dateRange = () => {
-    const start = startDate()
-    const end = endDate()
-
-    if (!start) {
-        return ''
+        return startLabel === endLabel
+            ? startLabel
+            : `${startLabel} — ${endLabel}`
     }
 
-    const startLabel = new Intl.DateTimeFormat('en', {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric',
-    }).format(start)
+    /*
+    |--------------------------------------------------------------------------
+    | Location
+    |--------------------------------------------------------------------------
+    */
 
-    if (!end) {
-        return startLabel
+    const location = () => {
+        return [
+            props.event.location_name,
+            props.event.city,
+            props.event.state,
+            props.event.country,
+        ]
+            .filter((value): value is string => Boolean(value))
+            .filter((value, index, values) => values.indexOf(value) === index)
+            .join(', ')
     }
-
-    const endLabel = new Intl.DateTimeFormat('en', {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric',
-    }).format(end)
-
-    return startLabel === endLabel
-        ? startLabel
-        : `${startLabel} — ${endLabel}`
-}
-
-/*
-|--------------------------------------------------------------------------
-| Location
-|--------------------------------------------------------------------------
-*/
-
-const location = () => {
-    return [
-        props.event.location_name,
-        props.event.city,
-    ]
-        .filter(Boolean)
-        .join(', ')
-}
 </script>
 
 <template>
@@ -153,10 +133,7 @@ const location = () => {
     |--------------------------------------------------------------------------
     -->
 
-    <Link
-        v-if="compact"
-        :href="href"
-        class="
+    <Link v-if="compact" :href="href" class="
             group
             flex
             h-full
@@ -170,12 +147,10 @@ const location = () => {
             hover:border-primary
             dark:border-border-dark
             dark:bg-surface-dark
-        "
-    >
+        ">
         <!-- Date -->
 
-        <div
-            class="
+        <div class="
                 flex
                 items-start
                 justify-between
@@ -183,105 +158,61 @@ const location = () => {
                 border-border-light
                 pb-5
                 dark:border-border-dark
-            "
-        >
+            ">
             <div class="flex items-baseline gap-2">
-                <AppText
-                    tag="span"
-                    font="redhat"
-                    size="2xl"
-                    weight="medium"
-                    leading="none"
-                >
+                <AppText tag="span" font="redhat" size="2xl" weight="medium" leading="none">
                     {{ day() }}
                 </AppText>
 
-                <AppText
-                    tag="span"
-                    size="xs"
-                    weight="bold"
-                    tracking="wide"
-                    uppercase
-                    color="primary"
-                >
+                <AppText tag="span" size="xs" weight="bold" tracking="wide" uppercase color="primary">
                     {{ month() }}
                 </AppText>
             </div>
 
-            <AppText
-                tag="span"
-                size="xs"
-                color="muted"
-            >
+            <AppText tag="span" size="xs" color="muted">
                 {{ year() }}
             </AppText>
         </div>
 
         <!-- Category -->
 
-        <AppText
-            v-if="event.categories?.length"
-            tag="p"
-            size="xs"
-            weight="bold"
-            tracking="wide"
-            uppercase
-            color="muted"
-            class="mt-5"
-        >
+        <AppText v-if="event.categories?.length" tag="p" size="xs" weight="bold" tracking="wide" uppercase color="muted"
+            class="mt-5">
             {{ event.categories[0].name }}
         </AppText>
 
         <!-- Title -->
 
-        <AppHeading
-            tag="h3"
-            font="prata"
-            size="lg"
-            weight="normal"
-            leading="tight"
-            hover-primary
-            :clamp="3"
-            class="mt-2"
-        >
+        <AppHeading tag="h3" font="prata" size="lg" weight="normal" leading="tight" hover-primary :clamp="3"
+            class="mt-2">
             {{ event.title }}
         </AppHeading>
 
         <!-- Description -->
 
-        <AppText
-            v-if="event.description"
-            tag="p"
-            font="lora"
-            size="xs"
-            color="muted"
-            leading="relaxed"
-            :clamp="2"
-            class="mt-3"
-        >
+        <AppText v-if="event.description" tag="p" font="lora" size="xs" color="muted" leading="relaxed" :clamp="2"
+            class="mt-3">
             {{ event.description }}
         </AppText>
 
         <!-- Location -->
 
         <div class="mt-auto pt-5">
-            <MetaInfo
-                :items="[
-                    ...(location()
-                        ? [{
-                            value: location(),
-                            icon: MapPin,
-                        }]
-                        : []),
+            <MetaInfo :items="[
+                ...(location()
+                    ? [{
+                        value: location(),
+                        icon: MapPin,
+                    }]
+                    : []),
 
-                    ...(time()
-                        ? [{
-                            value: time(),
-                            icon: Calendar,
-                        }]
-                        : []),
-                ]"
-            />
+                ...(time()
+                    ? [{
+                        value: time(),
+                        icon: Calendar,
+                    }]
+                    : []),
+            ]" />
         </div>
     </Link>
 
@@ -291,10 +222,7 @@ const location = () => {
     |--------------------------------------------------------------------------
     -->
 
-    <Link
-        v-else
-        :href="href"
-        class="
+    <Link v-else :href="href" class="
             group
             grid
             overflow-hidden
@@ -307,16 +235,14 @@ const location = () => {
             dark:border-border-dark
             dark:bg-surface-dark
             md:grid-cols-[180px_260px_1fr]
-        "
-    >
+        ">
         <!--
         |--------------------------------------------------------------------------
         | Date Block
         |--------------------------------------------------------------------------
         -->
 
-        <div
-            class="
+        <div class="
                 flex
                 flex-col
                 justify-between
@@ -327,22 +253,13 @@ const location = () => {
                 md:border-b-0
                 md:border-r
                 dark:md:border-border-dark
-            "
-        >
+            ">
             <div>
-                <AppText
-                    tag="span"
-                    size="xs"
-                    weight="bold"
-                    tracking="wide"
-                    uppercase
-                    color="primary"
-                >
+                <AppText tag="span" size="xs" weight="bold" tracking="wide" uppercase color="primary">
                     {{ month() }}
                 </AppText>
 
-                <div
-                    class="
+                <div class="
                         mt-1
                         font-prata
                         text-5xl
@@ -350,28 +267,17 @@ const location = () => {
                         leading-none
                         text-content-light
                         dark:text-content-dark
-                    "
-                >
+                    ">
                     {{ day() }}
                 </div>
 
-                <AppText
-                    tag="span"
-                    size="xs"
-                    color="muted"
-                    class="mt-2 block"
-                >
+                <AppText tag="span" size="xs" color="muted" class="mt-2 block">
                     {{ year() }}
                 </AppText>
             </div>
 
             <div class="mt-8">
-                <AppText
-                    v-if="time()"
-                    tag="span"
-                    size="xs"
-                    color="muted"
-                >
+                <AppText v-if="time()" tag="span" size="xs" color="muted">
                     {{ time() }}
                 </AppText>
             </div>
@@ -383,25 +289,17 @@ const location = () => {
         |--------------------------------------------------------------------------
         -->
 
-        <div
-            class="
+        <div class="
                 relative
                 overflow-hidden
                 bg-muted
-            "
-        >
-            <div
-                class="
+            ">
+            <div class="
                     aspect-[4/3]
                     h-full
                     md:aspect-auto
-                "
-            >
-                <img
-                    v-if="event.banner"
-                    :src="event.banner"
-                    :alt="event.title"
-                    class="
+                ">
+                <img v-if="event.banner" :src="event.banner" :alt="event.title" loading="lazy" decoding="async" class="
                         h-full
                         w-full
                         object-cover
@@ -409,12 +307,9 @@ const location = () => {
                         duration-700
                         ease-out
                         group-hover:scale-[1.025]
-                    "
-                />
+                    " />
 
-                <div
-                    v-else
-                    class="
+                <div v-else class="
                         flex
                         h-full
                         min-h-52
@@ -422,15 +317,8 @@ const location = () => {
                         justify-center
                         bg-surface-light
                         dark:bg-surface-dark
-                    "
-                >
-                    <AppText
-                        size="xs"
-                        weight="bold"
-                        tracking="wide"
-                        uppercase
-                        color="muted"
-                    >
+                    ">
+                    <AppText size="xs" weight="bold" tracking="wide" uppercase color="muted">
                         Event
                     </AppText>
                 </div>
@@ -443,8 +331,7 @@ const location = () => {
         |--------------------------------------------------------------------------
         -->
 
-        <div
-            class="
+        <div class="
                 flex
                 min-w-0
                 flex-col
@@ -452,57 +339,27 @@ const location = () => {
                 py-7
                 sm:px-8
                 sm:py-8
-            "
-        >
+            ">
             <!-- Category -->
-
-            <AppText
-                v-if="event.categories?.length"
-                tag="p"
-                size="xs"
-                weight="bold"
-                tracking="wide"
-                uppercase
-                color="primary"
-            >
+            <AppText v-if="event.categories?.length" tag="p" size="xs" weight="bold" tracking="wide" uppercase>
                 {{ event.categories[0].name }}
             </AppText>
 
             <!-- Title -->
-
-            <AppHeading
-                tag="h3"
-                font="prata"
-                size="2xl"
-                weight="normal"
-                leading="tight"
-                hover-primary
-                :clamp="3"
-                class="mt-2"
-            >
+            <AppHeading tag="h3" font="prata" size="2xl" weight="normal" leading="tight" hover-primary :clamp="3"
+                class="mt-2">
                 {{ event.title }}
             </AppHeading>
 
             <!-- Description -->
-
-            <AppText
-                v-if="event.description"
-                tag="p"
-                font="lora"
-                size="sm"
-                color="muted"
-                leading="relaxed"
-                :clamp="3"
-                class="mt-4"
-            >
+            <AppText v-if="event.description" tag="p" font="lora" size="sm" color="muted" leading="relaxed" :clamp="3"
+                class="mt-4">
                 {{ event.description }}
             </AppText>
 
             <!-- Meta -->
-
-            <div
-                class="
-                    mt-auto
+            <div class="
+                    mt-4
                     flex
                     flex-wrap
                     items-end
@@ -512,28 +369,24 @@ const location = () => {
                     border-border-light
                     pt-5
                     dark:border-border-dark
-                "
-            >
-                <MetaInfo
-                    :items="[
-                        ...(dateRange()
-                            ? [{
-                                value: dateRange(),
-                                icon: Calendar,
-                            }]
-                            : []),
+                ">
+                <MetaInfo :items="[
+                    ...(dateRange()
+                        ? [{
+                            value: dateRange(),
+                            icon: Calendar,
+                        }]
+                        : []),
 
-                        ...(location()
-                            ? [{
-                                value: location(),
-                                icon: MapPin,
-                            }]
-                            : []),
-                    ]"
-                />
+                    ...(location()
+                        ? [{
+                            value: location(),
+                            icon: MapPin,
+                        }]
+                        : []),
+                ]" />
 
-                <span
-                    class="
+                <span class="
                         shrink-0
                         font-redhat
                         text-xs
@@ -543,8 +396,7 @@ const location = () => {
                         transition-transform
                         duration-300
                         group-hover:translate-x-1
-                    "
-                >
+                    ">
                     View event →
                 </span>
             </div>
