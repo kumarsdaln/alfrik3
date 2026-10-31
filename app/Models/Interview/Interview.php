@@ -9,6 +9,11 @@ use App\Models\Media;
 use App\Models\SeoMetadata;
 use App\Models\Tag;
 use App\Models\User;
+use App\Traits\HasCategories;
+use App\Traits\HasMedia;
+use App\Traits\HasParticipants;
+use App\Traits\HasSeo;
+use App\Traits\HasTags;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -30,6 +35,7 @@ use Illuminate\Database\Eloquent\Relations\MorphToMany;
 class Interview extends Model
 {
     use HasFactory;
+    use HasCategories, HasTags, HasMedia, HasSeo, HasParticipants;
 
     protected function casts(): array
     {
@@ -49,49 +55,10 @@ class Interview extends Model
         );
     }
 
-    public function participants(): HasMany
-    {
-        return $this->hasMany(
-            InterviewParticipant::class,
-        );
-    }
-
     public function questions(): HasMany
     {
         return $this->hasMany(
             InterviewQuestion::class,
         )->orderBy('position');
-    }
-
-    public function media(): MorphMany
-    {
-        return $this->morphMany(
-            Media::class,
-            'mediable',
-        );
-    }
-
-    public function categories(): MorphToMany
-    {
-        return $this->morphToMany(
-            Category::class,
-            'categorizable',
-        );
-    }
-
-    public function tags(): MorphToMany
-    {
-        return $this->morphToMany(
-            Tag::class,
-            'taggable',
-        );
-    }
-
-    public function seo(): MorphMany
-    {
-        return $this->morphMany(
-            SeoMetadata::class,
-            'seoable',
-        );
     }
 }

@@ -31,17 +31,6 @@ return new class extends Migration
 
             /*
             |--------------------------------------------------------------------------
-            | Author / Publisher
-            |--------------------------------------------------------------------------
-            */
-
-            $table->foreignId('author_id')
-                ->nullable()
-                ->constrained('users')
-                ->nullOnDelete();
-
-            /*
-            |--------------------------------------------------------------------------
             | Publishing
             |--------------------------------------------------------------------------
             */
@@ -58,7 +47,6 @@ return new class extends Migration
             */
 
             $table->index(['status', 'published_at']);
-            $table->index(['author_id', 'status']);
         });
     }
 

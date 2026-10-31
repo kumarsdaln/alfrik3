@@ -202,19 +202,6 @@
                                     Magazine
                                 </Link>
                             </li>
-
-                            <li>
-                                <Link href="/events" class="
-                                        font-redhat
-                                        text-sm
-                                        text-content-lightMuted
-                                        transition-colors
-                                        hover:text-brand
-                                        dark:text-content-darkMuted
-                                    ">
-                                    Events
-                                </Link>
-                            </li>
                         </ul>
                     </nav>
                 </div>

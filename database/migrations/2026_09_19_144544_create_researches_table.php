@@ -27,11 +27,6 @@ return new class extends Migration
                 ->default('draft')
                 ->index();
 
-            $table->foreignId('author_id')
-                ->nullable()
-                ->constrained('users')
-                ->nullOnDelete();
-
             $table->boolean('featured')
                 ->default(false)
                 ->index();
@@ -45,11 +40,6 @@ return new class extends Migration
             $table->index([
                 'status',
                 'published_at',
-            ]);
-
-            $table->index([
-                'author_id',
-                'status',
             ]);
         });
     }

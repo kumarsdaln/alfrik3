@@ -146,15 +146,6 @@ class WelcomeController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        $events = Event::query()
-            ->published()
-            ->public()
-            ->upcoming()
-            ->with('categories')
-            ->orderBy('start_date')
-            ->take(3)
-            ->get();
-
         /*
         |--------------------------------------------------------------------------
         | Render Homepage
@@ -168,7 +159,6 @@ class WelcomeController extends Controller
             'surveys' => $surveys,
             'magazines' => $magazines,
             'interviews' => $interviews,
-            'events' => $events,
             'categories' => $categories,
         ]);
     }

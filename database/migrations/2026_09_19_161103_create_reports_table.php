@@ -10,12 +10,6 @@ return new class extends Migration
     {
         Schema::create('reports', function (Blueprint $table) {
             $table->id();
-
-            $table->foreignId('research_id')
-                ->nullable()
-                ->constrained('researches')
-                ->nullOnDelete();
-
             $table->string('title');
             $table->string('slug')->unique();
 
@@ -33,11 +27,6 @@ return new class extends Migration
                 ->default('draft')
                 ->index();
 
-            $table->foreignId('author_id')
-                ->nullable()
-                ->constrained('users')
-                ->nullOnDelete();
-
             $table->boolean('featured')
                 ->default(false)
                 ->index();
@@ -53,18 +42,8 @@ return new class extends Migration
             $table->timestamps();
 
             $table->index([
-                'research_id',
-                'status',
-            ]);
-
-            $table->index([
                 'status',
                 'published_at',
-            ]);
-
-            $table->index([
-                'author_id',
-                'status',
             ]);
         });
     }

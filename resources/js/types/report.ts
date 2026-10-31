@@ -119,39 +119,22 @@ export interface ReportSection {
 
 export interface Report {
     id: number
-
     research_id: number | null
-
     research?: ReportResearch | null
-
     title: string
-
     slug: string
-
     subtitle: string | null
-
     description: string | null
-
     summary: string | null
-
     type: ReportTypeOption
-
     status: ReportStatusOption
-
     author_id: number | null
-
     author?: ReportAuthor | null
-
     featured: boolean
-
     published_at: string | null
-
     report_date: string | null
-
     sections?: ReportSection[]
-
     created_at: string
-
     updated_at: string
 }
 

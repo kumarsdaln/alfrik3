@@ -17,3 +17,10 @@ export * from './report';
 export * from './event';
 export * from './research';
 export * from './survey';
+
+
+export interface Model {
+    type: string | number
+    id: number
+    title: string
+}

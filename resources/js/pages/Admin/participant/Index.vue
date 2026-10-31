@@ -1,4 +1,3 @@
-
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { router, Form } from '@inertiajs/vue3'
@@ -9,21 +8,18 @@ import Heading from '@/components/Heading.vue'
 import ProfileCell from '@/components/profile/ProfileCell.vue'
 import Button from '@/components/ui/button/Button.vue'
 
+import { index, store, destroy } from '@/actions/App/Http/Controllers/Admin/ContentParticipant/ContentParticipantController'
+
 import type {
     ContentParticipant,
     ParticipantRole,
-    ParticipantableType,
-    ParticipantUser,
     Pagination,
     Profile,
+    Model,
 } from '@/types'
 
 interface Props {
-    content: {
-        id: number
-        type: ParticipantableType
-        title: string
-    }
+    model: Model
     users: Pagination<Profile>
     participants: ContentParticipant[]
     roles: Pick<ParticipantRole, 'id' | 'name' | 'slug' | 'description'>[]
@@ -37,11 +33,6 @@ const props = defineProps<Props>()
 const search = ref(props.filters?.search ?? '')
 
 const selectedRoles = ref<Record<number, number>>({})
-
-const contentUrl = computed(
-    () =>
-        `/admin/content/${props.content.type}/${props.content.id}/participants`,
-)
 
 const participantRoleOptions = computed(() =>
     props.roles.map((role) => ({
@@ -72,7 +63,7 @@ function isSelected(userId: number): boolean {
 
 function searchUsers() {
     router.get(
-        contentUrl.value,
+        index({type: props.model.type, content: props.model.id}),
         { search: search.value || undefined },
         {
             preserveState: true,
@@ -92,30 +83,13 @@ function goToPage(url: string | null) {
         preserveScroll: true,
     })
 }
-
-function removeParticipant(participant: ContentParticipant) {
-    if (
-        !confirm(
-            `Remove ${participant.user.name} from "${props.content.title}"?`,
-        )
-    ) {
-        return
-    }
-
-    router.delete(`${contentUrl.value}/${participant.id}`, {
-        preserveScroll: true,
-    })
-}
 </script>
 
 <template>
     <div class="mt-4 space-y-6">
         <!-- Header -->
         <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-            <Heading
-                title="Participants"
-                :description="`Manage participants for ${content.title}`"
-            />
+            <Heading title="Participants" :description="`Manage participants for ${model.title}`" />
 
             <div class="flex shrink-0 items-center gap-2 rounded-lg border px-4 py-2">
                 <div>
@@ -146,22 +120,14 @@ function removeParticipant(participant: ContentParticipant) {
                         </div>
 
                         <div
-                            class="flex h-8 min-w-8 items-center justify-center rounded-full bg-muted px-2 text-sm font-medium"
-                        >
+                            class="flex h-8 min-w-8 items-center justify-center rounded-full bg-muted px-2 text-sm font-medium">
                             {{ users.meta.total }}
                         </div>
                     </div>
 
                     <!-- Search -->
-                    <form
-                        class="mt-5 flex flex-col gap-2 sm:flex-row"
-                        @submit.prevent="searchUsers"
-                    >
-                        <AppInput
-                            v-model="search"
-                            placeholder="Search by name or email..."
-                            class="flex-1"
-                        />
+                    <form class="mt-5 flex flex-col gap-2 sm:flex-row" @submit.prevent="searchUsers">
+                        <AppInput v-model="search" placeholder="Search by name or email..." class="flex-1" />
 
                         <Button type="submit" class="w-full sm:w-auto">
                             Search
@@ -171,67 +137,35 @@ function removeParticipant(participant: ContentParticipant) {
 
                 <!-- User List -->
                 <div class="divide-y">
-                    <div
-                        v-for="user in users.data"
-                        :key="user.id"
-                        class="p-4 sm:p-5"
-                    >
-                        <div
-                            class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
-                        >
+                    <div v-for="user in users.data" :key="user.id" class="p-4 sm:p-5">
+                        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                             <!-- User -->
                             <div class="min-w-0 flex-1">
-                                <ProfileCell
-                                    :profile="user"
-                                    show-email
-                                    size="sm"
-                                />
+                                <ProfileCell :profile="user" show-email size="sm" />
                             </div>
 
                             <!-- Already Added -->
-                            <div
-                                v-if="isSelected(user.id)"
-                                class="flex shrink-0 items-center"
-                            >
+                            <div v-if="isSelected(user.id)" class="flex shrink-0 items-center">
                                 <span
-                                    class="inline-flex items-center rounded-md bg-muted px-3 py-1.5 text-sm font-medium text-muted-foreground"
-                                >
+                                    class="inline-flex items-center rounded-md bg-muted px-3 py-1.5 text-sm font-medium text-muted-foreground">
                                     Already Added
                                 </span>
                             </div>
 
                             <!-- Add Form -->
-                            <Form
-                                v-else
-                                :action="contentUrl"
-                                method="post"
-                                class="flex w-full shrink-0 flex-col gap-2 sm:w-auto sm:flex-row sm:items-center"
-                            >
-                                <AppSelect
-                                    :name="`role_${user.id}`"
-                                    :options="participantRoleOptions"
-                                    :default-value="getRole(user.id)"
-                                    class="w-full sm:w-36"
-                                    @update:model-value="setRole(user.id, $event)"
-                                />
+                            <Form v-else v-bind="store.form({
+                                type: props.model.type,
+                                content: props.model.id,
+                            })" class="flex w-full shrink-0 flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+                                <AppSelect :name="`role_${user.id}`" :options="participantRoleOptions"
+                                    :default-value="getRole(user.id)" class="w-full sm:w-36"
+                                    @update:model-value="setRole(user.id, $event)" />
 
-                                <input
-                                    type="hidden"
-                                    name="user_id"
-                                    :value="user.id"
-                                />
+                                <input type="hidden" name="user_id" :value="user.id" />
 
-                                <input
-                                    type="hidden"
-                                    name="participant_role_id"
-                                    :value="getRole(user.id)"
-                                />
+                                <input type="hidden" name="participant_role_id" :value="getRole(user.id)" />
 
-                                <Button
-                                    type="submit"
-                                    class="w-full sm:w-auto"
-                                    :disabled="!roles.length"
-                                >
+                                <Button type="submit" class="w-full sm:w-auto" :disabled="!roles.length">
                                     Add
                                 </Button>
                             </Form>
@@ -239,10 +173,7 @@ function removeParticipant(participant: ContentParticipant) {
                     </div>
 
                     <!-- Empty users -->
-                    <div
-                        v-if="!users.data.length"
-                        class="p-10 text-center"
-                    >
+                    <div v-if="!users.data.length" class="p-10 text-center">
                         <p class="text-sm font-medium">
                             No users found
                         </p>
@@ -253,35 +184,24 @@ function removeParticipant(participant: ContentParticipant) {
                     </div>
 
                     <!-- No active roles -->
-                    <div
-                        v-if="!roles.length"
-                        class="border-t bg-muted/20 p-4 text-sm text-muted-foreground"
-                    >
+                    <div v-if="!roles.length" class="border-t bg-muted/20 p-4 text-sm text-muted-foreground">
                         No active participant roles are available. Activate a
                         role before assigning participants.
                     </div>
                 </div>
 
                 <!-- Pagination -->
-                <div
-                    v-if="users.meta.last_page > 1"
-                    class="flex flex-col gap-3 border-t p-4 sm:flex-row sm:items-center sm:justify-between"
-                >
+                <div v-if="users.meta.last_page > 1"
+                    class="flex flex-col gap-3 border-t p-4 sm:flex-row sm:items-center sm:justify-between">
                     <p class="text-sm text-muted-foreground">
                         Page {{ users.meta.current_page }}
                         of {{ users.meta.last_page }}
                     </p>
 
                     <div class="flex items-center gap-1 overflow-x-auto">
-                        <Button
-                            v-for="link in users.meta.links"
-                            :key="link.label"
-                            type="button"
-                            size="sm"
-                            :variant="link.active ? 'default' : 'outline'"
-                            :disabled="!link.url"
-                            @click="goToPage(link.url)"
-                        >
+                        <Button v-for="link in users.meta.links" :key="link.label" type="button" size="sm"
+                            :variant="link.active ? 'default' : 'outline'" :disabled="!link.url"
+                            @click="goToPage(link.url)">
                             <span v-html="link.label" />
                         </Button>
                     </div>
@@ -298,13 +218,12 @@ function removeParticipant(participant: ContentParticipant) {
                             </h2>
 
                             <p class="mt-1 text-sm text-muted-foreground">
-                                Users currently assigned to this content.
+                                Users currently assigned to this model.
                             </p>
                         </div>
 
                         <div
-                            class="flex h-8 min-w-8 items-center justify-center rounded-full bg-primary px-2 text-sm font-medium text-primary-foreground"
-                        >
+                            class="flex h-8 min-w-8 items-center justify-center rounded-full bg-primary px-2 text-sm font-medium text-primary-foreground">
                             {{ participants.length }}
                         </div>
                     </div>
@@ -312,68 +231,47 @@ function removeParticipant(participant: ContentParticipant) {
 
                 <!-- Selected list -->
                 <div class="divide-y">
-                    <div
-                        v-for="participant in participants"
-                        :key="participant.id"
-                        class="p-4 sm:p-5"
-                    >
-                        <div
-                            class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
-                        >
+                    <div v-for="participant in participants" :key="participant.id" class="p-4 sm:p-5">
+                        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                             <!-- User -->
                             <div class="min-w-0 flex-1">
-                                <ProfileCell
-                                    :profile="participant.user"
-                                    show-email
-                                    size="sm"
-                                />
+                                <ProfileCell :profile="participant.user" show-email size="sm" />
 
-                                <p
-                                    v-if="participant.contribution"
-                                    class="mt-2 line-clamp-2 text-sm text-muted-foreground"
-                                >
+                                <p v-if="participant.contribution"
+                                    class="mt-2 line-clamp-2 text-sm text-muted-foreground">
                                     {{ participant.contribution }}
                                 </p>
                             </div>
 
                             <!-- Role and actions -->
-                            <div
-                                class="flex w-full shrink-0 items-center gap-2 sm:w-auto"
-                            >
+                            <div class="flex w-full shrink-0 items-center gap-2 sm:w-auto">
                                 <span
-                                    class="flex-1 rounded-md bg-muted px-3 py-2 text-center text-sm font-medium sm:flex-none"
-                                >
+                                    class="flex-1 rounded-md bg-muted px-3 py-2 text-center text-sm font-medium sm:flex-none">
                                     {{ participant.role.name }}
                                 </span>
 
-                                <Button
-                                    type="button"
-                                    variant="destructive"
-                                    size="sm"
-                                    @click="removeParticipant(participant)"
-                                >
-                                    Remove
-                                </Button>
+                                <Form v-bind="destroy.form({
+                                    type: model.type,
+                                    content: model.id,
+                                    participant: participant.id,
+                                })">
+                                    <Button type="submit" variant="destructive" size="sm">
+                                        Remove
+                                    </Button>
+                                </Form>
                             </div>
                         </div>
 
-                        <div
-                            v-if="participant.is_primary"
-                            class="mt-3"
-                        >
-                            <span
-                                class="inline-flex items-center rounded-md border px-2 py-1 text-xs font-medium"
-                            >
+                        <div v-if="participant.is_primary" class="mt-3">
+                            <span class="inline-flex items-center rounded-md border px-2 py-1 text-xs font-medium">
                                 Primary participant
                             </span>
                         </div>
                     </div>
 
                     <!-- Empty selected participants -->
-                    <div
-                        v-if="!participants.length"
-                        class="flex min-h-60 flex-col items-center justify-center p-10 text-center"
-                    >
+                    <div v-if="!participants.length"
+                        class="flex min-h-60 flex-col items-center justify-center p-10 text-center">
                         <p class="text-sm font-medium">
                             No participants selected
                         </p>
@@ -381,7 +279,7 @@ function removeParticipant(participant: ContentParticipant) {
                         <p class="mt-1 max-w-sm text-sm text-muted-foreground">
                             Search for users on the left and click
                             <span class="font-medium">Add</span>
-                            to assign them to this content.
+                            to assign them to this model.
                         </p>
                     </div>
                 </div>

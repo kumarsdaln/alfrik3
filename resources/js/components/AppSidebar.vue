@@ -1,18 +1,19 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3'
 import {
-    BookOpen,
-    BookOpenCheck,
-    ClipboardList,
-    FolderGit2,
-    LayoutGrid,
-    MessagesSquare,
-    NotebookPen,
-    ShieldCheck,
+    LayoutDashboard,
+    FolderTree,
     Tags,
-    UserCog,
-    Users,
-    FileText,
+    UsersRound,
+    ShieldCheck,
+    KeyRound,
+    UserRoundCog,
+    Mic2,
+    BookOpen,
+    Microscope,
+    FileBarChart,
+    ClipboardList,
+    CalendarDays,
 } from '@lucide/vue'
 
 import AppLogo from '@/components/AppLogo.vue'
@@ -32,38 +33,42 @@ import {
 import type { NavItem } from '@/types'
 
 import { dashboard } from '@/routes'
-import { index as users } from '@/routes/admin/users'
-import { index as roles } from '@/routes/admin/roles'
-import { index as permissions } from '@/routes/admin/permissions'
-import { index as interviews } from '@/routes/admin/interviews'
-import { index as magazines } from '@/routes/admin/magazines'
-import { index as research } from '@/routes/admin/research'
-import { index as reports } from '@/routes/admin/report'
-import { index as surveys } from '@/routes/admin/survey'
+import { index as users } from '@/actions/App/Http/Controllers/Admin/User/UserController'
+import { index as roles } from '@/actions/App/Http/Controllers/Admin/User/RoleController'
+import { index as permissions } from '@/actions/App/Http/Controllers/Admin/User/PermissionController'
+import { index as interviews } from '@/actions/App/Http/Controllers/Admin/Interview/InterviewController'
+import { index as magazines } from '@/actions/App/Http/Controllers/Admin/Magazine/MagazineController'
+import { index as research } from '@/actions/App/Http/Controllers/Admin/Research/ResearchController'
+import { index as reports } from '@/actions/App/Http/Controllers/Admin/Report/ReportController'
+import { index as surveys } from '@/actions/App/Http/Controllers/Admin/Survey/SurveyController'
 
-import {
-    index as categories,
-} from '@/actions/App/Http/Controllers/Admin/Category/CategoryController'
+import { index as categories } from '@/actions/App/Http/Controllers/Admin/Category/CategoryController'
+import { index as tags } from '@/actions/App/Http/Controllers/Admin/Tag/TagController'
+import { index as participantsRole } from '@/actions/App/Http/Controllers/Admin/ContentParticipant/ParticipantRoleController'
 
-import {
-    index as tags,
-} from '@/actions/App/Http/Controllers/Admin/Tag/TagController'
+
+
 
 const mainNavItems: NavItem[] = [
     {
         title: 'Dashboard',
         href: dashboard(),
-        icon: LayoutGrid,
+        icon: LayoutDashboard,
     },
     {
         title: 'Categories',
         href: categories(),
-        icon: FolderGit2,
+        icon: FolderTree,
     },
     {
         title: 'Tags',
         href: tags(),
         icon: Tags,
+    },
+    {
+        title: 'Participants',
+        href: participantsRole(),
+        icon: UsersRound,
     },
     {
         title: 'Roles',
@@ -73,32 +78,32 @@ const mainNavItems: NavItem[] = [
     {
         title: 'Permissions',
         href: permissions(),
-        icon: UserCog,
+        icon: KeyRound,
     },
     {
         title: 'Users',
         href: users(),
-        icon: Users,
+        icon: UserRoundCog,
     },
     {
         title: 'Interviews',
         href: interviews(),
-        icon: MessagesSquare,
+        icon: Mic2,
     },
     {
         title: 'Magazines',
         href: magazines(),
-        icon: BookOpenCheck,
+        icon: BookOpen,
     },
     {
         title: 'Research',
         href: research(),
-        icon: NotebookPen,
+        icon: Microscope,
     },
     {
         title: 'Reports',
         href: reports(),
-        icon: FileText,
+        icon: FileBarChart,
     },
     {
         title: 'Surveys',

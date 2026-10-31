@@ -3,14 +3,14 @@
 namespace App\Models\Magazine;
 
 use App\Enums\Magazine\MagazineIssueStatus;
-use App\Models\Media;
-use App\Models\SeoMetadata;
+use App\Traits\HasMedia;
+use App\Traits\HasSeo;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 #[Fillable([
     'magazine_id',
@@ -32,6 +32,7 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
 ])]
 class MagazineIssue extends Model
 {
+    use HasMedia, HasSeo;
     /*
     |--------------------------------------------------------------------------
     | Casts
@@ -57,8 +58,8 @@ class MagazineIssue extends Model
     | Scopes
     |--------------------------------------------------------------------------
     */
-
-    public function scopePublished(Builder $query): Builder
+    #[Scope]
+    protected function published(Builder $query): Builder
     {
         return $query
             ->where(
@@ -76,7 +77,8 @@ class MagazineIssue extends Model
             });
     }
 
-    public function scopeFeatured(Builder $query): Builder
+    #[Scope]
+    protected function featured(Builder $query): Builder
     {
         return $query->where(
             'featured',
@@ -104,21 +106,5 @@ class MagazineIssue extends Model
             MagazineArticle::class,
             'issue_id',
         )->orderBy('position');
-    }
-
-    public function media(): MorphMany
-    {
-        return $this->morphMany(
-            Media::class,
-            'mediable',
-        );
-    }
-
-    public function seo(): MorphMany
-    {
-        return $this->morphMany(
-            SeoMetadata::class,
-            'seoable',
-        );
     }
 }

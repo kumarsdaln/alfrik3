@@ -1,5 +1,5 @@
 
-import type { Pagination } from '@/types'
+import type { Pagination, Profile } from '@/types'
 
 /**
  * Participant role managed by administrators.
@@ -28,16 +28,6 @@ export type ParticipantableType =
     | 'event'
 
 /**
- * User who participates in content.
- */
-export interface ParticipantUser {
-    id: number
-    name: string
-    email?: string
-    avatar?: string | null
-}
-
-/**
  * Participant assignment connecting a user and a role
  * to a specific content record.
  */
@@ -51,7 +41,7 @@ export interface ContentParticipant {
     is_primary: boolean
     contribution: string | null
 
-    user: ParticipantUser
+    user: Profile
     role: ParticipantRole
 
     created_at: string

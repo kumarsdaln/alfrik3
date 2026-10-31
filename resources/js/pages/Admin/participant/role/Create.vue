@@ -1,24 +1,29 @@
 <script setup lang="ts">
-    import { Form, router } from '@inertiajs/vue3'
+import { Form, router } from '@inertiajs/vue3'
 
-    import Heading from '@/components/Heading.vue'
-    import AppFormControl from '@/components/form/AppFormControl.vue'
-    import AppInput from '@/components/form/AppInput.vue'
-    import AppTextarea from '@/components/form/AppTextarea.vue'
-    import AppToggle from '@/components/form/AppToggle.vue'
-    import Button from '@/components/ui/button/Button.vue'
+import Heading from '@/components/Heading.vue'
+import AppFormControl from '@/components/form/AppFormControl.vue'
+import AppInput from '@/components/form/AppInput.vue'
+import AppTextarea from '@/components/form/AppTextarea.vue'
+import AppToggle from '@/components/form/AppToggle.vue'
+import Button from '@/components/ui/button/Button.vue'
 
-    import {
-        index as participantRoleIndex,
-        store as participantRoleStore,
-    } from '@/routes/admin/participants/roles'
+import {
+    index as participantRoleIndex,
+    store as participantRoleStore,
+} from '@/routes/admin/participants/roles'
+import BackButton from '@/components/ui/BackButton.vue'
 
 </script>
 
 <template>
     <div class="mt-4 space-y-6">
-        <Heading title="Create Participant Role"
-            description="Create a role for people contributing to research, reports, interviews, magazines, surveys, and events." />
+        <div class="flex gap-4 py-5">
+            <BackButton />
+
+            <Heading title="Create Participant Role"
+                description="Create a role for people contributing to research, reports, interviews, magazines, surveys, and events." />
+        </div>
 
         <Form v-bind="participantRoleStore.form()" #default="{ errors, processing }" class="max-w-3xl space-y-6">
             <AppFormControl label="Name" :error="errors.name" required>

@@ -1,168 +1,48 @@
 <script setup lang="ts">
-    import { Head, Link } from '@inertiajs/vue3'
-    import {
-        ArrowRight,
-        CalendarDays,
-        ChevronRight,
-        MapPin,
-    } from '@lucide/vue'
+import { Head, Link } from '@inertiajs/vue3'
+import {
+    ArrowRight,
+    CalendarDays,
+    ChevronRight,
+    MapPin,
+} from '@lucide/vue'
 
-    import AppContainer from '@/components/ui/AppContainer.vue'
-    import AppHeading from '@/components/ui/AppHeading.vue'
-    import AppText from '@/components/ui/AppText.vue'
-    import AppBadge from '@/components/ui/AppBadge.vue'
+import AppContainer from '@/components/ui/AppContainer.vue'
+import AppHeading from '@/components/ui/AppHeading.vue'
+import AppText from '@/components/ui/AppText.vue'
+import AppBadge from '@/components/ui/AppBadge.vue'
 
-    import ResearchCard from '@/components/research/ResearchCard.vue'
-    import EventCard from '@/components/events/EventCard.vue'
+import ResearchCard from '@/components/research/ResearchCard.vue'
 
-    import { show as researchShow } from '@/routes/research'
-    import { show as eventShow } from '@/routes/events'
-    import { Button } from '@/components/ui/button'
+import { show as researchShow } from '@/routes/research'
+import { Button } from '@/components/ui/button'
+import { Category, Interview, Magazine, Report, Research, Survey } from '@/types'
 
-    interface ResearchArea {
-        id: number
-        name: string
-        slug: string
-        description?: string | null
-        papers_count?: number
+interface Props {
+    featured: Research | Report | null
+    research: Research[]
+    reports: Report[]
+    surveys: Survey[]
+    magazines: Magazine[]
+    interviews: Interview[]
+    categories: Category[]
+}
+
+const props = defineProps<Props>()
+
+const featuredUrl = () => {
+    if (!props.featured) {
+        return '#'
     }
 
-    interface ResearchPaper {
-        id: number
-        title: string
-        slug: string
-        description?: string | null
-        cover_image?: string | null
-        published_at?: string | null
-        area?: ResearchArea | null
-        areas?: ResearchArea[]
-        author?: {
-            id: number
-            name: string
-        } | null
-    }
-
-    interface Report {
-        id: number
-        title: string
-        slug: string
-        description?: string | null
-        cover_image?: string | null
-        published_at?: string | null
-        category?: {
-            id: number
-            name: string
-            slug: string
-        } | null
-    }
-
-    interface Survey {
-        id: number
-        title: string
-        slug: string
-        description?: string | null
-        cover_image?: string | null
-        published_at?: string | null
-    }
-
-    interface Magazine {
-        id: number
-        title: string
-        slug: string
-        description?: string | null
-        cover_image?: string | null
-        published_at?: string | null
-        category?: {
-            id: number
-            name: string
-            slug: string
-        } | null
-    }
-
-    interface Interview {
-        id: number
-        title: string
-        slug: string
-        description?: string | null
-        cover_image?: string | null
-        published_at?: string | null
-        participants?: {
-            id: number
-            user?: {
-                id: number
-                name: string
-                profile_image?: string | null
-            } | null
-        }[]
-    }
-
-    interface EventItem {
-        id: number
-        title: string
-        slug: string
-        description?: string | null
-        cover_image?: string | null
-        start_date: string
-        end_date?: string | null
-        city?: string | null
-        venue?: string | null
-        categories?: {
-            id: number
-            name: string
-            slug: string
-        }[]
-    }
-
-    interface Props {
-        featured: ResearchPaper | Report | null
-        research: ResearchPaper[]
-        reports: Report[]
-        surveys: Survey[]
-        magazines: Magazine[]
-        interviews: Interview[]
-        events: EventItem[]
-        areas: ResearchArea[]
-    }
-
-    const props = defineProps<Props>()
-
-    const formatDate = (date?: string | null) => {
-        if (!date) {
-            return ''
-        }
-
-        return new Intl.DateTimeFormat('en', {
-            month: 'short',
-            day: 'numeric',
-            year: 'numeric',
-        }).format(new Date(date))
-    }
-
-    const eventDate = (event: EventItem) => {
-        const start = formatDate(event.start_date)
-
-        if (!event.end_date) {
-            return start
-        }
-
-        const end = formatDate(event.end_date)
-
-        return start === end ? start : `${start} — ${end}`
-    }
-
-    const featuredUrl = () => {
-        if (!props.featured) {
-            return '#'
-        }
-
-        return `/research/${props.featured.slug}`
-    }
+    return `/research/${props.featured.slug}`
+}
 </script>
 
 <template>
 
     <Head title="Alfrik">
-        <meta name="description" content="Research, ideas, conversations, publications and events from Alfrik." />
+        <meta name="description" content="Research, ideas, conversations, publications from Alfrik." />
     </Head>
 
     <!--
@@ -224,22 +104,6 @@
                             Explore research
                             <ArrowRight class="h-4 w-4" />
                         </Link>
-
-                        <Link href="/events" class="
-                                inline-flex
-                                items-center
-                                gap-2
-                                font-redhat
-                                text-sm
-                                font-semibold
-                                text-content-light
-                                transition-colors
-                                hover:text-brand
-                                dark:text-content-dark
-                            ">
-                            Upcoming events
-                            <ArrowRight class="h-4 w-4" />
-                        </Link>
                     </div>
                 </div>
 
@@ -262,7 +126,6 @@
                             ['Surveys', '/surveys'],
                             ['Interviews', '/interviews'],
                             ['Magazines', '/magazines'],
-                            ['Events', '/events'],
                         ]" :key="item[0]" :href="item[1]" class="
                                 group
                                 flex
@@ -570,7 +433,7 @@
                     gap-6
                     md:grid-cols-2
                 ">
-                <ResearchCard v-for="paper in research.slice(0, 4)" :key="paper.id" :paper="paper"
+                <ResearchCard v-for="paper in research.slice(0, 4)" :key="paper.id" :research="research"
                     :href="researchShow(paper.slug).url" />
             </div>
 
@@ -877,51 +740,10 @@
 
     <!--
     |--------------------------------------------------------------------------
-    | Upcoming Events
-    |--------------------------------------------------------------------------
-    -->
-
-    <section v-if="events.length" class="py-20 lg:py-24">
-        <AppContainer>
-            <div class="mb-10 flex items-end justify-between">
-                <div>
-                    <AppText tag="p" font="redhat" size="xs" weight="bold" tracking="wide" uppercase color="brand">
-                        What's happening
-                    </AppText>
-
-                    <AppHeading tag="h2" font="prata" size="3xl" weight="normal" class="mt-2">
-                        Upcoming at Alfrik
-                    </AppHeading>
-                </div>
-
-                <Link href="/events" class="
-                        hidden
-                        items-center
-                        gap-1
-                        font-redhat
-                        text-sm
-                        font-semibold
-                        hover:text-brand
-                        sm:inline-flex
-                    ">
-                    All events
-                    <ArrowRight class="h-4 w-4" />
-                </Link>
-            </div>
-
-            <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                <EventCard v-for="event in events" :key="event.id" :event="event" :href="eventShow(event.slug).url" />
-            </div>
-        </AppContainer>
-    </section>
-
-    <!--
-    |--------------------------------------------------------------------------
     | Areas of Work
     |--------------------------------------------------------------------------
     -->
-
-    <section v-if="areas.length" class="
+    <section v-if="categories.length" class="
             border-y
             border-border-light
             py-20
@@ -946,7 +768,7 @@
                 </div>
 
                 <div class="divide-y divide-white/15 border-y border-white/15">
-                    <Link v-for="area in areas" :key="area.id" :href="`/research?area=${area.slug}`" class="
+                    <Link v-for="area in categories" :key="area.id" :href="`/research?area=${area.slug}`" class="
                             group
                             flex
                             items-center

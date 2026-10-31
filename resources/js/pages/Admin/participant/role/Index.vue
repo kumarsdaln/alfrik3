@@ -24,29 +24,17 @@
         destroy as participantRoleDestroy,
     } from '@/routes/admin/participants/roles'
 
-    import type { Pagination } from '@/types'
+    import type { Pagination, ParticipantRole } from '@/types'
     import type { TableAction } from '@/components/ui/AppTableActions.vue'
 
-    interface ParticipantRole {
-        id: number
-        name: string
-        slug: string
-        description: string | null
-        is_active: boolean
-        position: number
-        content_participants_count: number
-        created_at: string
-        updated_at: string
-    }
+
 
     interface Props {
         roles: Pagination<ParticipantRole>
-
         filters: {
             search?: string
             status?: string
         }
-
         stats: {
             total: number
             active: number
@@ -155,7 +143,7 @@
     */
 
     function deleteParticipantRole(role: ParticipantRole) {
-        if (role.content_participants_count > 0) {
+        if (role.content_participants_count??0 > 0) {
             alert(
                 'This role is assigned to participants. Deactivate it instead of deleting it.',
             )

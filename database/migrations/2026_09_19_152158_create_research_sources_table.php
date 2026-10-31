@@ -22,8 +22,6 @@ return new class extends Migration
 
             $table->string('source_type', 50);
 
-            $table->string('author')->nullable();
-
             $table->string('publisher')->nullable();
 
             $table->string('url')->nullable();

@@ -21,11 +21,6 @@ return new class extends Migration
                 ->constrained('magazine_issues')
                 ->cascadeOnDelete();
 
-            $table->foreignId('author_id')
-                ->nullable()
-                ->constrained('users')
-                ->nullOnDelete();
-
             /*
             |--------------------------------------------------------------------------
             | Identity
