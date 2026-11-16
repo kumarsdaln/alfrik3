@@ -12,6 +12,7 @@ use App\Http\Resources\Report\ReportResource;
 use App\Http\Resources\Report\ReportSectionResource;
 use App\Models\Report\Report;
 use App\Models\Report\ReportSection;
+use App\Support\Breadcrumbs\BreadcrumbBuilder;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -21,7 +22,7 @@ class ReportSectionController extends Controller
     public function index(Report $report): Response
     {
         $report->load([
-            'sections',
+            'sections.blocks',
         ]);
 
         return Inertia::render(
@@ -32,6 +33,12 @@ class ReportSectionController extends Controller
                 'sections' => ReportSectionResource::collection(
                     $report->sections
                 ),
+                'breadcrumbs' => BreadcrumbBuilder::make()
+                ->admin()
+                ->add('Reports', route('admin.report.index'))
+                ->add($report->title, route('admin.report.show', $report))
+                ->add('Sections')
+                ->toArray(),
             ]
         );
     }
@@ -45,6 +52,13 @@ class ReportSectionController extends Controller
                     'id' => $report->id,
                     'title' => $report->title,
                 ],
+                'breadcrumbs' => BreadcrumbBuilder::make()
+                ->admin()
+                ->add('Reports', route('admin.report.index'))
+                ->add($report->title, route('admin.report.show', $report))
+                ->add('Sections', route('admin.report.sections.index', $report))
+                ->add('Create')
+                ->toArray(),
             ]
         );
     }
@@ -60,11 +74,10 @@ class ReportSectionController extends Controller
         );
 
         return redirect()
-            ->route('admin.report.sections.index', $report)
-            ->with(
-                'success',
-                'Report section created successfully.'
-            );
+            ->route('admin.report.sections.index', [
+                'report' => $report->id,
+            ])
+            ->with('success', 'Report section created successfully.');
     }
 
     public function show(
@@ -72,12 +85,12 @@ class ReportSectionController extends Controller
         ReportSection $section,
     ): Response {
         abort_unless(
-            $section->report_id === $report->id,
+            (int) $section->report_id === (int) $report->id,
             404
         );
 
         $section->load([
-            'contentBlocks',
+            'blocks',
         ]);
 
         return Inertia::render(
@@ -88,9 +101,14 @@ class ReportSectionController extends Controller
                     'title' => $report->title,
                 ],
 
-                'section' => new ReportSectionResource(
-                    $section
-                ),
+                'section' => new ReportSectionResource($section),
+                'breadcrumbs' => BreadcrumbBuilder::make()
+                ->admin()
+                ->add('Reports', route('admin.report.index'))
+                ->add($report->title, route('admin.report.show', $report))
+                ->add('Sections', route('admin.report.sections.index', $report))
+                ->add($section->title)
+                ->toArray(),
             ]
         );
     }
@@ -100,7 +118,7 @@ class ReportSectionController extends Controller
         ReportSection $section,
     ): Response {
         abort_unless(
-            $section->report_id === $report->id,
+            (int) $section->report_id === (int) $report->id,
             404
         );
 
@@ -112,9 +130,18 @@ class ReportSectionController extends Controller
                     'title' => $report->title,
                 ],
 
-                'section' => new ReportSectionResource(
-                    $section
-                ),
+                'section' => new ReportSectionResource($section),
+                'breadcrumbs' => BreadcrumbBuilder::make()
+                ->admin()
+                ->add('Reports', route('admin.report.index'))
+                ->add($report->title, route('admin.report.show', $report))
+                ->add('Sections', route('admin.report.sections.index', $report))
+                ->add($section->title, route('admin.report.sections.show', [
+                    'report' => $report->id,
+                    'section' => $section->id,
+                ]))
+                ->add('Edit')
+                ->toArray(),
             ]
         );
     }
@@ -126,7 +153,7 @@ class ReportSectionController extends Controller
         UpdateReportSection $action,
     ): RedirectResponse {
         abort_unless(
-            $section->report_id === $report->id,
+            (int) $section->report_id === (int) $report->id,
             404
         );
 
@@ -136,11 +163,10 @@ class ReportSectionController extends Controller
         );
 
         return redirect()
-            ->route('admin.report.sections.index', $report)
-            ->with(
-                'success',
-                'Report section updated successfully.'
-            );
+            ->route('admin.report.sections.index', [
+                'report' => $report->id,
+            ])
+            ->with('success', 'Report section updated successfully.');
     }
 
     public function destroy(
@@ -149,17 +175,16 @@ class ReportSectionController extends Controller
         DeleteReportSection $action,
     ): RedirectResponse {
         abort_unless(
-            $section->report_id === $report->id,
+            (int) $section->report_id === (int) $report->id,
             404
         );
 
         $action->handle($section);
 
         return redirect()
-            ->route('admin.report.sections.index', $report)
-            ->with(
-                'success',
-                'Report section deleted successfully.'
-            );
+            ->route('admin.report.sections.index', [
+                'report' => $report->id,
+            ])
+            ->with('success', 'Report section deleted successfully.');
     }
 }

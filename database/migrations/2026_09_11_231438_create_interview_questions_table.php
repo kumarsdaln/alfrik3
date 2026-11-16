@@ -6,9 +6,6 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('interview_questions', function (Blueprint $table) {
@@ -20,26 +17,19 @@ return new class extends Migration
 
             $table->foreignId('asked_by')
                 ->nullable()
-                ->constrained('users')
+                ->constrained('content_participants')
                 ->nullOnDelete();
 
             $table->text('question');
 
-            $table->unsignedInteger('position')
-                ->default(0);
+            $table->unsignedInteger('position')->default(0);
 
             $table->timestamps();
 
-            $table->index([
-                'interview_id',
-                'position',
-            ]);
+            $table->index(['interview_id', 'position']);
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('interview_questions');

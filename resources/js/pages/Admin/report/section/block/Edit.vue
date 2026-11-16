@@ -1,4 +1,6 @@
+
 <script setup lang="ts">
+import { computed, ref, watch } from 'vue'
 import { Head, Form, Link } from '@inertiajs/vue3'
 
 import AppFormControl from '@/components/form/AppFormControl.vue'
@@ -16,13 +18,7 @@ import {
 } from '@/routes/admin/report/sections/blocks'
 
 import type { ReportContentBlock } from '@/types/report'
-
-
-interface Option {
-    value: string
-    label: string
-}
-
+import { FormOption } from '@/types'
 
 interface Props {
     report: {
@@ -35,20 +31,21 @@ interface Props {
         title: string
     }
 
-    block: ReportContentBlock
-
-    typeOptions: Option[]
+    block: {
+        data: ReportContentBlock
+    }
+    typeOptions: FormOption[]
 }
-
 
 const props = defineProps<Props>()
 
+const content = ref(
+    JSON.stringify(props.block.data.content ?? {}, null, 4)
+)
 
-/*
-|--------------------------------------------------------------------------
-| Content Placeholder
-|--------------------------------------------------------------------------
-*/
+const jsonError = ref<string | null>(null)
+
+const selectedType = ref(props.block.data.type.value)
 
 const contentPlaceholder = (type: string): string => {
     switch (type) {
@@ -65,9 +62,8 @@ const contentPlaceholder = (type: string): string => {
 
         case 'quote':
             return `{
-    "quote": "Quote text",
-    "author": "Author Name",
-    "source": "Source"
+    "text": "Quote text",
+    "attribution": "Author Name"
 }`
 
         case 'image':
@@ -79,7 +75,7 @@ const contentPlaceholder = (type: string): string => {
 
         case 'table':
             return `{
-    "columns": ["Year", "Revenue"],
+    "headers": ["Year", "Revenue"],
     "rows": [
         ["2024", "₹10 Cr"],
         ["2025", "₹15 Cr"]
@@ -90,7 +86,7 @@ const contentPlaceholder = (type: string): string => {
             return `{
     "value": "72%",
     "label": "Consumers prefer sustainable products",
-    "source": "Alfrik Research"
+    "context": "Supporting context"
 }`
 
         case 'chart':
@@ -108,13 +104,14 @@ const contentPlaceholder = (type: string): string => {
         case 'finding':
             return `{
     "finding": "Key research finding",
-    "evidence": "Supporting evidence"
+    "implication": "What this finding means"
 }`
 
         case 'recommendation':
             return `{
     "recommendation": "Recommended action",
-    "rationale": "Why this action is recommended"
+    "actions": ["Action one", "Action two"],
+    "priority": "high"
 }`
 
         default:
@@ -122,110 +119,110 @@ const contentPlaceholder = (type: string): string => {
     }
 }
 
+const validateContent = (): boolean => {
+    try {
+        const parsed = JSON.parse(content.value)
 
-const initialContent = props.block.content
-    ? JSON.stringify(
-        props.block.content,
-        null,
-        4,
-    )
-    : '{}'
+        if (
+            parsed === null ||
+            Array.isArray(parsed) ||
+            typeof parsed !== 'object'
+        ) {
+            jsonError.value = 'Content must be a valid JSON object.'
+            return false
+        }
+
+        jsonError.value = null
+
+        return true
+    } catch {
+        jsonError.value = 'Invalid JSON. Please check your JSON syntax.'
+
+        return false
+    }
+}
+
+const selectedTypeLabel = computed(
+    () =>
+        props.typeOptions.find(
+            option => option.value === selectedType.value
+        )?.label ?? props.block.data.type.label
+)
+
+const indexUrl = computed(() =>
+    index({
+        report: props.report.id,
+        section: props.section.id,
+    })
+)
+
+const updateForm = update.form({
+    report: props.report.id,
+    section: props.section.id,
+    block: props.block.data.id,
+})
+
+watch(selectedType, (newType, oldType) => {
+    if (newType !== oldType) {
+        // Preserve existing content when changing the block type.
+        // The placeholder changes, but stored content is not discarded.
+        jsonError.value = null
+    }
+})
 </script>
 
-
 <template>
-    <Head
-        :title="`Edit Content Block - ${section.title}`"
-    />
+    <Head :title="`Edit Content Block - ${section.title}`" />
 
     <div class="space-y-6">
-
-        <!-- ============================================================= -->
         <!-- Header -->
-        <!-- ============================================================= -->
-
-        <div class="flex items-center gap-3">
+        <div class="flex items-center gap-4 border-b py-5">
             <BackButton />
 
             <Heading
                 title="Edit Content Block"
-                :description="
-                    `${report.title} / ${section.title}`
-                "
+                :description="`${report.title} / ${section.title}`"
             />
         </div>
 
-
-        <!-- ============================================================= -->
-        <!-- Form -->
-        <!-- ============================================================= -->
-
         <Form
             v-slot="{ errors, processing }"
-            v-bind="update.form({
-                report: props.report.id,
-                section: props.section.id,
-                block: props.block.id,
-            })"
+            v-bind="updateForm"
             :options="{
                 preserveScroll: true,
             }"
+            :transform="data => ({
+                ...data,
+                position: Number(data.position),
+                content: JSON.parse(String(data.content)),
+            })"
+            @before="validateContent()"
             class="space-y-6"
         >
             <div class="grid gap-6 lg:grid-cols-3">
-
-                <!-- ===================================================== -->
                 <!-- Main -->
-                <!-- ===================================================== -->
-
                 <div class="space-y-6 lg:col-span-2">
-
-                    <div
-                        class="
-                            rounded-lg
-                            border
-                            bg-background
-                            p-6
-                        "
-                    >
-                        <div class="mb-6">
-                            <h2 class="text-base font-semibold">
-                                Block Information
-                            </h2>
-
-                            <p
-                                class="
-                                    mt-1
-                                    text-sm
-                                    text-muted-foreground
-                                "
-                            >
-                                Update the content block.
-                            </p>
+                    <section class="border bg-background">
+                        <div class="border-b p-6">
+                            <Heading
+                                title="Block Information"
+                                description="Update the content block and its structured data."
+                            />
                         </div>
 
-
-                        <div class="space-y-5">
-
-                            <!-- Type -->
-
+                        <div class="space-y-5 p-6">
                             <AppFormControl
                                 label="Type"
                                 :error="errors.type"
                                 required
                             >
                                 <AppSelect
+                                    v-model="selectedType"
                                     name="type"
                                     :options="typeOptions"
-                                    :default-value="
-                                        block.type.value
-                                    "
                                     placeholder="Select block type"
                                 />
                             </AppFormControl>
-
-
-                            <!-- Title -->
 
                             <AppFormControl
                                 label="Title"
@@ -233,15 +230,10 @@ const initialContent = props.block.content
                             >
                                 <AppInput
                                     name="title"
-                                    :default-value="
-                                        block.title ?? ''
-                                    "
+                                    :default-value="block.data.title ?? ''"
                                     placeholder="Enter block title"
                                 />
                             </AppFormControl>
-
-
-                            <!-- Description -->
 
                             <AppFormControl
                                 label="Description"
@@ -249,182 +241,105 @@ const initialContent = props.block.content
                             >
                                 <AppTextarea
                                     name="description"
-                                    :default-value="
-                                        block.description ?? ''
-                                    "
+                                    :default-value="block.data.description ?? ''"
                                     placeholder="Enter a short description..."
-                                    rows="4"
+                                    :rows="4"
                                 />
                             </AppFormControl>
-
-
-                            <!-- Content -->
 
                             <AppFormControl
                                 label="Content"
                                 :error="errors.content"
-                                description="Content is stored as JSON for this block."
+                                description="Edit the structured JSON content for this block.data."
                                 required
                             >
                                 <AppTextarea
+                                    v-model="content"
                                     name="content"
-                                    :default-value="initialContent"
-                                    :placeholder="
-                                        contentPlaceholder(
-                                            block.type.value,
-                                        )
-                                    "
-                                    rows="18"
+                                    :placeholder="contentPlaceholder(selectedType)"
+                                    :rows="18"
                                     class="font-mono text-sm"
                                 />
                             </AppFormControl>
 
-                        </div>
-                    </div>
-                </div>
-
-
-                <!-- ===================================================== -->
-                <!-- Sidebar -->
-                <!-- ===================================================== -->
-
-                <div class="space-y-6">
-
-                    <!-- Position -->
-
-                    <div
-                        class="
-                            rounded-lg
-                            border
-                            bg-background
-                            p-6
-                        "
-                    >
-                        <div class="mb-6">
-                            <h2 class="text-base font-semibold">
-                                Position
-                            </h2>
-
                             <p
-                                class="
-                                    mt-1
-                                    text-sm
-                                    text-muted-foreground
-                                "
+                                v-if="jsonError"
+                                class="text-sm text-destructive"
                             >
-                                Lower numbers appear first.
+                                {{ jsonError }}
                             </p>
                         </div>
+                    </section>
+                </div>
 
-                        <AppFormControl
-                            label="Position"
-                            :error="errors.position"
-                        >
-                            <AppInput
-                                name="position"
-                                type="number"
-                                min="0"
-                                :default-value="
-                                    block.position
-                                "
+                <!-- Sidebar -->
+                <aside class="space-y-6">
+                    <!-- Position -->
+                    <section class="border bg-background">
+                        <div class="border-b p-6">
+                            <Heading
+                                title="Position"
+                                description="Lower numbers appear first."
                             />
-                        </AppFormControl>
-                    </div>
+                        </div>
 
+                        <div class="p-6">
+                            <AppFormControl
+                                label="Position"
+                                :error="errors.position"
+                            >
+                                <AppInput
+                                    name="position"
+                                    type="number"
+                                    min="1"
+                                    :default-value="block.data.position"
+                                />
+                            </AppFormControl>
+                        </div>
+                    </section>
 
                     <!-- Selected Block -->
+                    <section class="border bg-background p-6">
+                        <Heading
+                            title="Selected Block"
+                            description="Current block type information."
+                        />
 
-                    <div
-                        class="
-                            rounded-lg
-                            border
-                            bg-background
-                            p-6
-                        "
-                    >
-                        <h2 class="text-base font-semibold">
-                            Selected Block
-                        </h2>
+                        <div class="mt-5 border bg-muted/30 px-4 py-3">
+                            <p class="text-sm font-medium">
+                                {{ selectedTypeLabel }}
+                            </p>
 
-                        <div class="mt-4">
-                            <div
-                                class="
-                                    rounded-md
-                                    border
-                                    bg-muted/30
-                                    px-4
-                                    py-3
-                                "
-                            >
-                                <p class="text-sm font-medium">
-                                    {{
-                                        typeOptions.find(
-                                            option =>
-                                                option.value ===
-                                                block.type.value,
-                                        )?.label ??
-                                        block.type.label
-                                    }}
-                                </p>
-
-                                <p
-                                    class="
-                                        mt-1
-                                        text-xs
-                                        text-muted-foreground
-                                    "
-                                >
-                                    {{ block.type.value }}
-                                </p>
-                            </div>
+                            <p class="mt-1 text-xs text-muted-foreground">
+                                {{ selectedType }}
+                            </p>
                         </div>
-                    </div>
-
+                    </section>
 
                     <!-- Actions -->
-
-                    <div
-                        class="
-                            rounded-lg
-                            border
-                            bg-background
-                            p-6
-                        "
-                    >
-                        <div class="flex justify-end gap-3">
+                    <section class="border bg-background p-6">
+                        <div class="space-y-3">
+                            <Button
+                                type="submit"
+                                class="w-full"
+                                :disabled="processing"
+                            >
+                                {{ processing ? 'Updating...' : 'Update Block' }}
+                            </Button>
 
                             <Button
                                 type="button"
                                 variant="outline"
                                 as-child
+                                class="w-full"
                             >
-                                <Link
-                                    :href="
-                                        index({
-                                            report: report.id,
-                                            section: section.id,
-                                        })
-                                    "
-                                >
+                                <Link :href="indexUrl">
                                     Cancel
                                 </Link>
                             </Button>
-
-                            <Button
-                                type="submit"
-                                :disabled="processing"
-                            >
-                                {{
-                                    processing
-                                        ? 'Processing...'
-                                        : 'Update Block'
-                                }}
-                            </Button>
-
                         </div>
-                    </div>
-
-                </div>
+                    </section>
+                </aside>
             </div>
         </Form>
     </div>

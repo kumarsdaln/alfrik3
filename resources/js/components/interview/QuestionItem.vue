@@ -12,6 +12,7 @@
     import { Edit2, GripVertical, Trash2 } from '@lucide/vue'
 
     interface Props {
+        interviewId: number
         question: InterviewQuestion
         index: number
     }
@@ -49,7 +50,7 @@
 
                     <!-- Asked By -->
                     <div v-if="question.asked_by" class="mt-3">
-                        <ProfileCell :profile="question.asked_by" size="xs" />
+                        <ProfileCell :profile="question.asked_by.user" size="xs" />
                     </div>
 
                     <!-- Answers -->
@@ -74,7 +75,10 @@
                 </Button>
 
                 <!-- Delete -->
-                <Form :action="questionDestroy(props.question.id)" method="delete">
+                <Form :action="questionDestroy({
+                    interview: interviewId,
+                    question: question.id
+                })" method="delete">
                     <Button type="submit" variant="destructive" size="icon" title="Delete question"
                         aria-label="Delete question">
                         <Trash2 class="size-4" />

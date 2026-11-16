@@ -1,234 +1,234 @@
+
 <script setup lang="ts">
-    import { Link, router } from '@inertiajs/vue3'
-    import { Eye, Pencil, Plus, Trash2 } from '@lucide/vue'
+import { Link, router } from '@inertiajs/vue3'
+import { Eye, Pencil, Plus, Trash2 } from '@lucide/vue'
 
-    import Date from '@/components/datadisplay/Date.vue'
-    import ProfileCell from '@/components/profile/ProfileCell.vue'
-    import FilterControl from '@/components/filters/FilterControl.vue'
-    import AppSelect from '@/components/form/AppSelect.vue'
-    import Heading from '@/components/Heading.vue'
-    import BackButton from '@/components/ui/BackButton.vue'
-    import AppPagination from '@/components/ui/AppPagination.vue'
-    import AppTable from '@/components/ui/AppTable.vue'
-    import AppTableActions from '@/components/ui/AppTableActions.vue'
-    import AppText from '@/components/ui/AppText.vue'
-    import Badge from '@/components/ui/badge/Badge.vue'
-    import Button from '@/components/ui/button/Button.vue'
-    import TableLayout from '@/layouts/table/TableLayout.vue'
+import Date from '@/components/datadisplay/Date.vue'
+import ParticipantCell from '@/components/datadisplay/ParticipantCell.vue'
+import CategoryCell from '@/components/datadisplay/CategoryCell.vue'
+import TagCell from '@/components/datadisplay/TagCell.vue'
 
-    import { useFilters } from '@/composables/useFilters'
+import FilterControl from '@/components/filters/FilterControl.vue'
+import AppSelect from '@/components/form/AppSelect.vue'
+import Heading from '@/components/Heading.vue'
+import BackButton from '@/components/ui/BackButton.vue'
+import AppPagination from '@/components/ui/AppPagination.vue'
+import AppTable from '@/components/ui/AppTable.vue'
+import AppTableActions from '@/components/ui/AppTableActions.vue'
+import AppText from '@/components/ui/AppText.vue'
+import Badge from '@/components/ui/badge/Badge.vue'
+import Button from '@/components/ui/button/Button.vue'
+import TableLayout from '@/layouts/table/TableLayout.vue'
 
-    import {
-        create,
-        show,
-        edit,
-        destroy,
-    } from '@/routes/admin/magazines/issues/articles'
+import { useFilters } from '@/composables/useFilters'
 
-    import {
-        index as manageMedia,
-    } from '@/routes/admin/media'
+import {
+    create,
+    show,
+    edit,
+    destroy,
+} from '@/routes/admin/magazines/issues/articles'
 
-    import {
-        index as manageSeo,
-    } from '@/routes/admin/seo'
+import { index as manageMedia } from '@/routes/admin/media'
+import { index as manageSeo } from '@/routes/admin/seo'
+import { index as manageCategories } from '@/routes/admin/categories/assignment'
+import { index as manageTags } from '@/routes/admin/tags/assignment'
+import { index as manageParticipants } from '@/actions/App/Http/Controllers/Admin/ContentParticipant/ContentParticipantController'
 
-    import {
-        index as manageCategories,
-    } from '@/routes/admin/categories/assignment'
+import type {
+    FormOption,
+    Magazine,
+    MagazineArticle,
+    MagazineIssue,
+    Pagination,
+} from '@/types'
 
-    import {
-        index as manageTags,
-    } from '@/routes/admin/tags/assignment'
+import type { TableAction } from '@/components/ui/AppTableActions.vue'
 
-    import type {
-        FormOption,
-        Magazine,
-        MagazineArticle,
-        MagazineIssue,
-        Pagination,
-    } from '@/types'
+interface Props {
+    magazine: Magazine
+    issue: MagazineIssue
+    articles: Pagination<MagazineArticle>
+    statusOptions: FormOption[]
+    typeOptions: FormOption[]
+    filters: {
+        search?: string
+        status?: string
+        type?: string
+    }
+}
 
-    import type { TableAction } from '@/components/ui/AppTableActions.vue'
+const props = defineProps<Props>()
 
-    interface Props {
-        magazine: Magazine
-        issue: MagazineIssue
-        articles: Pagination<MagazineArticle>
-        statusOptions: FormOption[]
-        typeOptions: FormOption[]
-        filters: {
-            search?: string
-            status?: string
-            type?: string
-        }
+/*
+|--------------------------------------------------------------------------
+| Filters
+|--------------------------------------------------------------------------
+*/
+
+const {
+    filters,
+    filterCount,
+    applyFilters,
+    clearFilters,
+} = useFilters(
+    {
+        search: props.filters.search ?? '',
+        status: props.filters.status ?? '',
+        type: props.filters.type ?? '',
+    },
+    {
+        url: window.location.pathname,
+        searchKey: 'search',
+        debounce: 500,
+    },
+)
+
+/*
+|--------------------------------------------------------------------------
+| Table
+|--------------------------------------------------------------------------
+*/
+
+const columns = [
+    {
+        key: 'position',
+        label: '#',
+        width: '80px',
+    },
+    {
+        key: 'title',
+        label: 'Article',
+    },
+    {
+        key: 'type',
+        label: 'Type',
+        width: '150px',
+    },
+    {
+        key: 'participants',
+        label: 'Participants',
+        width: '240px',
+    },
+    {
+        key: 'categories',
+        label: 'Categories',
+        width: '220px',
+    },
+    {
+        key: 'tags',
+        label: 'Tags',
+        width: '220px',
+    },
+    {
+        key: 'status',
+        label: 'Status',
+        width: '140px',
+    },
+    {
+        key: 'published_at',
+        label: 'Published At',
+        width: '180px',
+    },
+    {
+        key: 'actions',
+        label: '',
+        width: '64px',
+        align: 'right' as const,
+    },
+]
+
+/*
+|--------------------------------------------------------------------------
+| Actions
+|--------------------------------------------------------------------------
+*/
+
+function deleteArticle(article: MagazineArticle) {
+    if (!confirm(`Are you sure you want to delete "${article.title}"?`)) {
+        return
     }
 
-    const props = defineProps<Props>()
-
-    /*
-    |--------------------------------------------------------------------------
-    | Filters
-    |--------------------------------------------------------------------------
-    */
-
-    const {
-        filters,
-        filterCount,
-        applyFilters,
-        clearFilters,
-    } = useFilters(
+    router.delete(
+        destroy({
+            magazine: props.magazine.id,
+            issue: props.issue.id,
+            article: article.id,
+        }).url,
         {
-            search: props.filters.search ?? '',
-            status: props.filters.status ?? '',
-            type: props.filters.type ?? '',
-        },
-        {
-            url: window.location.pathname,
-            searchKey: 'search',
-            debounce: 500,
+            preserveScroll: true,
         },
     )
+}
 
-    /*
-    |--------------------------------------------------------------------------
-    | Table
-    |--------------------------------------------------------------------------
-    */
-
-    const columns = [
+function getArticleActions(article: MagazineArticle): TableAction[] {
+    return [
         {
-            key: 'position',
-            label: '#',
-            width: '80px',
-        },
-        {
-            key: 'title',
-            label: 'Article',
-        },
-        {
-            key: 'type',
-            label: 'Type',
-            width: '150px',
-        },
-        {
-            key: 'author',
-            label: 'Author',
-            width: '220px',
-        },
-        {
-            key: 'categories',
-            label: 'Categories',
-            width: '220px',
-        },
-        {
-            key: 'tags',
-            label: 'Tags',
-            width: '220px',
-        },
-        {
-            key: 'status',
-            label: 'Status',
-            width: '140px',
-        },
-        {
-            key: 'published_at',
-            label: 'Published At',
-            width: '180px',
-        },
-        {
-            key: 'actions',
-            label: '',
-            width: '64px',
-            align: 'right' as const,
-        },
-    ]
-
-    /*
-    |--------------------------------------------------------------------------
-    | Actions
-    |--------------------------------------------------------------------------
-    */
-
-    function deleteArticle(article: MagazineArticle) {
-        if (!confirm(`Are you sure you want to delete "${article.title}"?`)) {
-            return
-        }
-
-        router.delete(
-            destroy({
+            label: 'View',
+            icon: Eye,
+            href: show({
                 magazine: props.magazine.id,
                 issue: props.issue.id,
                 article: article.id,
             }).url,
-            {
-                preserveScroll: true,
-            },
-        )
-    }
-
-    function getArticleActions(
-        article: MagazineArticle,
-    ): TableAction[] {
-        return [
-            {
-                label: 'View',
-                icon: Eye,
-                href: show({
-                    magazine: props.magazine.id,
-                    issue: props.issue.id,
-                    article: article.id,
-                }).url,
-            },
-            {
-                label: 'Edit',
-                icon: Pencil,
-                href: edit({
-                    magazine: props.magazine.id,
-                    issue: props.issue.id,
-                    article: article.id,
-                }).url,
-            },
-            {
-                label: 'Manage Media',
-                icon: Pencil,
-                href: manageMedia({
-                    type: 'magazine-article',
-                    id: article.id,
-                }).url,
-            },
-            {
-                label: 'Manage Categories',
-                icon: Pencil,
-                href: manageCategories({
-                    type: 'magazine-article',
-                    id: article.id,
-                }).url,
-            },
-            {
-                label: 'Manage Tags',
-                icon: Pencil,
-                href: manageTags({
-                    type: 'magazine-article',
-                    id: article.id,
-                }).url,
-            },
-            {
-                label: 'Manage SEO',
-                icon: Pencil,
-                href: manageSeo({
-                    type: 'magazine-article',
-                    id: article.id,
-                }).url,
-            },
-            {
-                label: 'Delete',
-                icon: Trash2,
-                danger: true,
-                onClick: () => deleteArticle(article),
-            },
-        ]
-    }
+        },
+        {
+            label: 'Edit',
+            icon: Pencil,
+            href: edit({
+                magazine: props.magazine.id,
+                issue: props.issue.id,
+                article: article.id,
+            }).url,
+        },
+        {
+            label: 'Manage Participants',
+            icon: Pencil,
+            href: manageParticipants({
+                type: 'magazine-article',
+                id: article.id,
+            }).url,
+        },
+        {
+            label: 'Manage Media',
+            icon: Pencil,
+            href: manageMedia({
+                type: 'magazine-article',
+                id: article.id,
+            }).url,
+        },
+        {
+            label: 'Manage Categories',
+            icon: Pencil,
+            href: manageCategories({
+                type: 'magazine-article',
+                id: article.id,
+            }).url,
+        },
+        {
+            label: 'Manage Tags',
+            icon: Pencil,
+            href: manageTags({
+                type: 'magazine-article',
+                id: article.id,
+            }).url,
+        },
+        {
+            label: 'Manage SEO',
+            icon: Pencil,
+            href: manageSeo({
+                type: 'magazine-article',
+                id: article.id,
+            }).url,
+        },
+        {
+            label: 'Delete',
+            icon: Trash2,
+            danger: true,
+            onClick: () => deleteArticle(article),
+        },
+    ]
+}
 </script>
 
 <template>
@@ -236,7 +236,7 @@
         <!-- Header -->
         <template #header>
             <div class="flex items-center justify-between gap-4 py-5">
-                <div class="flex gap-4">
+                <div class="flex items-center gap-4">
                     <BackButton />
 
                     <Heading
@@ -245,10 +245,7 @@
                     />
                 </div>
 
-                <Button
-                    as-child
-                    class="gap-2"
-                >
+                <Button as-child class="gap-2">
                     <Link
                         :href="create({
                             magazine: magazine.id,
@@ -264,7 +261,7 @@
 
         <!-- Content -->
         <div class="py-6">
-            <!-- Issue -->
+            <!-- Magazine Issue -->
             <section class="mb-8">
                 <AppText class="font-medium">
                     {{ magazine.title }}
@@ -308,7 +305,7 @@
                 </FilterControl>
             </section>
 
-            <!-- Table -->
+            <!-- Articles Table -->
             <AppTable
                 :columns="columns"
                 :data="props.articles.data"
@@ -336,16 +333,22 @@
 
                 <!-- Type -->
                 <template #cell-type="{ value }">
-                    <Badge :color="value.color">
+                    <Badge
+                        v-if="value"
+                        :color="value.color"
+                    >
                         {{ value.label }}
                     </Badge>
+
+                    <span v-else>—</span>
                 </template>
 
-                <!-- Author -->
-                <template #cell-author="{ value }">
-                    <ProfileCell
-                        v-if="value"
-                        :profile="value"
+                <!-- Participants -->
+                <template #cell-participants="{ value }">
+                    <ParticipantCell
+                        v-if="value?.length"
+                        :participants="value"
+                        :max-visible="3"
                     />
 
                     <span v-else>—</span>
@@ -353,45 +356,36 @@
 
                 <!-- Categories -->
                 <template #cell-categories="{ value }">
-                    <div
+                    <CategoryCell
                         v-if="value?.length"
-                        class="flex flex-wrap gap-1.5"
-                    >
-                        <Badge
-                            v-for="category in value"
-                            :key="category.id"
-                            variant="outline"
-                        >
-                            {{ category.name }}
-                        </Badge>
-                    </div>
+                        :categories="value"
+                        :max-visible="3"
+                    />
 
                     <span v-else>—</span>
                 </template>
 
                 <!-- Tags -->
                 <template #cell-tags="{ value }">
-                    <div
+                    <TagCell
                         v-if="value?.length"
-                        class="flex flex-wrap gap-1.5"
-                    >
-                        <Badge
-                            v-for="tag in value"
-                            :key="tag.id"
-                            variant="outline"
-                        >
-                            {{ tag.name }}
-                        </Badge>
-                    </div>
+                        :tags="value"
+                        :max-visible="3"
+                    />
 
                     <span v-else>—</span>
                 </template>
 
                 <!-- Status -->
                 <template #cell-status="{ value }">
-                    <Badge :color="value.color">
+                    <Badge
+                        v-if="value"
+                        :color="value.color"
+                    >
                         {{ value.label }}
                     </Badge>
+
+                    <span v-else>—</span>
                 </template>
 
                 <!-- Published At -->

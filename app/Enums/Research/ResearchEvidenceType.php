@@ -1,8 +1,12 @@
 <?php
 namespace App\Enums\Research;
 
+use App\Traits\Enums\HasDropdown;
+
 enum ResearchEvidenceType: string
 {
+    use HasDropdown; 
+    
     case Source = 'source';
     case Survey = 'survey';
     case SurveyQuestion = 'survey_question';

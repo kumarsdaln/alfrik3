@@ -1,122 +1,152 @@
 <script setup lang="ts">
-    import { Form, router } from '@inertiajs/vue3'
+import { Form, router } from '@inertiajs/vue3'
 
-    import AppFormControl from '@/components/form/AppFormControl.vue'
-    import AppTextarea from '@/components/form/AppTextarea.vue'
-    import Heading from '@/components/Heading.vue'
-    import Button from '@/components/ui/button/Button.vue'
+import {
+    AppFormControl,
+    AppTextarea,
+    AppSelect,
+} from '@/components/form'
 
-    import { update, destroy } from '@/routes/admin/interviews/questions/answers'
-    import { edit as questionEdit } from '@/routes/admin/interviews/questions'
-import { InterviewParticipant } from '@/types'
-import AppSelect from '@/components/form/AppSelect.vue'
+import Heading from '@/components/Heading.vue'
+import Button from '@/components/ui/button/Button.vue'
+import BackButton from '@/components/ui/BackButton.vue'
 
-    const props = defineProps<{
-        answer: {
-            id: number
-            answer: string
-            answered_by: {
-                id: number
-                name: string
-                email: string
-            } | null
-            question: {
-                id: number
-                question: string
-            }
-            interview: {
-                id: number
-                title: string
-            }
-        }
-        interviewees: {
-            data: InterviewParticipant[]
-        }
-    }>()
-    const backToQuestion = () => {
-        router.visit(questionEdit(props.answer.question.id).url)
+import { update } from '@/routes/admin/interviews/questions/answers'
+import { edit as questionEdit } from '@/routes/admin/interviews/questions'
+
+import type {
+    Participant,
+    InterviewQuestion,
+    Interview,
+    InterviewAnswer,
+} from '@/types'
+
+interface Props {
+    interview: {
+        data: Interview
     }
+    question: {
+        data: InterviewQuestion
+    }
+    answer: {
+        data: InterviewAnswer
+    }
+    interviewees: {
+        data: Participant[]
+    }
+}
+
+const props = defineProps<Props>()
+
+/*
+|--------------------------------------------------------------------------
+| Participant Options
+|--------------------------------------------------------------------------
+*/
+
+const intervieweeOptions = props.interviewees.data.map((participant) => ({
+    label: participant.user.name,
+    value: participant.id,
+}))
+
+/*
+|--------------------------------------------------------------------------
+| Navigation
+|--------------------------------------------------------------------------
+*/
+
+function backToQuestion(): void {
+    router.visit(
+        questionEdit({
+            interview: props.interview.data.id,
+            question: props.question.data.id,
+        }).url,
+    )
+}
 </script>
 
 <template>
-    <div class="space-y-6 my-4">
-        <Heading title="Edit Answer" :description="`Edit answer for ${answer.interview.title}`" />
+    <div class="mt-4 space-y-6">
+        <!-- Header -->
+        <div class="flex items-start gap-4">
+            <BackButton />
 
-        <!-- Question -->
-        <div>
-            <div class="mb-6">
-                <h2 class="text-lg font-semibold">
+            <Heading
+                title="Edit Answer"
+                :description="`Update an answer to a question in ${interview.data.title}.`"
+            />
+        </div>
+
+        <div class="max-w-3xl space-y-6 bg-card">
+            <!-- Question Context -->
+            <div class="rounded-md bg-muted p-4">
+                <p class="text-sm font-medium">
                     Question
-                </h2>
+                </p>
 
-                <p class="mt-2 whitespace-pre-wrap text-sm text-muted-foreground">
-                    {{ answer.question.question }}
+                <p class="mt-2 whitespace-pre-wrap text-sm leading-6 text-muted-foreground">
+                    {{ question.data.question }}
                 </p>
             </div>
 
-            <Form v-slot="{ errors, processing }" v-bind="update.form(answer.id)" class="space-y-6">
-                <AppFormControl label="Answer By" :error="errors.answered_by" required>
-                    <AppSelect name="answered_by" label="Answer By" placeholder="Select interviewee" :options="interviewees.data.map(participant => ({
-                        label: participant.user.name,
-                        value: participant.user.id,
-                    }))" />
-                </AppFormControl>
-                <AppFormControl label="Answer" :error="errors.answer" required>
-                    <AppTextarea name="answer" v-model="answer.answer" placeholder="Enter answer" :rows="10" />
+            <!-- Answer Form -->
+            <Form
+                v-slot="{ errors, processing }"
+                v-bind="update.form({
+                    interview: interview.data.id,
+                    question: question.data.id,
+                    answer: answer.data.id,
+                })"
+                :options="{ preserveScroll: true }"
+                class="space-y-6"
+            >
+                <AppFormControl
+                    label="Answered By"
+                    required
+                    :error="errors.answered_by"
+                    description="Select the interviewee responsible for this answer."
+                >
+                    <AppSelect
+                        name="answered_by"
+                        placeholder="Select interviewee"
+                        :options="intervieweeOptions"
+                        :default-value="answer.data.answered_by?.id"
+                    />
                 </AppFormControl>
 
-                <div class="flex items-center justify-between">
-                    <Button type="button" variant="outline" @click="backToQuestion">
+                <AppFormControl
+                    label="Answer"
+                    required
+                    :error="errors.answer"
+                    description="Enter the interviewee's complete response."
+                >
+                    <AppTextarea
+                        name="answer"
+                        placeholder="Enter the answer..."
+                        :rows="8"
+                        :default-value="answer.data.answer"
+                        required
+                    />
+                </AppFormControl>
+
+                <!-- Actions -->
+                <div class="flex justify-end gap-3 border-t border-border-light pt-6 dark:border-border-dark">
+                    <Button
+                        type="button"
+                        variant="outline"
+                        @click="backToQuestion"
+                    >
                         Cancel
                     </Button>
 
-                    <Button type="submit" :disabled="processing">
-                        {{ processing ? 'Processing...' : 'Update Answer' }}
+                    <Button
+                        type="submit"
+                        :disabled="processing"
+                    >
+                        {{ processing ? 'Updating...' : 'Update Answer' }}
                     </Button>
                 </div>
             </Form>
-        </div>
-
-        <!-- Answer Information -->
-        <div class="border bg-card p-6">
-            <h2 class="text-lg font-semibold">
-                Answer Information
-            </h2>
-
-            <div class="mt-4">
-                <p class="text-sm text-muted-foreground">
-                    Answered by
-                </p>
-
-                <p class="mt-1 text-sm font-medium">
-                    {{ answer.answered_by?.name ?? 'Unknown' }}
-                </p>
-
-                <p v-if="answer.answered_by?.email" class="text-sm text-muted-foreground">
-                    {{ answer.answered_by.email }}
-                </p>
-            </div>
-        </div>
-
-        <!-- Delete -->
-        <div class="border border-destructive/30 bg-destructive/5 p-6">
-            <div class="flex items-center justify-between gap-6">
-                <div>
-                    <h2 class="font-semibold">
-                        Delete Answer
-                    </h2>
-
-                    <p class="mt-1 text-sm text-muted-foreground">
-                        This action cannot be undone.
-                    </p>
-                </div>
-
-                <Form :action="destroy(answer.id).url" method="delete">
-                    <Button type="submit" variant="destructive">
-                        Delete Answer
-                    </Button>
-                </Form>
-            </div>
         </div>
     </div>
 </template>

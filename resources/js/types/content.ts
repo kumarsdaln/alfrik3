@@ -60,3 +60,87 @@ export interface ContentFormData {
     meta_description: string
     meta_keywords: string
 }
+
+export type ContentBlockType =
+    | 'heading'
+    | 'text'
+    | 'quote'
+    | 'image'
+    | 'table'
+    | 'statistic'
+    | 'chart'
+    | 'finding'
+    | 'recommendation'
+
+export interface ContentBlock {
+    id: string | number
+    type: ContentBlockType
+    title?: string | null
+    description?: string | null
+    content: Record<string, unknown>
+    position: number
+}
+
+export interface ContentBlockDefinition {
+    type: ContentBlockType
+    label: string
+    description: string
+    category: 'basic' | 'media' | 'data' | 'research'
+}
+
+export const CONTENT_BLOCKS: ContentBlockDefinition[] = [
+    {
+        type: 'heading',
+        label: 'Heading',
+        description: 'Add a section heading.',
+        category: 'basic',
+    },
+    {
+        type: 'text',
+        label: 'Text',
+        description: 'Add paragraphs and written content.',
+        category: 'basic',
+    },
+    {
+        type: 'quote',
+        label: 'Quote',
+        description: 'Highlight a quotation.',
+        category: 'basic',
+    },
+    {
+        type: 'image',
+        label: 'Image',
+        description: 'Add an image with caption.',
+        category: 'media',
+    },
+    {
+        type: 'table',
+        label: 'Table',
+        description: 'Present structured information.',
+        category: 'data',
+    },
+    {
+        type: 'statistic',
+        label: 'Statistic',
+        description: 'Highlight an important metric.',
+        category: 'data',
+    },
+    {
+        type: 'chart',
+        label: 'Chart',
+        description: 'Visualize numerical data.',
+        category: 'data',
+    },
+    {
+        type: 'finding',
+        label: 'Finding',
+        description: 'Highlight a research finding.',
+        category: 'research',
+    },
+    {
+        type: 'recommendation',
+        label: 'Recommendation',
+        description: 'Present an actionable recommendation.',
+        category: 'research',
+    },
+]

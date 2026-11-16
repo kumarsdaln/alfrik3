@@ -3,6 +3,9 @@
  */
 
 import { FormOption } from './forms'
+import { Media } from './media'
+import { Participant } from './participant'
+import { Category, Tag } from './taxonomy'
 import { Profile } from './user'
 
 /* =========================================================
@@ -110,20 +113,31 @@ export interface Research {
     id: number
     title: string
     slug: string
-    subtitle: string | null
+    subtitle: string
     description: string | null
     summary: string | null
 
     type: ResearchTypeOption
     status: ResearchStatusOption
 
-    author?: Profile
-
     featured: boolean
     published_at: string | null
 
     created_at: string
     updated_at: string
+
+    participants?: Participant[]
+    categories?: Category[]
+    tags?: Tag[]
+    media?: Media[]
+
+    sources?: ResearchSource[]
+    questions?: ResearchQuestion[]
+    evidence?: ResearchEvidence[]
+    members?: ResearchMember[]
+    invitations?: ResearchInvitation[]
+    methodology?: ResearchMethodology
+    findings?: ResearchFinding[]
 }
 
 /* =========================================================

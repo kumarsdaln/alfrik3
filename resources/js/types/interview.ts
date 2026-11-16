@@ -1,6 +1,9 @@
+
 import type { FormOption } from './forms'
-import { Media } from './media'
-import { Profile } from './user'
+import type { Media } from './media'
+import type { Participant } from './participant'
+import type { SeoMetadata } from './seo'
+import { Category, Tag } from './taxonomy'
 
 export enum InterviewType {
     VIDEO = 'video',
@@ -13,33 +16,22 @@ export enum InterviewStatus {
     PUBLISHED = 'published',
 }
 
-export enum InterviewParticipantRole {
-    INTERVIEWER = 'interviewer',
-    INTERVIEWEE = 'interviewee',
-}
-
 export type InterviewTypeOption = FormOption<InterviewType>
 export type InterviewStatusOption = FormOption<InterviewStatus>
-export type InterviewParticipantRoleOption = FormOption<InterviewParticipantRole>
-
-export interface InterviewParticipant {
-    id: number
-    role: FormOption<InterviewParticipantRole>
-    user: Profile
-}
 
 export interface InterviewAnswer {
     id: number
     answer: string
-    answered_by: Profile
+    position: number
+    answered_by: Participant | null
 }
 
 export interface InterviewQuestion {
     id: number
     question: string
     position: number
-    asked_by: Profile
-    answers: InterviewAnswer[]
+    asked_by: Participant | null
+    answers?: InterviewAnswer[]
 
     interview?: {
         id: number
@@ -47,69 +39,33 @@ export interface InterviewQuestion {
     }
 }
 
-export interface InterviewCategory {
-    id: number
-    name: string
-    slug: string
-    description: string | null
-    status: boolean
-    sort_order: number
-}
-
-export interface InterviewTag {
-    id: number
-    name: string
-    slug: string
-    description: string | null
-    status: boolean
-}
-
-export interface InterviewSeo {
-    id: number
-    title: string | null
-    description: string | null
-    canonical_url: string | null
-    indexable: boolean
-    followable: boolean
-    og_title: string | null
-    og_description: string | null
-    og_type: string | null
-    og_image_url: string | null
-    twitter_card: string | null
-    twitter_title: string | null
-    twitter_description: string | null
-    twitter_image_url: string | null
-    locale: string
-    schema_type: string | null
-}
-
 export interface Interview {
     id: number
+
+    // Publication details
     title: string
     slug: string
     description: string | null
+    introduction: string | null
+    conclusion: string | null
 
+    // Publication settings
     interview_type: InterviewTypeOption
     status: InterviewStatusOption
-
     published_at: string | null
-    views_count: number
+
+    // Participants and conversation
+    participants: Participant[]
+    questions: InterviewQuestion[]
+
+    // Classification
+    categories?: Category[]
+    tags?: Tag[]
+
+    // Integrations
+    media?: Media[]
+    seo?: SeoMetadata
 
     created_at: string
     updated_at: string
-
-    creator: {
-        id: number
-        name: string
-        email: string
-    } | null
-
-    participants: InterviewParticipant[]
-    questions: InterviewQuestion[]
-
-    categories: InterviewCategory[]
-    tags: InterviewTag[]
-
-    media: Media[]
-    seo: InterviewSeo[]
 }

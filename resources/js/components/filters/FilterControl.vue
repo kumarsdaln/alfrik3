@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { Search, SlidersHorizontal, X } from '@lucide/vue'
 
 import AppInput from '@/components/form/AppInput.vue'
 
@@ -7,6 +8,8 @@ import { Button } from '@/components/ui/button'
 import {
     Sheet,
     SheetContent,
+    SheetDescription,
+    SheetFooter,
     SheetHeader,
     SheetTitle,
 } from '@/components/ui/sheet'
@@ -15,6 +18,9 @@ interface Props {
     search?: string
     searchPlaceholder?: string
     filterCount?: number
+    title?: string
+    description?: string
+    showSearch?: boolean
 }
 
 const props = withDefaults(
@@ -23,6 +29,9 @@ const props = withDefaults(
         search: '',
         searchPlaceholder: 'Search...',
         filterCount: 0,
+        title: 'Filters',
+        description: 'Refine the results using the filters below.',
+        showSearch: true,
     },
 )
 
@@ -36,8 +45,20 @@ const open = ref(false)
 
 const search = computed({
     get: () => props.search,
-    set: value => emit('update:search', String(value)),
+    set: (value: string | number) => {
+        emit('update:search', String(value))
+    },
 })
+
+const hasSearch = computed(() => Boolean(props.search.trim()))
+
+const hasActiveFilters = computed(() =>
+    props.filterCount > 0 || hasSearch.value,
+)
+
+function clearSearch() {
+    search.value = ''
+}
 
 function clearFilters() {
     emit('clear')
@@ -50,41 +71,62 @@ function applyFilters() {
 </script>
 
 <template>
-    <div class="flex items-end gap-3">
-
+    <div class="flex w-full items-center gap-3">
         <!-- Search -->
+        <div
+            v-if="showSearch"
+            class="relative min-w-0 flex-1"
+        >
+            <Search
+                class="
+                    pointer-events-none
+                    absolute
+                    left-3
+                    top-1/2
+                    z-10
+                    size-4
+                    -translate-y-1/2
+                    text-muted-foreground
+                "
+            />
 
-        <div class="min-w-0 flex-1">
             <AppInput
                 v-model="search"
                 name="search"
                 :placeholder="searchPlaceholder"
+                class="pl-10 pr-10"
             />
+
+            <button
+                v-if="hasSearch"
+                type="button"
+                aria-label="Clear search"
+                class="
+                    absolute
+                    right-3
+                    top-1/2
+                    z-10
+                    -translate-y-1/2
+                    text-muted-foreground
+                    transition-colors
+                    hover:text-foreground
+                "
+                @click="clearSearch"
+            >
+                <X class="size-4" />
+            </button>
         </div>
 
-
         <!-- Filter Button -->
-
         <Button
             type="button"
             variant="outline"
             class="h-10 shrink-0 gap-2"
+            :aria-expanded="open"
+            aria-haspopup="dialog"
             @click="open = true"
         >
-            <svg
-                class="size-4"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                aria-hidden="true"
-            >
-                <path d="M4 6h16" />
-                <path d="M7 12h10" />
-                <path d="M10 18h4" />
-            </svg>
+            <SlidersHorizontal class="size-4" />
 
             <span>Filters</span>
 
@@ -98,8 +140,10 @@ function applyFilters() {
                     rounded-full
                     bg-foreground
                     px-1.5
+                    py-0.5
                     text-xs
                     font-medium
+                    leading-none
                     text-background
                 "
             >
@@ -107,34 +151,41 @@ function applyFilters() {
             </span>
         </Button>
 
-
         <!-- Filter Sheet -->
-
         <Sheet v-model:open="open">
             <SheetContent
                 side="right"
-                class="flex w-full flex-col sm:max-w-md"
+                class="flex h-full w-full flex-col sm:max-w-md"
             >
-                <SheetHeader>
-                    <SheetTitle>
-                        Filters
-                    </SheetTitle>
+                <SheetHeader class="border-b border-border pb-5 text-left">
+                    <div class="flex items-center justify-between">
+                        <SheetTitle class="text-lg">
+                            {{ title }}
+                        </SheetTitle>
+
+                        <span
+                            v-if="filterCount > 0"
+                            class="text-xs text-muted-foreground"
+                        >
+                            {{ filterCount }} active
+                        </span>
+                    </div>
+
+                    <SheetDescription>
+                        {{ description }}
+                    </SheetDescription>
                 </SheetHeader>
 
-
                 <!-- Filter Fields -->
-
                 <div class="min-h-0 flex-1 overflow-y-auto px-1 py-6">
                     <slot />
                 </div>
 
-
-                <!-- Actions -->
-
-                <div
+                <!-- Footer Actions -->
+                <SheetFooter
                     class="
                         flex
-                        shrink-0
+                        flex-row
                         items-center
                         justify-between
                         gap-3
@@ -146,6 +197,7 @@ function applyFilters() {
                     <Button
                         type="button"
                         variant="ghost"
+                        :disabled="!hasActiveFilters"
                         @click="clearFilters"
                     >
                         Clear all
@@ -157,9 +209,8 @@ function applyFilters() {
                     >
                         Apply filters
                     </Button>
-                </div>
+                </SheetFooter>
             </SheetContent>
         </Sheet>
-
     </div>
 </template>

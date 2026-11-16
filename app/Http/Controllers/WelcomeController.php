@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Event\Event;
 use App\Models\Interview\Interview;
 use App\Models\Magazine\Magazine;
 use App\Models\Report\Report;
@@ -28,9 +27,11 @@ class WelcomeController extends Controller
             ->where('status', 'published')
             ->where('featured', true)
             ->with([
-                'author',
                 'categories',
+                'tags',
                 'media',
+                'participants.user',
+                'participants.role',
             ])
             ->latest('published_at')
             ->first();
@@ -40,7 +41,10 @@ class WelcomeController extends Controller
             ->featured()
             ->with([
                 'categories',
-                'author',
+                'tags',
+                'media',
+                'participants.user',
+                'participants.role',
             ])
             ->latest('published_at')
             ->first();
@@ -57,8 +61,10 @@ class WelcomeController extends Controller
             ->where('status', 'published')
             ->with([
                 'categories',
-                'author',
+                'tags',
                 'media',
+                'participants.user',
+                'participants.role',
             ])
             ->latest('published_at')
             ->take(4)
@@ -90,7 +96,10 @@ class WelcomeController extends Controller
             ->published()
             ->with([
                 'categories',
-                'author',
+                'tags',
+                'media',
+                'participants.user',
+                'participants.role',
             ])
             ->latest('published_at')
             ->take(4)
@@ -119,7 +128,10 @@ class WelcomeController extends Controller
             ->published()
             ->with([
                 'categories',
-                'author',
+                'tags',
+                'media',
+                'participants.user',
+                'participants.role',
             ])
             ->latest('published_at')
             ->take(3)
@@ -134,7 +146,11 @@ class WelcomeController extends Controller
         $interviews = Interview::query()
             ->where('status', 'published')
             ->with([
+                'categories',
+                'tags',
+                'media',
                 'participants.user',
+                'participants.role',
             ])
             ->latest('published_at')
             ->take(3)

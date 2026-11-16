@@ -9,11 +9,17 @@
 
     import AppFormControl from '@/components/form/AppFormControl.vue'
     import AppInput from '@/components/form/AppInput.vue'
+    import AppSelect from '@/components/form/AppSelect.vue'
     import AppTextarea from '@/components/form/AppTextarea.vue'
+
     import Heading from '@/components/Heading.vue'
     import Button from '@/components/ui/button/Button.vue'
 
-    import { edit as interviewEdit } from '@/routes/admin/interviews'
+    import {
+        index as questionsIndex,
+        update as questionUpdate,
+        destroy as questionDestroy,
+    } from '@/routes/admin/interviews/questions'
 
     import {
         create as answerCreate,
@@ -21,108 +27,123 @@
         destroy as answerDestroy,
     } from '@/routes/admin/interviews/questions/answers'
 
-    import {
-        update as questionUpdate,
-        destroy as questionDestroy,
-    } from '@/routes/admin/interviews/questions'
+    import type {
+        Participant,
+        InterviewQuestion,
+        Interview,
+    } from '@/types'
+    import BackButton from '@/components/ui/BackButton.vue'
 
-    import type { InterviewParticipant, InterviewQuestion } from '@/types'
-    import AppSelect from '@/components/form/AppSelect.vue'
-import { ref } from 'vue'
-
-    const props = defineProps<{
+    interface Props {
+        interview: {
+            data: Interview
+        }
         question: {
             data: InterviewQuestion
-        },
+        }
+
         interviewers: {
-            data: InterviewParticipant[]
+            data: Participant[]
         }
-    }>()
-
-    function backToInterview() {
-        router.visit(
-            interviewEdit(props.question.data.interview.id).url
-        )
     }
 
-    function deleteAnswer(answerId: number) {
+    const props = defineProps<Props>()
+    /*
+    |--------------------------------------------------------------------------
+    | Participant Options
+    |--------------------------------------------------------------------------
+    */
+
+    const interviewerOptions = props.interviewers.data.map((participant) => ({
+        label: participant.user.name,
+        value: participant.id,
+    }))
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Answer Actions
+    |--------------------------------------------------------------------------
+    */
+
+    function deleteAnswer(answerId: number): void {
+        if (!confirm('Are you sure you want to delete this answer? This action cannot be undone.')) {
+            return
+        }
+
+        router.delete(answerDestroy({
+            interview: props.interview.data.id,
+            question: props.question.data.id,
+            answer: answerId,
+        }).url, {
+            preserveScroll: true,
+        })
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Question Actions
+    |--------------------------------------------------------------------------
+    */
+
+    function deleteQuestion(): void {
         if (
             !confirm(
-                'Are you sure you want to delete this answer? This action cannot be undone.'
+                'Are you sure you want to delete this question? All answers belonging to this question will also be deleted.',
             )
         ) {
             return
         }
 
-        router.delete(
-            answerDestroy(answerId).url,
-            {
-                preserveScroll: true,
-            }
-        )
+        router.delete(questionDestroy({
+            interview: props.interview.data.id,
+            question: props.question.data.id,
+        }).url, {
+            preserveScroll: true,
+            onSuccess: () => {
+                router.visit(questionsIndex(props.interview.data.id).url)
+            },
+        })
     }
-
-    function deleteQuestion() {
-        if (
-            !confirm(
-                'Are you sure you want to delete this question? All answers belonging to this question will also be deleted.'
-            )
-        ) {
-            return
-        }
-
-        router.delete(
-            questionDestroy(props.question.data.id).url,
-            {
-                onSuccess: () => {
-                    backToInterview()
-                },
-            }
-        )
-    }
-
-    const askedBY = ref<number|string|undefined>(props.question.data.asked_by?.id)
 </script>
 
 <template>
-    <div class="space-y-8 my-4">
-
+    <div class="my-4 space-y-8">
         <!-- Header -->
         <div class="flex items-start gap-4">
-            <Button type="button" variant="outline" size="icon" class="shrink-0" @click="backToInterview">
-                <ArrowLeft class="size-4" />
-                <span class="sr-only">
-                    Back to interview
-                </span>
-            </Button>
+            <BackButton />
 
             <Heading title="Edit Question"
-                :description="`Manage this question and its answers for ${question.data.interview.title}.`" />
+                :description="`Manage this question and its answers for ${props.interview.data.title}.`" />
         </div>
 
-        <!-- Question -->
+        <!-- Question Form -->
         <section>
-            <Form v-bind="questionUpdate.form(question.data.id)" :options="{
-                preserveScroll: true,
-            }" #default="{ errors, processing }" class="space-y-6">
-                <AppFormControl label="Question By" required :error="errors.asked_by">
-                    <AppSelect name="asked_by" v-model="askedBY" placeholder="Select interviewer" :options="interviewers.data.map(participant => ({
-                        label: participant.user.name,
-                        value: participant.user.id,
-                    }))" />
+            <Form v-slot="{ errors, processing }" v-bind="questionUpdate.form({
+                interview: interview.data.id,
+                question: question.data.id
+            })" :options="{ preserveScroll: true }" class="space-y-6">
+                <AppFormControl label="Question By" :error="errors.asked_by"
+                    description="Select the interviewer who asked this question.">
+                    <AppSelect name="asked_by" :default-value="props.question.data.asked_by?.id"
+                        placeholder="Select interviewer" :options="interviewerOptions" />
                 </AppFormControl>
-                <AppFormControl label="Question" :error="errors.question" required>
-                    <AppTextarea name="question" v-model="question.data.question"
-                        placeholder="Enter interview question..." :rows="6" />
+
+                <AppFormControl label="Question" required :error="errors.question">
+                    <AppTextarea name="question" :default-value="props.question.data.question"
+                        placeholder="Enter interview question..." :rows="6" required />
                 </AppFormControl>
 
                 <AppFormControl label="Position" :error="errors.position"
                     description="Controls the order in which questions are displayed.">
-                    <AppInput name="position" type="number" min="0" v-model="question.data.position" />
+                    <AppInput name="position" type="number" min="0" :default-value="props.question.data.position" />
                 </AppFormControl>
 
-                <div class="flex items-center justify-between gap-3 border-t pt-6">
-                    <Button type="button" variant="outline" @click="backToInterview">
+                <!-- Form Actions -->
+                <div
+                    class="flex items-center justify-between gap-3 border-t border-border-light pt-6 dark:border-border-dark">
+                    <Button type="button" variant="outline"
+                        @click="router.visit(questionsIndex(interview.data.id).url)">
                         Cancel
                     </Button>
 
@@ -135,7 +156,6 @@ import { ref } from 'vue'
 
         <!-- Answers -->
         <section class="overflow-hidden border bg-card">
-
             <!-- Answers Header -->
             <div class="flex items-center justify-between gap-4 border-b px-6 py-5">
                 <div>
@@ -149,7 +169,10 @@ import { ref } from 'vue'
                 </div>
 
                 <Button as-child class="gap-2">
-                    <Link :href="answerCreate(question.data.id)">
+                    <Link :href="answerCreate({
+                        interview: interview.data.id,
+                        question: question.data.id,
+                    })">
                         <Plus class="size-4" />
                         Add Answer
                     </Link>
@@ -157,43 +180,34 @@ import { ref } from 'vue'
             </div>
 
             <!-- Answer List -->
-            <div v-if="question.data.answers.length" class="divide-y">
+            <div v-if="question.data.answers" class="divide-y">
                 <article v-for="answer in question.data.answers" :key="answer.id"
                     class="p-6 transition-colors hover:bg-muted/30">
                     <div class="flex items-start justify-between gap-6">
-
                         <!-- Answer Content -->
                         <div class="min-w-0 flex-1">
-
-                            <p class="
-                                    whitespace-pre-wrap
-                                    text-sm
-                                    leading-6
-                                ">
+                            <p class="whitespace-pre-wrap text-sm leading-6">
                                 {{ answer.answer }}
                             </p>
 
                             <div v-if="answer.answered_by"
                                 class="mt-4 flex items-center gap-2 text-xs text-muted-foreground">
-                                <span>
-                                    Answered by
-                                </span>
+                                <span>Answered by</span>
 
                                 <span class="font-medium text-foreground">
-                                    {{ answer.answered_by.name }}
+                                    {{ answer.answered_by.user.name }}
                                 </span>
                             </div>
-
                         </div>
 
                         <!-- Answer Actions -->
                         <div class="flex shrink-0 items-center gap-2">
-
                             <Button as-child type="button" variant="outline" size="icon">
-                                <Link :href="answerEdit(
-                                    answer.id
-                                )
-                                    ">
+                                <Link :href="answerEdit({
+                                    interview: interview.data.id,
+                                    question: question.data.id,
+                                    answer: answer.id,
+                                })">
                                     <Edit2 class="size-4" />
 
                                     <span class="sr-only">
@@ -209,18 +223,14 @@ import { ref } from 'vue'
                                     Delete answer
                                 </span>
                             </Button>
-
                         </div>
                     </div>
                 </article>
             </div>
 
-            <!-- Empty -->
+            <!-- Empty State -->
             <div v-else class="flex flex-col items-center justify-center px-6 py-16 text-center">
-                <div class="
-                        mb-4 flex size-12 items-center justify-center
-                        rounded-full bg-muted
-                    ">
+                <div class="mb-4 flex size-12 items-center justify-center rounded-full bg-muted">
                     <Plus class="size-5 text-muted-foreground" />
                 </div>
 
@@ -233,7 +243,10 @@ import { ref } from 'vue'
                 </p>
 
                 <Button as-child variant="outline" class="mt-5 gap-2">
-                    <Link :href="answerCreate(question.data.id)">
+                    <Link :href="answerCreate({
+                        interview: interview.data.id,
+                        question: question.data.id,
+                    })">
                         <Plus class="size-4" />
                         Add Answer
                     </Link>
@@ -242,11 +255,7 @@ import { ref } from 'vue'
         </section>
 
         <!-- Danger Zone -->
-        <section class="
-                border
-                border-destructive/30
-                bg-destructive/5
-            ">
+        <section class="border border-destructive/30 bg-destructive/5">
             <div class="flex items-center justify-between gap-6 p-6">
                 <div class="min-w-0">
                     <h2 class="font-semibold text-destructive">
@@ -254,7 +263,7 @@ import { ref } from 'vue'
                     </h2>
 
                     <p class="mt-1 text-sm text-muted-foreground">
-                        Permanently delete this question and all of its answers.
+                        Permanently delete this question and all its answers.
                         This action cannot be undone.
                     </p>
                 </div>
@@ -265,6 +274,5 @@ import { ref } from 'vue'
                 </Button>
             </div>
         </section>
-
     </div>
 </template>

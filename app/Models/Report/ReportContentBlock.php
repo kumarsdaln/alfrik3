@@ -20,7 +20,6 @@ class ReportContentBlock extends Model
 {
     use HasFactory;
 
-
     protected function casts(): array
     {
         return [
@@ -30,11 +29,18 @@ class ReportContentBlock extends Model
         ];
     }
 
+    /*
+    |--------------------------------------------------------------------------
+    | Relationships
+    |--------------------------------------------------------------------------
+    */
+
     public function section(): BelongsTo
     {
         return $this->belongsTo(
             ReportSection::class,
             'report_section_id',
+            'id',
         );
     }
 }

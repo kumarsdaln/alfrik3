@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOneThrough;
 
 #[Fillable([
     'issue_id',
@@ -23,17 +24,19 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'excerpt',
     'content',
     'type',
-    'byline',
     'position',
     'featured',
     'status',
     'published_at',
-    'views',
-    'reading_time',
 ])]
 class MagazineArticle extends Model
 {
-    use HasCategories, HasTags, HasMedia, HasSeo, HasParticipants;
+    use HasCategories;
+    use HasTags;
+    use HasMedia;
+    use HasSeo;
+    use HasParticipants;
+
     /*
     |--------------------------------------------------------------------------
     | Casts
@@ -43,13 +46,11 @@ class MagazineArticle extends Model
     protected function casts(): array
     {
         return [
+            'type' => MagazineArticleType::class,
+            'status' => MagazineArticleStatus::class,
             'position' => 'integer',
             'featured' => 'boolean',
-            'status' => MagazineArticleStatus::class,
-            'type' => MagazineArticleType::class,
             'published_at' => 'datetime',
-            'views' => 'integer',
-            'reading_time' => 'integer',
         ];
     }
 
@@ -59,37 +60,22 @@ class MagazineArticle extends Model
     |--------------------------------------------------------------------------
     */
 
-    /**
-     * Scope published articles.
-     */
     #[Scope]
-    public function published(Builder $query): Builder
+    protected function published(Builder $query): void
     {
-        return $query
-            ->where(
-                'status',
-                MagazineArticleStatus::Published
-            )
+        $query
+            ->where('status', MagazineArticleStatus::Published)
             ->where(function (Builder $query) {
                 $query
                     ->whereNull('published_at')
-                    ->orWhere(
-                        'published_at',
-                        '<=',
-                        now()
-                    );
+                    ->orWhere('published_at', '<=', now());
             });
     }
 
-    /**
-     * Scope featured articles.
-     */
-    public function featured(Builder $query): Builder
+    #[Scope]
+    protected function featured(Builder $query): void
     {
-        return $query->where(
-            'featured',
-            true
-        );
+        $query->where('featured', true);
     }
 
     /*
@@ -98,14 +84,24 @@ class MagazineArticle extends Model
     |--------------------------------------------------------------------------
     */
 
-    /**
-     * Article issue.
-     */
     public function issue(): BelongsTo
     {
         return $this->belongsTo(
             MagazineIssue::class,
             'issue_id',
+            'id',
+        );
+    }
+
+    public function magazine(): HasOneThrough
+    {
+        return $this->hasOneThrough(
+            Magazine::class,
+            MagazineIssue::class,
+            'id',
+            'id',
+            'issue_id',
+            'magazine_id',
         );
     }
 }

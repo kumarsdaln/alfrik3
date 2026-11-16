@@ -18,7 +18,7 @@ return new class extends Migration
                 ->constrained('researches')
                 ->cascadeOnDelete();
 
-            $table->foreignId('finding_id')
+            $table->foreignId('research_finding_id')
                 ->constrained('research_findings')
                 ->cascadeOnDelete();
 
@@ -39,7 +39,7 @@ return new class extends Migration
             $table->timestamps();
 
             $table->index([
-                'finding_id',
+                'research_finding_id',
                 'type',
                 'reference_id',
             ]);

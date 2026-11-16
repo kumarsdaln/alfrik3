@@ -3,13 +3,13 @@
 namespace App\Traits;
 
 use App\Models\SeoMetadata;
-use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
 
 trait HasSeo
 {
-    public function seo(): MorphMany
+    public function seo(): MorphOne
     {
-        return $this->morphMany(
+        return $this->MorphOne(
             SeoMetadata::class,
             'seoable',
         );

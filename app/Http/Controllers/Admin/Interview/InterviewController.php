@@ -2,20 +2,16 @@
 
 namespace App\Http\Controllers\Admin\Interview;
 
-use App\Actions\Interview\AddInterviewParticipant;
 use App\Actions\Interview\CreateInterview;
 use App\Actions\Interview\DeleteInterview;
-use App\Actions\Interview\RemoveInterviewParticipant;
 use App\Actions\Interview\UpdateInterview;
 use App\Enums\Interview\InterviewStatus;
 use App\Enums\Interview\InterviewType;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Interview\StoreInterviewParticipantRequest;
 use App\Http\Requests\Interview\StoreInterviewRequest;
 use App\Http\Requests\Interview\UpdateInterviewRequest;
 use App\Http\Resources\Interview\InterviewResource;
 use App\Models\Interview\Interview;
-use App\Models\Interview\InterviewParticipant;
 use App\Support\Breadcrumbs\BreadcrumbBuilder;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -33,39 +29,40 @@ class InterviewController extends Controller
 
         $interviews = Interview::query()
             ->with([
-                'creator',
                 'participants.user',
+                'participants.role',
                 'categories',
                 'tags',
             ])
             ->when(
-                $search,
-                fn($query, $search) => $query->where(function ($query) use ($search) {
+                filled($search),
+                fn ($query) => $query->where(function ($query) use ($search) {
                     $query
                         ->where('title', 'like', "%{$search}%")
-                        ->orWhere('description', 'like', "%{$search}%");
+                        ->orWhere('description', 'like', "%{$search}%")
+                        ->orWhere('introduction', 'like', "%{$search}%");
                 }),
             )
             ->when(
                 filled($type),
-                fn($query) => $query->where('interview_type', $type),
+                fn ($query) => $query->where('interview_type', $type),
             )
             ->when(
                 filled($status),
-                fn($query) => $query->where('status', $status),
+                fn ($query) => $query->where('status', $status),
             )
             ->when(
                 filled($category),
-                fn($query) => $query->whereHas(
+                fn ($query) => $query->whereHas(
                     'categories',
-                    fn($query) => $query->where('slug', $category),
+                    fn ($query) => $query->where('slug', $category),
                 ),
             )
             ->when(
                 filled($tags),
-                fn($query) => $query->whereHas(
+                fn ($query) => $query->whereHas(
                     'tags',
-                    fn($query) => $query->where('slug', $tags),
+                    fn ($query) => $query->where('slug', $tags),
                 ),
             )
             ->latest()
@@ -74,8 +71,17 @@ class InterviewController extends Controller
 
         $stats = [
             'total' => Interview::count(),
-            'published' => Interview::where('status', true)->count(),
-            'draft' => Interview::where('status', false)->count(),
+
+            'published' => Interview::where(
+                'status',
+                InterviewStatus::PUBLISHED->value,
+            )->count(),
+
+            'draft' => Interview::where(
+                'status',
+                InterviewStatus::DRAFT->value,
+            )->count(),
+
             'this_month' => Interview::whereBetween('created_at', [
                 now()->startOfMonth(),
                 now()->endOfMonth(),
@@ -124,22 +130,19 @@ class InterviewController extends Controller
         CreateInterview $action,
     ) {
         $interview = $action->handle(
-            $request->validated()
+            $request->validated(),
         );
 
         Inertia::flash('success', 'Interview created successfully.');
 
-        return to_route(
-            'admin.interviews.edit',
-            $interview
-        );
+        return to_route('admin.interviews.edit', $interview);
     }
 
     public function show(Interview $interview): Response
     {
         $interview->load([
-            'creator',
             'participants.user',
+            'participants.role',
             'questions.asker',
             'questions.answers.answerer',
             'media',
@@ -162,13 +165,15 @@ class InterviewController extends Controller
     public function edit(Interview $interview): Response
     {
         $interview->load([
-            'creator',
             'participants.user',
-            'questions.asker',
-            'questions.answers.answerer',
-            'media',
+            'participants.role',
+            'questions.asker.user',
+            'questions.asker.role',
+            'questions.answers.answerer.user',
+            'questions.answers.answerer.role',
             'categories',
             'tags',
+            'media',
             'seo',
         ]);
 
@@ -193,15 +198,12 @@ class InterviewController extends Controller
     ) {
         $action->handle(
             $interview,
-            $request->validated()
+            $request->validated(),
         );
 
         Inertia::flash('success', 'Interview updated successfully.');
 
-        return to_route(
-            'admin.interviews.edit',
-            $interview
-        );
+        return to_route('admin.interviews.edit', $interview);
     }
 
     public function destroy(
@@ -213,44 +215,5 @@ class InterviewController extends Controller
         Inertia::flash('success', 'Interview deleted successfully.');
 
         return to_route('admin.interviews.index');
-    }
-
-
-    public function addParticipant(
-        StoreInterviewParticipantRequest $request,
-        Interview $interview,
-        AddInterviewParticipant $action,
-    ) {
-        $action->handle(
-            $interview,
-            $request->validated(),
-        );
-
-        Inertia::flash(
-            'success',
-            'Participant added successfully.',
-        );
-
-        return to_route(
-            'admin.interviews.edit',
-            $interview,
-        );
-    }
-
-    public function removeParticipant(
-        InterviewParticipant $participant,
-        RemoveInterviewParticipant $action,
-    ) {
-        $action->handle($participant);
-
-        Inertia::flash(
-            'success',
-            'Participant removed successfully.',
-        );
-
-        return to_route(
-            'admin.interviews.edit',
-            $participant->interview,
-        );
     }
 }

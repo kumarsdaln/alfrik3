@@ -3,6 +3,7 @@
 namespace App\Http\Resources\Interview;
 
 use App\Http\Resources\CategoryResource;
+use App\Http\Resources\ContentParticipant\ParticipantResource;
 use App\Http\Resources\MediaResource;
 use App\Http\Resources\SeoMetadataResource;
 use App\Http\Resources\TagResource;
@@ -15,33 +16,30 @@ class InterviewResource extends JsonResource
     {
         return [
             'id' => $this->id,
+
+            // Publication details
             'title' => $this->title,
             'slug' => $this->slug,
             'description' => $this->description,
+            'introduction' => $this->introduction,
+            'conclusion' => $this->conclusion,
 
+            // Publication settings
             'interview_type' => $this->interview_type?->option(),
             'status' => $this->status?->option(),
-
             'published_at' => $this->published_at,
-            'views_count' => $this->views_count,
 
-            'creator' => $this->whenLoaded(
-                'creator',
-                fn () => [
-                    'id' => $this->creator->id,
-                    'name' => $this->creator->name,
-                    'email' => $this->creator->email,
-                ],
-            ),
-
-            'participants' => InterviewParticipantResource::collection(
+            // Participants
+            'participants' => ParticipantResource::collection(
                 $this->whenLoaded('participants'),
             ),
 
+            // Interview conversation
             'questions' => InterviewQuestionResource::collection(
                 $this->whenLoaded('questions'),
             ),
 
+            // Taxonomy
             'categories' => CategoryResource::collection(
                 $this->whenLoaded('categories'),
             ),
@@ -50,12 +48,18 @@ class InterviewResource extends JsonResource
                 $this->whenLoaded('tags'),
             ),
 
+            // Media
             'media' => MediaResource::collection(
                 $this->whenLoaded('media'),
             ),
 
-            'seo' => SeoMetadataResource::collection(
-                $this->whenLoaded('seo'),
+            // SEO
+            // SEO
+            'seo' => $this->whenLoaded(
+                'seo',
+                fn() => $this->seo
+                    ? SeoMetadataResource::make($this->seo)
+                    : null,
             ),
         ];
     }

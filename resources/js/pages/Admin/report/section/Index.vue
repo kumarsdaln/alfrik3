@@ -1,8 +1,14 @@
+
 <script setup lang="ts">
 import { Link, router } from '@inertiajs/vue3'
-import { Eye, Pencil, Plus, Trash2 } from '@lucide/vue'
+import {
+    Eye,
+    Pencil,
+    Plus,
+    Trash2,
+    Layers,
+} from '@lucide/vue'
 
-import AppPagination from '@/components/ui/AppPagination.vue'
 import AppTable from '@/components/ui/AppTable.vue'
 import AppTableActions from '@/components/ui/AppTableActions.vue'
 import Button from '@/components/ui/button/Button.vue'
@@ -25,6 +31,7 @@ interface Props {
     report: {
         data: Report
     }
+
     sections: Pagination<ReportSection>
 }
 
@@ -53,12 +60,8 @@ const columns = [
     },
 ]
 
-function deleteSection(section: ReportSection) {
-    if (
-        !confirm(
-            `Are you sure you want to delete "${section.title}"?`,
-        )
-    ) {
+function deleteSection(section: ReportSection): void {
+    if (!confirm(`Are you sure you want to delete "${section.title}"?`)) {
         return
     }
 
@@ -73,9 +76,7 @@ function deleteSection(section: ReportSection) {
     )
 }
 
-function getSectionActions(
-    section: ReportSection,
-) {
+function getSectionActions(section: ReportSection) {
     return [
         {
             label: 'View',
@@ -94,8 +95,8 @@ function getSectionActions(
             }).url,
         },
         {
-            label: 'Manage Block',
-            icon: Pencil,
+            label: 'Manage Blocks',
+            icon: Layers,
             href: manageBlock({
                 report: props.report.data.id,
                 section: section.id,
@@ -114,10 +115,8 @@ function getSectionActions(
 <template>
     <TableLayout>
         <template #header>
-            <div
-                class="flex items-center justify-between gap-4 py-5"
-            >
-                <div class="flex gap-4">
+            <div class="flex items-center justify-between gap-4 border-b py-5">
+                <div class="flex items-center gap-4">
                     <BackButton />
 
                     <Heading
@@ -141,31 +140,29 @@ function getSectionActions(
                 :data="sections.data"
             >
                 <template #cell-position="{ row }">
-                    <span class="text-sm text-muted-foreground">
-                        {{ row.position + 1 }}
+                    <span class="text-sm tabular-nums text-muted-foreground">
+                        {{ row.position }}
                     </span>
                 </template>
 
                 <template #cell-title="{ row }">
                     <div class="min-w-0">
                         <Link
-                            :href="
-                                show({
-                                    report: props.report.data.id,
-                                    section: row.id,
-                                }).url
-                            "
+                            :href="show({
+                                report: report.data.id,
+                                section: row.id,
+                            }).url"
                             class="block truncate font-medium hover:text-primary"
                         >
                             {{ row.title }}
                         </Link>
 
-                        <div
+                        <p
                             v-if="row.content"
                             class="mt-1 line-clamp-1 text-sm text-muted-foreground"
                         >
                             {{ row.content }}
-                        </div>
+                        </p>
                     </div>
                 </template>
 
@@ -194,19 +191,21 @@ function getSectionActions(
 
             <div
                 v-if="sections.data.length === 0"
-                class="py-12 text-center"
+                class="border-t py-12 text-center"
             >
-                <p class="font-medium">
+                <Layers class="mx-auto size-8 text-muted-foreground" />
+
+                <h3 class="mt-4 font-medium">
                     No sections yet
-                </p>
+                </h3>
 
                 <p class="mt-1 text-sm text-muted-foreground">
-                    Add the first section to start building this report.data.
+                    Add your first section to start building this report.
                 </p>
 
                 <Button
                     as-child
-                    class="mt-4"
+                    class="mt-5"
                 >
                     <Link :href="create(report.data.id).url">
                         <Plus class="mr-2 size-4" />

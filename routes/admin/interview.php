@@ -2,7 +2,6 @@
 
 use App\Http\Controllers\Admin\Interview\AnswerController;
 use App\Http\Controllers\Admin\Interview\InterviewController;
-use App\Http\Controllers\Admin\Interview\ParticipantController;
 use App\Http\Controllers\Admin\Interview\QuestionController;
 use Illuminate\Support\Facades\Route;
 
@@ -54,30 +53,6 @@ Route::prefix('admin/interviews')
                 ->name('destroy')
                 ->middleware('permission:interviews.delete');
         });
-
-        /*
-        |--------------------------------------------------------------------------
-        | Interview Participants
-        |--------------------------------------------------------------------------
-        */
-
-        Route::prefix('{interview}/participants')
-            ->name('participants.')
-            ->controller(ParticipantController::class)
-            ->group(function () {
-
-                Route::get('/', 'index')
-                    ->name('index')
-                    ->middleware('permission:interviews.participants.view');
-
-                Route::post('/', 'store')
-                    ->name('store')
-                    ->middleware('permission:interviews.participants.create');
-
-                Route::delete('/{participant}', 'destroy')
-                    ->name('destroy')
-                    ->middleware('permission:interviews.participants.delete');
-            });
 
         /*
         |--------------------------------------------------------------------------

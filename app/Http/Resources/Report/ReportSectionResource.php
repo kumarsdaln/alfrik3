@@ -11,26 +11,17 @@ class ReportSectionResource extends JsonResource
     {
         return [
             'id' => $this->id,
-
             'report_id' => $this->report_id,
-
             'title' => $this->title,
-
             'subtitle' => $this->subtitle,
-
             'content' => $this->content,
-
             'position' => $this->position,
 
-            'content_blocks' => $this->whenLoaded(
-                'contentBlocks',
-                fn () => ReportContentBlockResource::collection(
-                    $this->contentBlocks
-                ),
+            'blocks' => ReportContentBlockResource::collection(
+                $this->whenLoaded('blocks')
             ),
 
             'created_at' => $this->created_at?->toISOString(),
-
             'updated_at' => $this->updated_at?->toISOString(),
         ];
     }

@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources\Interview;
 
+use App\Http\Resources\ContentParticipant\ParticipantResource;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -14,17 +15,14 @@ class InterviewQuestionResource extends JsonResource
             'question' => $this->question,
             'position' => $this->position,
 
-            'interview' => $this->whenLoaded('interview', fn() => [
+            'interview' => $this->whenLoaded('interview', fn () => [
                 'id' => $this->interview->id,
                 'title' => $this->interview->title,
+                'slug' => $this->interview->slug,
             ]),
 
-            'asked_by' => $this->whenLoaded(
-                'asker',
-                fn () => [
-                    'id' => $this->asker?->id,
-                    'name' => $this->asker?->name,
-                ],
+            'asked_by' => new ParticipantResource(
+                $this->whenLoaded('asker'),
             ),
 
             'answers' => InterviewAnswerResource::collection(

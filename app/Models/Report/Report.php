@@ -4,19 +4,17 @@ namespace App\Models\Report;
 
 use App\Enums\Report\ReportStatus;
 use App\Enums\Report\ReportType;
-use App\Models\Research\Research;
 use App\Traits\HasCategories;
 use App\Traits\HasMedia;
 use App\Traits\HasParticipants;
 use App\Traits\HasSeo;
 use App\Traits\HasTags;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable([
     'title',
@@ -33,7 +31,11 @@ use Illuminate\Database\Eloquent\Builder;
 class Report extends Model
 {
     use HasFactory;
-    use HasCategories, HasTags, HasMedia, HasSeo, HasParticipants;
+    use HasCategories;
+    use HasTags;
+    use HasMedia;
+    use HasSeo;
+    use HasParticipants;
 
     protected function casts(): array
     {
@@ -42,18 +44,30 @@ class Report extends Model
             'status' => ReportStatus::class,
             'featured' => 'boolean',
             'published_at' => 'datetime',
-            'report_date' => 'datetime',
+            'report_date' => 'date',
         ];
     }
 
+    /*
+    |--------------------------------------------------------------------------
+    | Scopes
+    |--------------------------------------------------------------------------
+    */
+
     #[Scope]
-    protected function published(Builder $query)
+    protected function published(Builder $query): void
     {
-        $query->where('status', ReportStatus::Published);
+        $query
+            ->where('status', ReportStatus::Published)
+            ->where(function (Builder $query) {
+                $query
+                    ->whereNull('published_at')
+                    ->orWhere('published_at', '<=', now());
+            });
     }
 
     #[Scope]
-    protected function featured(Builder $query)
+    protected function featured(Builder $query): void
     {
         $query->where('featured', true);
     }
@@ -63,9 +77,13 @@ class Report extends Model
     | Relationships
     |--------------------------------------------------------------------------
     */
+
     public function sections(): HasMany
     {
-        return $this->hasMany(ReportSection::class)
-            ->orderBy('position');
+        return $this->hasMany(
+            ReportSection::class,
+            'report_id',
+            'id',
+        )->orderBy('position');
     }
 }

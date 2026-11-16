@@ -4,6 +4,7 @@ namespace App\Http\Requests\Interview;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 
 class ReorderInterviewQuestionsRequest extends FormRequest
 {
@@ -14,6 +15,8 @@ class ReorderInterviewQuestionsRequest extends FormRequest
 
     public function rules(): array
     {
+        $interview = $this->route('interview');
+
         return [
             'questions' => [
                 'required',
@@ -24,13 +27,16 @@ class ReorderInterviewQuestionsRequest extends FormRequest
             'questions.*.id' => [
                 'required',
                 'integer',
-                'exists:interview_questions,id',
+                'distinct',
+                Rule::exists('interview_questions', 'id')
+                    ->where('interview_id', $interview->id),
             ],
 
             'questions.*.position' => [
                 'required',
                 'integer',
                 'min:0',
+                'distinct',
             ],
         ];
     }

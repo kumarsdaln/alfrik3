@@ -11,22 +11,17 @@ use Illuminate\Validation\Rule;
 
 class StoreInterviewRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
     public function authorize(): bool
     {
         return Auth::check();
     }
 
     /**
-     * Get the validation rules that apply to the request.
-     *
      * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {
-         return [
+        return [
             'title' => [
                 'required',
                 'string',
@@ -45,16 +40,24 @@ class StoreInterviewRequest extends FormRequest
                 'string',
             ],
 
+            'introduction' => [
+                'nullable',
+                'string',
+            ],
+
+            'conclusion' => [
+                'nullable',
+                'string',
+            ],
+
             'interview_type' => [
                 'required',
-                'string',
-                Rule::enum(InterviewType::class)
+                Rule::enum(InterviewType::class),
             ],
 
             'status' => [
                 'required',
-                'string',
-                Rule::enum(InterviewStatus::class)
+                Rule::enum(InterviewStatus::class),
             ],
 
             'published_at' => [

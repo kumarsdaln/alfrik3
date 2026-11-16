@@ -3,18 +3,15 @@
 namespace App\Models\Survey;
 
 use App\Enums\Survey\SurveyStatus;
-use App\Models\Category;
-use App\Models\Media;
 use App\Models\Research\Research;
-use App\Models\SeoMetadata;
-use App\Models\Tag;
+use App\Traits\HasCategories;
+use App\Traits\HasMedia;
+use App\Traits\HasSeo;
+use App\Traits\HasTags;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\MorphMany;
-use Illuminate\Database\Eloquent\Relations\MorphOne;
-use Illuminate\Database\Eloquent\Relations\MorphToMany;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
@@ -35,6 +32,7 @@ use Illuminate\Database\Eloquent\Builder;
 class Survey extends Model
 {
     use HasFactory;
+    use HasCategories, HasTags, HasMedia, HasSeo;
 
 
     protected function casts(): array
@@ -87,34 +85,5 @@ class Survey extends Model
     public function responses(): HasMany
     {
         return $this->hasMany(SurveyResponse::class);
-    }
-
-    public function media(): MorphMany
-    {
-        return $this->morphMany(Media::class, 'mediable');
-    }
-
-    public function categories(): MorphToMany
-    {
-        return $this->morphToMany(
-            Category::class,
-            'categorizable'
-        );
-    }
-
-    public function tags(): MorphToMany
-    {
-        return $this->morphToMany(
-            Tag::class,
-            'taggable'
-        );
-    }
-
-    public function seo(): MorphOne
-    {
-        return $this->morphOne(
-            SeoMetadata::class,
-            'seoable'
-        );
     }
 }

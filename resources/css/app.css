@@ -1,182 +1,583 @@
-@import 'tailwindcss';
 
-@import 'tw-animate-css';
+/* =========================================================
+   ALFRIK — DESIGN SYSTEM
+   Tailwind CSS v4
+   ========================================================= */
 
-@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
-@source '../../storage/framework/views/*.php';
+/* 1. Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap');
 
-@custom-variant dark (&:is(.dark *));
+@import "tailwindcss";
 
-@theme inline {
-    --font-sans:
-        Instrument Sans, ui-sans-serif, system-ui, sans-serif,
-        'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
-        'Noto Color Emoji';
-
-    --radius-lg: var(--radius);
-    --radius-md: calc(var(--radius) - 2px);
-    --radius-sm: calc(var(--radius) - 4px);
-    
-    --color-brand: var(--brand);
-    --color-background: var(--background);
-    --color-foreground: var(--foreground);
-
-    --color-surface: var(--background);
-    --color-surface-light: var(--background);
-    --color-surface-dark: var(--background);
-
-    --color-content: var(--foreground);
-    --color-content-light: var(--foreground);
-    --color-content-dark: var(--foreground);
-
-    --color-card: var(--card);
-    --color-card-foreground: var(--card-foreground);
-
-    --color-popover: var(--popover);
-    --color-popover-foreground: var(--popover-foreground);
-
-    --color-primary: var(--primary);
-    --color-primary-foreground: var(--primary-foreground);
-
-    --color-secondary: var(--secondary);
-    --color-secondary-foreground: var(--secondary-foreground);
-
-    --color-muted: var(--muted);
-    --color-muted-foreground: var(--muted-foreground);
-
-    --color-accent: var(--accent);
-    --color-accent-foreground: var(--accent-foreground);
-
-    --color-destructive: var(--destructive);
-    --color-destructive-foreground: var(--destructive-foreground);
-
-    --color-border: var(--border);
-    --color-input: var(--input);
-    --color-ring: var(--ring);
-
-    --color-chart-1: var(--chart-1);
-    --color-chart-2: var(--chart-2);
-    --color-chart-3: var(--chart-3);
-    --color-chart-4: var(--chart-4);
-    --color-chart-5: var(--chart-5);
-
-    --color-sidebar: var(--sidebar-background);
-    --color-sidebar-foreground: var(--sidebar-foreground);
-    --color-sidebar-primary: var(--sidebar-primary);
-    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-    --color-sidebar-accent: var(--sidebar-accent);
-    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-    --color-sidebar-border: var(--sidebar-border);
-    --color-sidebar-ring: var(--sidebar-ring);
-}
-
-/*
-  The default border color has changed to `currentColor` in Tailwind CSS v4,
-  so we've added these compatibility styles to make sure everything still
-  looks the same as it did with Tailwind CSS v3.
-
-  If we ever want to remove these styles, we need to add an explicit border
-  color utility to any element that depends on these defaults.
-*/
-@layer base {
-    *,
-    ::after,
-    ::before,
-    ::backdrop,
-    ::file-selector-button {
-        border-color: var(--color-gray-200, currentColor);
-    }
-}
-
-@layer utilities {
-    body,
-    html {
-        --font-sans:
-            'Instrument Sans', ui-sans-serif, system-ui, sans-serif,
-            'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
-            'Noto Color Emoji';
-    }
-}
+/* =========================================================
+   2. LIGHT THEME
+   ========================================================= */
 
 :root {
-    --brand: hsl(331.07deg 100% 43.92%);
-    --background: hsl(0 0% 100%);
-    --foreground: hsl(0 0% 3.9%);
-    --card: hsl(0 0% 100%);
-    --card-foreground: hsl(0 0% 3.9%);
-    --popover: hsl(0 0% 100%);
-    --popover-foreground: hsl(0 0% 3.9%);
-    --primary: hsl(0 0% 9%);
-    --primary-foreground: hsl(0 0% 98%);
-    --secondary: hsl(0 0% 92.1%);
-    --secondary-foreground: hsl(0 0% 9%);
-    --muted: hsl(0 0% 96.1%);
-    --muted-foreground: hsl(0 0% 45.1%);
-    --accent: hsl(0 0% 96.1%);
-    --accent-foreground: hsl(0 0% 9%);
-    --destructive: hsl(0 84.2% 60.2%);
-    --destructive-foreground: hsl(0 0% 98%);
-    --border: hsl(0 0% 92.8%);
-    --input: hsl(0 0% 89.8%);
-    --ring: hsl(0 0% 3.9%);
-    --chart-1: hsl(12 76% 61%);
-    --chart-2: hsl(173 58% 39%);
-    --chart-3: hsl(197 37% 24%);
-    --chart-4: hsl(43 74% 66%);
-    --chart-5: hsl(27 87% 67%);
-    --radius: 0.5rem;
-    --sidebar-background: hsl(0 0% 98%);
-    --sidebar-foreground: hsl(240 5.3% 26.1%);
-    --sidebar-primary: hsl(0 0% 10%);
-    --sidebar-primary-foreground: hsl(0 0% 98%);
-    --sidebar-accent: hsl(0 0% 94%);
-    --sidebar-accent-foreground: hsl(0 0% 30%);
-    --sidebar-border: hsl(0 0% 91%);
-    --sidebar-ring: hsl(217.2 91.2% 59.8%);
-    --sidebar: hsl(0 0% 98%);
+  color-scheme: light;
+
+  /* Brand */
+  --brand: #92264f;
+  --brand-deep: #70203f;
+  --brand-light: #b94d75;
+  --brand-soft: #f5e9ed;
+  --brand-foreground: #ffffff;
+
+  --berry: #92264f;
+  --berry-soft: #f5e9ed;
+
+  --gold: #9a794a;
+  --gold-soft: #f4efe6;
+
+  /* Typography */
+  --font-body: "DM Sans", sans-serif;
+  --font-heading: "Playfair Display", Georgia, serif;
+  --font-editorial: "Cormorant Garamond", Georgia, serif;
+
+  /* Base */
+  --background: #f8f5f0;
+  --foreground: #292522;
+
+  /* Surfaces */
+  --surface: #ffffff;
+  --surface-light: #fdfbf8;
+  --surface-dark: #efeae4;
+  --surface-raised: #ffffff;
+  --surface-sunken: #f1ede7;
+
+  /* Content */
+  --content: #292522;
+  --content-light: #77716e;
+  --content-dark: #211e1c;
+  --content-inverse: #ffffff;
+
+  /* Card */
+  --card: #ffffff;
+  --card-foreground: #292522;
+
+  /* Popover */
+  --popover: #ffffff;
+  --popover-foreground: #292522;
+
+  /* Primary */
+  --primary: #92264f;
+  --primary-foreground: #ffffff;
+
+  /* Secondary */
+  --secondary: #efeae4;
+  --secondary-foreground: #292522;
+
+  /* Muted */
+  --muted: #f1ede7;
+  --muted-foreground: #77716e;
+
+  /* Accent */
+  --accent: #f5e9ed;
+  --accent-foreground: #70203f;
+
+  /* Status */
+  --success: #52745b;
+  --success-foreground: #ffffff;
+
+  --warning: #a47732;
+  --warning-foreground: #ffffff;
+
+  --destructive: #b34242;
+  --destructive-foreground: #ffffff;
+
+  --info: #52758a;
+  --info-foreground: #ffffff;
+
+  /* Borders and controls */
+  --border: #e9e3dd;
+  --input: #dcd4cc;
+  --ring: #92264f;
+
+  /* Radius */
+  --radius: 0.625rem;
+
+  /* Charts */
+  --chart-1: #92264f;
+  --chart-2: #52758a;
+  --chart-3: #9a794a;
+  --chart-4: #71816b;
+  --chart-5: #91758b;
+
+  /* Sidebar */
+  --sidebar: #fdfbf8;
+  --sidebar-foreground: #292522;
+  --sidebar-primary: #92264f;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #f5e9ed;
+  --sidebar-accent-foreground: #70203f;
+  --sidebar-border: #e9e3dd;
+  --sidebar-ring: #92264f;
+
+  /* Typography scale */
+  --text-display: 4.5rem;
+  --text-h1: 3rem;
+  --text-h2: 2.25rem;
+  --text-h3: 1.625rem;
+  --text-h4: 1.25rem;
+  --text-body: 1rem;
+  --text-small: 0.875rem;
+  --text-caption: 0.75rem;
+
+  --leading-heading: 1.15;
+  --leading-body: 1.75;
+
+  --tracking-heading: -0.035em;
+  --tracking-body: 0;
+  --tracking-label: 0.09em;
 }
+
+/* =========================================================
+   3. DARK THEME
+   ========================================================= */
 
 .dark {
-    --background: hsl(0 0% 3.9%);
-    --foreground: hsl(0 0% 98%);
-    --card: hsl(0 0% 3.9%);
-    --card-foreground: hsl(0 0% 98%);
-    --popover: hsl(0 0% 3.9%);
-    --popover-foreground: hsl(0 0% 98%);
-    --primary: hsl(0 0% 98%);
-    --primary-foreground: hsl(0 0% 9%);
-    --secondary: hsl(0 0% 14.9%);
-    --secondary-foreground: hsl(0 0% 98%);
-    --muted: hsl(0 0% 16.08%);
-    --muted-foreground: hsl(0 0% 63.9%);
-    --accent: hsl(0 0% 14.9%);
-    --accent-foreground: hsl(0 0% 98%);
-    --destructive: hsl(0 84% 60%);
-    --destructive-foreground: hsl(0 0% 98%);
-    --border: hsl(0 0% 14.9%);
-    --input: hsl(0 0% 14.9%);
-    --ring: hsl(0 0% 83.1%);
-    --chart-1: hsl(220 70% 50%);
-    --chart-2: hsl(160 60% 45%);
-    --chart-3: hsl(30 80% 55%);
-    --chart-4: hsl(280 65% 60%);
-    --chart-5: hsl(340 75% 55%);
-    --sidebar-background: hsl(0 0% 7%);
-    --sidebar-foreground: hsl(0 0% 95.9%);
-    --sidebar-primary: hsl(360, 100%, 100%);
-    --sidebar-primary-foreground: hsl(0 0% 100%);
-    --sidebar-accent: hsl(0 0% 15.9%);
-    --sidebar-accent-foreground: hsl(240 4.8% 95.9%);
-    --sidebar-border: hsl(0 0% 15.9%);
-    --sidebar-ring: hsl(217.2 91.2% 59.8%);
-    --sidebar: hsl(240 5.9% 10%);
+  color-scheme: dark;
+
+  /* Brand */
+  --brand: #d17a9a;
+  --brand-deep: #e6a3bb;
+  --brand-light: #e6a3bb;
+  --brand-soft: #402631;
+  --brand-foreground: #21191d;
+
+  --berry: #d17a9a;
+  --berry-soft: #402631;
+
+  --gold: #c5a575;
+  --gold-soft: #383126;
+
+  /* Base */
+  --background: #1d1a19;
+  --foreground: #f2ede7;
+
+  /* Surfaces */
+  --surface: #262220;
+  --surface-light: #302b28;
+  --surface-dark: #191615;
+  --surface-raised: #332d2a;
+  --surface-sunken: #211e1c;
+
+  /* Content */
+  --content: #f2ede7;
+  --content-light: #b3aaa1;
+  --content-dark: #ffffff;
+  --content-inverse: #211e1c;
+
+  /* Card */
+  --card: #262220;
+  --card-foreground: #f2ede7;
+
+  /* Popover */
+  --popover: #302b28;
+  --popover-foreground: #f2ede7;
+
+  /* Primary */
+  --primary: #d17a9a;
+  --primary-foreground: #21191d;
+
+  /* Secondary */
+  --secondary: #39322e;
+  --secondary-foreground: #f2ede7;
+
+  /* Muted */
+  --muted: #302b28;
+  --muted-foreground: #b3aaa1;
+
+  /* Accent */
+  --accent: #402631;
+  --accent-foreground: #e6a3bb;
+
+  /* Status */
+  --success: #83a88a;
+  --success-foreground: #17231a;
+
+  --warning: #d4aa68;
+  --warning-foreground: #292016;
+
+  --destructive: #e17c7c;
+  --destructive-foreground: #2a1717;
+
+  --info: #85a9c0;
+  --info-foreground: #17232b;
+
+  /* Borders and controls */
+  --border: #443b36;
+  --input: #51463f;
+  --ring: #d17a9a;
+
+  /* Charts */
+  --chart-1: #d17a9a;
+  --chart-2: #85a9c0;
+  --chart-3: #c5a575;
+  --chart-4: #91a68a;
+  --chart-5: #b99ab5;
+
+  /* Sidebar */
+  --sidebar: #211e1c;
+  --sidebar-foreground: #f2ede7;
+  --sidebar-primary: #d17a9a;
+  --sidebar-primary-foreground: #21191d;
+  --sidebar-accent: #402631;
+  --sidebar-accent-foreground: #e6a3bb;
+  --sidebar-border: #443b36;
+  --sidebar-ring: #d17a9a;
 }
 
+/* =========================================================
+   4. TAILWIND THEME MAPPING
+   ========================================================= */
+
+@theme inline {
+  /* Fonts */
+  --font-sans: var(--font-body);
+  --font-serif: var(--font-heading);
+  --font-editorial: var(--font-editorial);
+
+  /* Brand */
+  --color-brand: var(--brand);
+  --color-brand-deep: var(--brand-deep);
+  --color-brand-light: var(--brand-light);
+  --color-brand-soft: var(--brand-soft);
+  --color-brand-foreground: var(--brand-foreground);
+
+  --color-berry: var(--berry);
+  --color-berry-soft: var(--berry-soft);
+
+  --color-gold: var(--gold);
+  --color-gold-soft: var(--gold-soft);
+
+  /* Base */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  /* Surfaces */
+  --color-surface: var(--surface);
+  --color-surface-light: var(--surface-light);
+  --color-surface-dark: var(--surface-dark);
+  --color-surface-raised: var(--surface-raised);
+  --color-surface-sunken: var(--surface-sunken);
+
+  /* Content */
+  --color-content: var(--content);
+  --color-content-light: var(--content-light);
+  --color-content-dark: var(--content-dark);
+  --color-content-inverse: var(--content-inverse);
+
+  /* Standard semantic tokens */
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+
+  /* Status */
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+
+  /* Controls */
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* Charts */
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  /* Sidebar */
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /* Radius */
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+/* =========================================================
+   5. BASE STYLES
+   ========================================================= */
+
 @layer base {
-    * {
-        @apply border-border outline-ring/50;
-    }
-    body {
-        @apply bg-background text-foreground;
-    }
+  *,
+  *::before,
+  *::after {
+    @apply border-border;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 6rem;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: var(--font-body);
+    font-size: var(--text-body);
+    line-height: var(--leading-body);
+    font-feature-settings: "kern" 1, "liga" 1;
+    text-rendering: optimizeLegibility;
+  }
+
+  button,
+  input,
+  textarea,
+  select {
+    font: inherit;
+  }
+
+  button {
+    cursor: pointer;
+  }
+
+  button:disabled {
+    cursor: not-allowed;
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  img,
+  video,
+  svg {
+    display: block;
+    max-width: 100%;
+  }
+
+  img {
+    height: auto;
+  }
+
+  ::selection {
+    color: var(--primary-foreground);
+    background: var(--primary);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 3px;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-heading);
+    font-weight: 500;
+    line-height: var(--leading-heading);
+    letter-spacing: var(--tracking-heading);
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  strong,
+  b {
+    font-weight: 700;
+  }
+
+  hr {
+    border-color: var(--border);
+  }
+}
+
+/* =========================================================
+   6. TYPOGRAPHY UTILITIES
+   ========================================================= */
+
+@layer utilities {
+  .font-editorial {
+    font-family: var(--font-editorial);
+  }
+
+  .font-heading {
+    font-family: var(--font-heading);
+  }
+
+  .font-body {
+    font-family: var(--font-body);
+  }
+
+  .text-display {
+    font-family: var(--font-heading);
+    font-size: clamp(3rem, 7vw, var(--text-display));
+    font-weight: 500;
+    line-height: 1.04;
+    letter-spacing: -0.045em;
+  }
+
+  .text-editorial {
+    font-family: var(--font-editorial);
+    font-weight: 500;
+    line-height: 1.05;
+  }
+
+  .text-heading-1 {
+    font-family: var(--font-heading);
+    font-size: clamp(2.25rem, 5vw, var(--text-h1));
+    font-weight: 500;
+    line-height: 1.12;
+    letter-spacing: -0.04em;
+  }
+
+  .text-heading-2 {
+    font-family: var(--font-heading);
+    font-size: clamp(1.875rem, 4vw, var(--text-h2));
+    font-weight: 500;
+    line-height: 1.15;
+    letter-spacing: -0.035em;
+  }
+
+  .text-heading-3 {
+    font-family: var(--font-heading);
+    font-size: var(--text-h3);
+    font-weight: 500;
+    line-height: 1.25;
+    letter-spacing: -0.025em;
+  }
+
+  .eyebrow {
+    font-family: var(--font-body);
+    font-size: var(--text-caption);
+    font-weight: 700;
+    letter-spacing: var(--tracking-label);
+    line-height: 1.5;
+    text-transform: uppercase;
+  }
+
+  .reading-text {
+    max-width: 72ch;
+    font-size: 1rem;
+    line-height: 1.85;
+  }
+
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .text-pretty {
+    text-wrap: pretty;
+  }
+
+  .tracking-editorial {
+    letter-spacing: 0.12em;
+  }
+
+  /* Brand surfaces */
+  .surface-card {
+    background: var(--card);
+    color: var(--card-foreground);
+    border: 1px solid var(--border);
+  }
+
+  .surface-raised {
+    background: var(--surface-raised);
+    color: var(--content);
+  }
+
+  .surface-sunken {
+    background: var(--surface-sunken);
+    color: var(--content);
+  }
+
+  /* Editorial details */
+  .editorial-rule {
+    height: 1px;
+    background: var(--border);
+  }
+
+  .editorial-link {
+    text-decoration: underline;
+    text-decoration-color: var(--brand);
+    text-underline-offset: 4px;
+    transition: color 160ms ease;
+  }
+
+  .editorial-link:hover {
+    color: var(--brand);
+  }
+}
+
+/* =========================================================
+   7. REDUCED MOTION
+   ========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* =========================================================
+   8. RESPONSIVE TYPOGRAPHY
+   ========================================================= */
+
+@media (max-width: 640px) {
+  :root {
+    --text-display: 3rem;
+    --text-h1: 2.25rem;
+    --text-h2: 1.875rem;
+    --text-h3: 1.375rem;
+  }
+}
+
+
+@keyframes progress-indeterminate {
+  from {
+    transform: translateX(-100%);
+  }
+
+  to {
+    transform: translateX(300%);
+  }
+}
+
+@theme {
+  --animate-progress-indeterminate: progress-indeterminate 1.5s ease-in-out infinite;
 }

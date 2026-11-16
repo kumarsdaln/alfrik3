@@ -18,6 +18,9 @@ export interface ParticipantRole {
 
 /**
  * Supported content types for participant assignments.
+ *
+ * These values should match the morph-map aliases
+ * configured by the backend.
  */
 export type ParticipantableType =
     | 'research'
@@ -31,7 +34,7 @@ export type ParticipantableType =
  * Participant assignment connecting a user and a role
  * to a specific content record.
  */
-export interface ContentParticipant {
+export interface Participant {
     id: number
     user_id: number
     participant_role_id: number
@@ -88,7 +91,7 @@ export interface ParticipantRoleFormData {
 /**
  * Data submitted when assigning a participant to content.
  */
-export interface ContentParticipantFormData {
+export interface ParticipantFormData {
     user_id: number
     participant_role_id: number
     position: number
@@ -99,9 +102,9 @@ export interface ContentParticipantFormData {
 /**
  * Props for managing participants on a content detail page.
  */
-export interface ContentParticipantsProps {
+export interface ParticipantsProps {
     type: ParticipantableType
     contentId: number
-    participants: ContentParticipant[]
+    participants: Participant[]
     availableRoles: ParticipantRole[]
 }

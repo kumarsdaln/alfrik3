@@ -2,7 +2,8 @@
 
 namespace App\Http\Requests\Interview;
 
-use App\Enums\Interview\InterviewParticipantRole;
+use App\Models\Interview\Interview;
+use App\Models\ParticipantRole;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
@@ -20,6 +21,9 @@ class StoreInterviewQuestionRequest extends FormRequest
      */
     public function rules(): array
     {
+        /** @var Interview $interview */
+        $interview = $this->route('interview');
+
         return [
             'question' => [
                 'required',
@@ -31,14 +35,18 @@ class StoreInterviewQuestionRequest extends FormRequest
                 'integer',
                 'min:0',
             ],
+
             'asked_by' => [
                 'nullable',
                 'integer',
-                Rule::exists('interview_participants', 'user_id')
-                    ->where(
-                        fn($query) => $query
-                            ->where('interview_id', $this->route('interview')->id)
-                            ->where('role', InterviewParticipantRole::Interviewer->value)
+                Rule::exists('content_participants', 'id')
+                    ->where('participantable_type', $interview->getMorphClass())
+                    ->where('participantable_id', $interview->id)
+                    ->whereIn(
+                        'participant_role_id',
+                        ParticipantRole::query()
+                            ->where('slug', 'interviewer')
+                            ->select('id'),
                     ),
             ],
         ];

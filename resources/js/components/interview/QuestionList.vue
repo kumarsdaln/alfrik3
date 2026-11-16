@@ -34,22 +34,17 @@ const reorderQuestions = (oldIndex: number, newIndex: number) => {
     if (oldIndex === newIndex) {
         return
     }
-
     const [question] = questionList.value.splice(oldIndex, 1)
-
     if (!question) {
         return
     }
-
     questionList.value.splice(newIndex, 0, question)
-
     const questions = questionList.value.map(
         (question, position) => ({
             id: question.id,
             position,
         })
     )
-
     router.put(
         questionReorder(props.interviewId).url,
         {
@@ -68,15 +63,10 @@ onMounted(() => {
 
     sortable = Sortable.create(listElement.value, {
         animation: 150,
-
         handle: '.question-drag-handle',
-
         ghostClass: 'opacity-50',
-
         chosenClass: 'bg-muted/50',
-
         dragClass: 'shadow-lg',
-
         onEnd: (event) => {
             if (
                 event.oldIndex === undefined ||
@@ -84,7 +74,6 @@ onMounted(() => {
             ) {
                 return
             }
-
             reorderQuestions(
                 event.oldIndex,
                 event.newIndex
@@ -103,10 +92,6 @@ onBeforeUnmount(() => {
     <div class="border bg-card">
         <!-- Header -->
         <div class="border-b p-5 sm:p-6">
-            <h2 class="text-lg font-semibold">
-                Interview Questions
-            </h2>
-
             <p class="mt-1 text-sm text-muted-foreground">
                 {{ questionList.length }}
                 {{
@@ -128,6 +113,7 @@ onBeforeUnmount(() => {
                 :key="question.id"
             >
                 <QuestionItem
+                    :interview-id="interviewId"
                     :question="question"
                     :index="index"
                     @edit="emit('edit', $event)"

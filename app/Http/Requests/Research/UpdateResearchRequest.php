@@ -61,12 +61,6 @@ class UpdateResearchRequest extends FormRequest
                 new Enum(ResearchStatus::class),
             ],
 
-            'author_id' => [
-                'nullable',
-                'integer',
-                'exists:users,id',
-            ],
-
             'featured' => [
                 'required',
                 'boolean',

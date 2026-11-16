@@ -59,12 +59,6 @@ class StoreResearchRequest extends FormRequest
                 new Enum(ResearchResearchStatus::class),
             ],
 
-            'author_id' => [
-                'nullable',
-                'integer',
-                'exists:users,id',
-            ],
-
             'featured' => [
                 'required',
                 'boolean',

@@ -62,12 +62,6 @@ class StoreReportRequest extends FormRequest
                 Rule::enum(ReportStatus::class),
             ],
 
-            'author_id' => [
-                'nullable',
-                'integer',
-                'exists:users,id',
-            ],
-
             'featured' => [
                 'boolean',
             ],

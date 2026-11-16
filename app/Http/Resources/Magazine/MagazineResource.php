@@ -3,6 +3,7 @@
 namespace App\Http\Resources\Magazine;
 
 use App\Http\Resources\CategoryResource;
+use App\Http\Resources\ContentParticipant\ParticipantResource;
 use App\Http\Resources\MediaResource;
 use App\Http\Resources\TagResource;
 use Illuminate\Http\Request;
@@ -29,14 +30,9 @@ class MagazineResource extends JsonResource
 
             'published_at' => $this->published_at,
 
-            'author' => $this->whenLoaded('author', function () {
-                return [
-                    'id' => $this->author->id,
-                    'name' => $this->author->name,
-                    'username' => $this->author->username,
-                    'avatar' => $this->author->avatar,
-                ];
-            }),
+            'participants' => ParticipantResource::collection(
+                $this->whenLoaded('participants')
+            ),
 
             'media' => MediaResource::collection(
                 $this->whenLoaded('media')

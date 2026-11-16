@@ -1,3 +1,4 @@
+
 <script setup lang="ts">
 import { useId } from 'vue'
 
@@ -28,7 +29,6 @@ const props = withDefaults(
 const model = defineModel<string | number>()
 
 const generatedId = useId()
-
 const inputId = props.id ?? generatedId
 </script>
 
@@ -44,5 +44,14 @@ const inputId = props.id ?? generatedId
         :required="props.required"
         :autocomplete="props.autocomplete"
         :aria-invalid="props.error || undefined"
+        :class="[
+            'bg-background text-foreground font-sans',
+            'placeholder:text-muted-foreground',
+            'border-border',
+            'focus-visible:border-primary',
+            'focus-visible:ring-primary/10',
+            'disabled:bg-muted',
+            'aria-invalid:border-destructive',
+        ]"
     />
 </template>

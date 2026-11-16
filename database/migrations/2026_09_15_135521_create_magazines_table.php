@@ -11,42 +11,22 @@ return new class extends Migration
         Schema::create('magazines', function (Blueprint $table) {
             $table->id();
 
-            /*
-            |--------------------------------------------------------------------------
-            | Basic Information
-            |--------------------------------------------------------------------------
-            */
-
+            // Identity
             $table->string('title');
             $table->string('slug')->unique();
-            $table->text('subtitle')->nullable();
-
-            /*
-            |--------------------------------------------------------------------------
-            | Description
-            |--------------------------------------------------------------------------
-            */
-
+            $table->string('subtitle')->nullable();
             $table->longText('description')->nullable();
 
-            /*
-            |--------------------------------------------------------------------------
-            | Publishing
-            |--------------------------------------------------------------------------
-            */
-            $table->string('status', 30)->default('draft')->index();
-            $table->boolean('featured')->default(false)->index();
-            $table->timestamp('published_at')->nullable()->index();
+            // Publishing
+            $table->string('status', 30)->default('draft');
+            $table->boolean('featured')->default(false);
+            $table->timestamp('published_at')->nullable();
 
             $table->timestamps();
 
-            /*
-            |--------------------------------------------------------------------------
-            | Indexes
-            |--------------------------------------------------------------------------
-            */
-
+            // Listing and publication queries
             $table->index(['status', 'published_at']);
+            $table->index(['featured', 'status']);
         });
     }
 

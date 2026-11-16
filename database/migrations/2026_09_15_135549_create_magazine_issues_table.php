@@ -11,83 +11,49 @@ return new class extends Migration
         Schema::create('magazine_issues', function (Blueprint $table) {
             $table->id();
 
-            /*
-            |--------------------------------------------------------------------------
-            | Relationship
-            |--------------------------------------------------------------------------
-            */
-
+            // Parent publication
             $table->foreignId('magazine_id')
                 ->constrained('magazines')
                 ->cascadeOnDelete();
 
-            /*
-            |--------------------------------------------------------------------------
-            | Identity
-            |--------------------------------------------------------------------------
-            */
-
+            // Identity
             $table->string('title');
-            $table->string('slug')->unique();
+            $table->string('slug');
             $table->string('subtitle')->nullable();
+            $table->text('description')->nullable();
 
-            /*
-            |--------------------------------------------------------------------------
-            | Issue Information
-            |--------------------------------------------------------------------------
-            */
-
+            // Edition information
             $table->unsignedInteger('volume')->nullable();
             $table->unsignedInteger('issue_number')->nullable();
-
             $table->date('cover_date')->nullable();
+
+            // Publishing
+            $table->string('status', 30)->default('draft');
+            $table->boolean('featured')->default(false);
             $table->timestamp('published_at')->nullable();
-
-            /*
-            |--------------------------------------------------------------------------
-            | Editorial
-            |--------------------------------------------------------------------------
-            */
-
-            $table->text('description')->nullable();
-            $table->string('editor')->nullable();
-
-            /*
-            |--------------------------------------------------------------------------
-            | Digital Edition
-            |--------------------------------------------------------------------------
-            */
-
-            $table->string('file_path')->nullable();
-            $table->unsignedBigInteger('file_size')->nullable();
-            $table->string('file_type', 20)->nullable();
-
-            $table->unsignedBigInteger('download_count')->default(0);
-
-            /*
-            |--------------------------------------------------------------------------
-            | Publishing
-            |--------------------------------------------------------------------------
-            */
-
-            $table->string('status', 30)->default('draft')->index();
-            $table->boolean('featured')->default(false)->index();
 
             $table->timestamps();
 
-            /*
-            |--------------------------------------------------------------------------
-            | Indexes
-            |--------------------------------------------------------------------------
-            */
+            // A slug is unique within its magazine
+            $table->unique(
+                ['magazine_id', 'slug'],
+                'magazine_issues_magazine_slug_unique'
+            );
 
+            // A numbered edition should not be duplicated
+            $table->unique(
+                ['magazine_id', 'volume', 'issue_number'],
+                'magazine_issues_edition_unique'
+            );
+
+            // Magazine archive
             $table->index(['magazine_id', 'published_at']);
-            $table->index([
-                'magazine_id',
-                'volume',
-                'issue_number',
-            ]);
+
+            // Public listing
             $table->index(['status', 'published_at']);
+
+            // Featured issue listings
+            $table->index(['featured', 'status']);
         });
     }
 

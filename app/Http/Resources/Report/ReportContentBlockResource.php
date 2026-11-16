@@ -11,24 +11,13 @@ class ReportContentBlockResource extends JsonResource
     {
         return [
             'id' => $this->id,
-
             'report_section_id' => $this->report_section_id,
-
-            'type' => [
-                'value' => $this->type->value,
-                'label' => $this->type->label(),
-            ],
-
+            'type' => $this->type->option(),
             'title' => $this->title,
-
             'description' => $this->description,
-
             'content' => $this->content,
-
             'position' => $this->position,
-
             'created_at' => $this->created_at?->toISOString(),
-
             'updated_at' => $this->updated_at?->toISOString(),
         ];
     }

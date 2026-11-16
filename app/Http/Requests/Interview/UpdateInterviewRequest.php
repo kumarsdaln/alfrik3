@@ -11,17 +11,12 @@ use Illuminate\Validation\Rule;
 
 class UpdateInterviewRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
     public function authorize(): bool
     {
         return Auth::check();
     }
 
     /**
-     * Get the validation rules that apply to the request.
-     *
      * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function rules(): array
@@ -38,7 +33,7 @@ class UpdateInterviewRequest extends FormRequest
                 'string',
                 'max:255',
                 Rule::unique('interviews', 'slug')
-                    ->ignore($this->route('interview')->id),
+                    ->ignore($this->route('interview')),
             ],
 
             'description' => [
@@ -46,15 +41,23 @@ class UpdateInterviewRequest extends FormRequest
                 'string',
             ],
 
+            'introduction' => [
+                'nullable',
+                'string',
+            ],
+
+            'conclusion' => [
+                'nullable',
+                'string',
+            ],
+
             'interview_type' => [
                 'required',
-                'string',
                 Rule::enum(InterviewType::class),
             ],
 
             'status' => [
                 'required',
-                'string',
                 Rule::enum(InterviewStatus::class),
             ],
 

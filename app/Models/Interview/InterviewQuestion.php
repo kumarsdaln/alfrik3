@@ -2,13 +2,12 @@
 
 namespace App\Models\Interview;
 
-use App\Models\User;
+use App\Models\ContentParticipant;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-
 
 #[Fillable([
     'interview_id',
@@ -29,21 +28,17 @@ class InterviewQuestion extends Model
 
     public function interview(): BelongsTo
     {
-        return $this->belongsTo(
-            Interview::class,
-        );
+        return $this->belongsTo(Interview::class);
     }
 
     public function asker(): BelongsTo
     {
-        return $this->belongsTo(
-            User::class,
-            'asked_by',
-        );
+        return $this->belongsTo(ContentParticipant::class, 'asked_by');
     }
 
     public function answers(): HasMany
     {
-        return $this->hasMany(InterviewAnswer::class, 'question_id');
+        return $this->hasMany(InterviewAnswer::class, 'question_id')
+            ->orderBy('position');
     }
 }

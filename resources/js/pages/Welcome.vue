@@ -1,42 +1,43 @@
 <script setup lang="ts">
-import { Head, Link } from '@inertiajs/vue3'
-import {
-    ArrowRight,
-    CalendarDays,
-    ChevronRight,
-    MapPin,
-} from '@lucide/vue'
+    import { Head, Link } from '@inertiajs/vue3'
+    import {
+        ArrowRight,
+        CalendarDays,
+        ChevronRight,
+        MapPin,
+    } from '@lucide/vue'
 
-import AppContainer from '@/components/ui/AppContainer.vue'
-import AppHeading from '@/components/ui/AppHeading.vue'
-import AppText from '@/components/ui/AppText.vue'
-import AppBadge from '@/components/ui/AppBadge.vue'
+    import Container from '@/components/ui/Container.vue'
+    import AppHeading from '@/components/ui/AppHeading.vue'
+    import AppText from '@/components/ui/AppText.vue'
+    import AppBadge from '@/components/ui/AppBadge.vue'
 
-import ResearchCard from '@/components/research/ResearchCard.vue'
+    import ResearchCard from '@/components/research/ResearchCard.vue'
 
-import { show as researchShow } from '@/routes/research'
-import { Button } from '@/components/ui/button'
-import { Category, Interview, Magazine, Report, Research, Survey } from '@/types'
+    import { show as researchShow } from '@/routes/research'
+    import { Button } from '@/components/ui/button'
+    import { Category, Interview, Magazine, Report, Research, Survey } from '@/types'
+import Badge from '@/components/ui/badge/Badge.vue'
 
-interface Props {
-    featured: Research | Report | null
-    research: Research[]
-    reports: Report[]
-    surveys: Survey[]
-    magazines: Magazine[]
-    interviews: Interview[]
-    categories: Category[]
-}
-
-const props = defineProps<Props>()
-
-const featuredUrl = () => {
-    if (!props.featured) {
-        return '#'
+    interface Props {
+        featured: Research | Report | null
+        research: Research[]
+        reports: Report[]
+        surveys: Survey[]
+        magazines: Magazine[]
+        interviews: Interview[]
+        categories: Category[]
     }
 
-    return `/research/${props.featured.slug}`
-}
+    const props = defineProps<Props>()
+
+    const featuredUrl = () => {
+        if (!props.featured) {
+            return '#'
+        }
+
+        return `/research/${props.featured.slug}`
+    }
 </script>
 
 <template>
@@ -50,14 +51,12 @@ const featuredUrl = () => {
     | Hero
     |--------------------------------------------------------------------------
     -->
-
     <section class="
             border-b
             border-border-light
             dark:border-border-dark
         ">
-        <AppContainer>
-            <div class="
+        <div class="
                     grid
                     min-h-[560px]
                     items-end
@@ -66,48 +65,34 @@ const featuredUrl = () => {
                     lg:grid-cols-[1.2fr_0.8fr]
                     lg:py-28
                 ">
-                <div>
-                    <AppText tag="p" font="redhat" size="xs" weight="bold" tracking="wide" uppercase color="brand"
-                        class="mb-6">
-                        Research · Ideas · Conversations
-                    </AppText>
+            <div>
+                <AppText tag="p" font="redhat" size="xs" weight="bold" tracking="wide" uppercase color="brand"
+                    class="mb-6">
+                    Research · Ideas · Conversations
+                </AppText>
 
-                    <AppHeading tag="h1" font="prata" size="6xl" weight="normal" leading="tight" class="max-w-4xl">
-                        Understanding the world through
-                        <span class="text-brand"> research and ideas.</span>
-                    </AppHeading>
+                <AppHeading tag="h1" font="prata" size="hero" weight="normal" leading="tight" class="max-w-4xl">
+                    Understanding the world through
+                    <span class="text-brand"> research and ideas.</span>
+                </AppHeading>
 
-                    <AppText tag="p" font="lora" size="lg" color="muted" leading="relaxed" class="mt-8 max-w-2xl">
-                        Alfrik brings together research, evidence,
-                        conversations and public knowledge to make complex
-                        questions easier to understand.
-                    </AppText>
+                <AppText tag="p" font="lora" size="lg" color="muted" leading="relaxed" class="mt-8 max-w-2xl">
+                    Alfrik brings together research, evidence,
+                    conversations and public knowledge to make complex
+                    questions easier to understand.
+                </AppText>
 
-                    <div class="mt-9 flex flex-wrap items-center gap-6">
-                        <Link href="/research" class="
-                                inline-flex
-                                items-center
-                                gap-2
-                                bg-content-light
-                                px-6
-                                py-3
-                                font-redhat
-                                text-sm
-                                font-semibold
-                                transition-colors
-                                hover:bg-brand
-                                dark:bg-content-dark
-                                dark:text-content-light
-                                dark:hover:bg-brand
-                                dark:hover:text-white
-                            ">
+                <div class="mt-9 flex flex-wrap items-center gap-6">
+                    <Button as-child variant="primary">
+                        <Link href="/research" class="inline-flex items-center gap-2">
                             Explore research
                             <ArrowRight class="h-4 w-4" />
                         </Link>
-                    </div>
+                    </Button>
                 </div>
+            </div>
 
-                <div class="
+            <div class="
                         hidden
                         border-l
                         border-border-light
@@ -115,18 +100,18 @@ const featuredUrl = () => {
                         lg:block
                         dark:border-border-dark
                     ">
-                    <AppText tag="p" font="redhat" size="xs" weight="bold" tracking="wide" uppercase color="muted">
-                        What we publish
-                    </AppText>
+                <AppText tag="p" font="redhat" size="xs" weight="bold" tracking="wide" uppercase color="muted">
+                    What we publish
+                </AppText>
 
-                    <div class="mt-6 divide-y divide-border-light dark:divide-border-dark">
-                        <Link v-for="item in [
-                            ['Research', '/research'],
-                            ['Reports', '/reports'],
-                            ['Surveys', '/surveys'],
-                            ['Interviews', '/interviews'],
-                            ['Magazines', '/magazines'],
-                        ]" :key="item[0]" :href="item[1]" class="
+                <div class="mt-6 divide-y divide-border-light dark:divide-border-dark">
+                    <Link v-for="item in [
+                        ['Research', '/research'],
+                        ['Reports', '/reports'],
+                        ['Surveys', '/surveys'],
+                        ['Interviews', '/interviews'],
+                        ['Magazines', '/magazines'],
+                    ]" :key="item[0]" :href="item[1]" class="
                                 group
                                 flex
                                 items-center
@@ -137,19 +122,18 @@ const featuredUrl = () => {
                                 transition-colors
                                 hover:text-brand
                             ">
-                            {{ item[0] }}
+                        {{ item[0] }}
 
-                            <ChevronRight class="
+                        <ChevronRight class="
                                     h-4
                                     w-4
                                     transition-transform
                                     group-hover:translate-x-1
                                 " />
-                        </Link>
-                    </div>
+                    </Link>
                 </div>
             </div>
-        </AppContainer>
+        </div>
     </section>
 
     <!--
@@ -159,20 +143,19 @@ const featuredUrl = () => {
     -->
 
     <section v-if="featured" class="py-20 lg:py-28">
-        <AppContainer>
-            <div class="mb-10 flex items-end justify-between gap-6">
-                <div>
-                    <AppText tag="p" font="redhat" size="xs" weight="bold" tracking="wide" uppercase color="brand">
-                        Editor's choice
-                    </AppText>
+        <div class="mb-10 flex items-end justify-between gap-6">
+            <div>
+                <AppText tag="p" font="redhat" size="xs" weight="bold" tracking="wide" uppercase color="brand">
+                    Editor's choice
+                </AppText>
 
-                    <AppHeading tag="h2" font="prata" size="3xl" weight="normal" leading="tight" class="mt-2">
-                        Worth your attention
-                    </AppHeading>
-                </div>
+                <AppHeading tag="h2" font="prata" size="3xl" weight="normal" leading="tight" class="mt-2">
+                    Worth your attention
+                </AppHeading>
             </div>
+        </div>
 
-            <Link :href="featuredUrl()" class="
+        <Link :href="featuredUrl()" class="
                     group
                     grid
                     overflow-hidden
@@ -181,14 +164,14 @@ const featuredUrl = () => {
                     dark:border-border-dark
                     lg:grid-cols-[1.15fr_0.85fr]
                 ">
-                <div class="
+            <div class="
                         relative
                         min-h-[320px]
                         overflow-hidden
                         bg-surface-light
                         dark:bg-surface-dark
                     ">
-                    <img v-if="featured.cover_image" :src="featured.cover_image" :alt="featured.title" class="
+                <img v-if="featured.cover_image" :src="featured.cover_image" :alt="featured.title" class="
                             h-full
                             w-full
                             object-cover
@@ -197,7 +180,7 @@ const featuredUrl = () => {
                             group-hover:scale-[1.02]
                         " />
 
-                    <div v-else class="
+                <div v-else class="
                             flex
                             h-full
                             min-h-[320px]
@@ -205,28 +188,27 @@ const featuredUrl = () => {
                             justify-center
                             bg-muted
                         ">
-                        <AppText size="xs" weight="bold" tracking="wide" uppercase color="muted">
-                            Alfrik
-                        </AppText>
-                    </div>
-                </div>
-
-                <div class="flex flex-col justify-center p-8 sm:p-10 lg:p-14">
-                    <AppBadge variant="primary" size="sm">
-                        Featured
-                    </AppBadge>
-
-                    <AppHeading tag="h2" font="prata" size="3xl" weight="normal" leading="tight" hover-brand
-                        class="mt-5">
-                        {{ featured.title }}
-                    </AppHeading>
-
-                    <AppText v-if="featured.description" tag="p" font="lora" size="sm" color="muted" leading="relaxed"
-                        :clamp="4" class="mt-5">
-                        {{ featured.description }}
+                    <AppText size="xs" weight="bold" tracking="wide" uppercase color="muted">
+                        Alfrik
                     </AppText>
+                </div>
+            </div>
 
-                    <div class="
+            <div class="flex flex-col justify-center p-8 sm:p-10 lg:p-14">
+                <Badge size="sm" weight="bold" uppercase>
+                    Featured
+                </Badge>
+
+                <AppHeading tag="h2" font="prata" size="3xl" weight="normal" leading="tight" hover-brand class="mt-5">
+                    {{ featured.title }}
+                </AppHeading>
+
+                <AppText v-if="featured.description" tag="p" font="lora" size="sm" color="muted" leading="relaxed"
+                    :clamp="4" class="mt-5">
+                    {{ featured.description }}
+                </AppText>
+
+                <div class="
                             mt-8
                             flex
                             items-center
@@ -236,12 +218,11 @@ const featuredUrl = () => {
                             font-semibold
                             text-brand
                         ">
-                        Read more
-                        <ArrowRight class="h-4 w-4 transition-transform group-hover:translate-x-1" />
-                    </div>
+                    Read more
+                    <ArrowRight class="h-4 w-4 transition-transform group-hover:translate-x-1" />
                 </div>
-            </Link>
-        </AppContainer>
+            </div>
+        </Link>
     </section>
 
     <!--
@@ -257,19 +238,18 @@ const featuredUrl = () => {
             dark:border-border-dark
             lg:py-24
         ">
-        <AppContainer>
-            <div class="mb-10 flex items-end justify-between">
-                <div>
-                    <AppText tag="p" font="redhat" size="xs" weight="bold" tracking="wide" uppercase color="brand">
-                        Latest from Alfrik
-                    </AppText>
+        <div class="mb-10 flex items-end justify-between">
+            <div>
+                <AppText tag="p" font="redhat" size="xs" weight="bold" tracking="wide" uppercase color="brand">
+                    Latest from Alfrik
+                </AppText>
 
-                    <AppHeading tag="h2" font="prata" size="3xl" weight="normal" class="mt-2">
-                        New work and ideas
-                    </AppHeading>
-                </div>
+                <AppHeading tag="h2" font="prata" size="3xl" weight="normal" class="mt-2">
+                    New work and ideas
+                </AppHeading>
+            </div>
 
-                <Link href="/research" class="
+            <Link href="/research" class="
                         hidden
                         items-center
                         gap-1
@@ -279,12 +259,12 @@ const featuredUrl = () => {
                         hover:text-brand
                         sm:inline-flex
                     ">
-                    View all
-                    <ArrowRight class="h-4 w-4" />
-                </Link>
-            </div>
+                View all
+                <ArrowRight class="h-4 w-4" />
+            </Link>
+        </div>
 
-            <div class="
+        <div class="
                     divide-y
                     divide-border-light
                     border-y
@@ -292,7 +272,7 @@ const featuredUrl = () => {
                     dark:divide-border-dark
                     dark:border-border-dark
                 ">
-                <Link v-for="paper in research.slice(0, 4)" :key="paper.id" :href="researchShow(paper.slug).url" class="
+            <Link v-for="paper in research.slice(0, 4)" :key="paper.id" :href="researchShow(paper.slug).url" class="
                         group
                         grid
                         gap-5
@@ -303,22 +283,22 @@ const featuredUrl = () => {
                         sm:items-center
                         dark:hover:bg-surface-dark
                     ">
-                    <AppText tag="span" font="redhat" size="xs" weight="bold" uppercase tracking="wide" color="brand">
-                        Research
+                <AppText tag="span" font="redhat" size="xs" weight="bold" uppercase tracking="wide" color="brand">
+                    Research
+                </AppText>
+
+                <div>
+                    <AppHeading tag="h3" font="prata" size="xl" weight="normal" leading="tight" hover-brand>
+                        {{ paper.title }}
+                    </AppHeading>
+
+                    <AppText v-if="paper.description" tag="p" font="lora" size="sm" color="muted" :clamp="2"
+                        class="mt-2">
+                        {{ paper.description }}
                     </AppText>
+                </div>
 
-                    <div>
-                        <AppHeading tag="h3" font="prata" size="xl" weight="normal" leading="tight" hover-brand>
-                            {{ paper.title }}
-                        </AppHeading>
-
-                        <AppText v-if="paper.description" tag="p" font="lora" size="sm" color="muted" :clamp="2"
-                            class="mt-2">
-                            {{ paper.description }}
-                        </AppText>
-                    </div>
-
-                    <ArrowRight class="
+                <ArrowRight class="
                             hidden
                             h-5
                             w-5
@@ -326,10 +306,10 @@ const featuredUrl = () => {
                             group-hover:translate-x-1
                             sm:block
                         " />
-                </Link>
+            </Link>
 
-                <Link v-for="report in reports.slice(0, 2)" :key="`report-${report.id}`"
-                    :href="`/reports/${report.slug}`" class="
+            <Link v-for="report in reports.slice(0, 2)" :key="`report-${report.id}`" :href="`/reports/${report.slug}`"
+                class="
                         group
                         grid
                         gap-5
@@ -340,22 +320,22 @@ const featuredUrl = () => {
                         sm:items-center
                         dark:hover:bg-surface-dark
                     ">
-                    <AppText tag="span" font="redhat" size="xs" weight="bold" uppercase tracking="wide" color="brand">
-                        Report
+                <AppText tag="span" font="redhat" size="xs" weight="bold" uppercase tracking="wide" color="brand">
+                    Report
+                </AppText>
+
+                <div>
+                    <AppHeading tag="h3" font="prata" size="xl" weight="normal" leading="tight" hover-brand>
+                        {{ report.title }}
+                    </AppHeading>
+
+                    <AppText v-if="report.description" tag="p" font="lora" size="sm" color="muted" :clamp="2"
+                        class="mt-2">
+                        {{ report.description }}
                     </AppText>
+                </div>
 
-                    <div>
-                        <AppHeading tag="h3" font="prata" size="xl" weight="normal" leading="tight" hover-brand>
-                            {{ report.title }}
-                        </AppHeading>
-
-                        <AppText v-if="report.description" tag="p" font="lora" size="sm" color="muted" :clamp="2"
-                            class="mt-2">
-                            {{ report.description }}
-                        </AppText>
-                    </div>
-
-                    <ArrowRight class="
+                <ArrowRight class="
                             hidden
                             h-5
                             w-5
@@ -363,10 +343,10 @@ const featuredUrl = () => {
                             group-hover:translate-x-1
                             sm:block
                         " />
-                </Link>
+            </Link>
 
-                <Link v-for="interview in interviews.slice(0, 2)" :key="`interview-${interview.id}`"
-                    :href="`/interviews/${interview.slug}`" class="
+            <Link v-for="interview in interviews.slice(0, 2)" :key="`interview-${interview.id}`"
+                :href="`/interviews/${interview.slug}`" class="
                         group
                         grid
                         gap-5
@@ -377,22 +357,22 @@ const featuredUrl = () => {
                         sm:items-center
                         dark:hover:bg-surface-dark
                     ">
-                    <AppText tag="span" font="redhat" size="xs" weight="bold" uppercase tracking="wide" color="brand">
-                        Interview
+                <AppText tag="span" font="redhat" size="xs" weight="bold" uppercase tracking="wide" color="brand">
+                    Interview
+                </AppText>
+
+                <div>
+                    <AppHeading tag="h3" font="prata" size="xl" weight="normal" leading="tight" hover-brand>
+                        {{ interview.title }}
+                    </AppHeading>
+
+                    <AppText v-if="interview.description" tag="p" font="lora" size="sm" color="muted" :clamp="2"
+                        class="mt-2">
+                        {{ interview.description }}
                     </AppText>
+                </div>
 
-                    <div>
-                        <AppHeading tag="h3" font="prata" size="xl" weight="normal" leading="tight" hover-brand>
-                            {{ interview.title }}
-                        </AppHeading>
-
-                        <AppText v-if="interview.description" tag="p" font="lora" size="sm" color="muted" :clamp="2"
-                            class="mt-2">
-                            {{ interview.description }}
-                        </AppText>
-                    </div>
-
-                    <ArrowRight class="
+                <ArrowRight class="
                             hidden
                             h-5
                             w-5
@@ -400,9 +380,8 @@ const featuredUrl = () => {
                             group-hover:translate-x-1
                             sm:block
                         " />
-                </Link>
-            </div>
-        </AppContainer>
+            </Link>
+        </div>
     </section>
 
     <!--
@@ -412,33 +391,32 @@ const featuredUrl = () => {
     -->
 
     <section v-if="research.length" class="py-20 lg:py-24">
-        <AppContainer>
-            <div class="mb-10 max-w-2xl">
-                <AppText tag="p" font="redhat" size="xs" weight="bold" tracking="wide" uppercase color="brand">
-                    Research & evidence
-                </AppText>
+        <div class="mb-10 max-w-2xl">
+            <AppText tag="p" font="redhat" size="xs" weight="bold" tracking="wide" uppercase color="brand">
+                Research & evidence
+            </AppText>
 
-                <AppHeading tag="h2" font="prata" size="3xl" weight="normal" class="mt-2">
-                    Evidence for better understanding
-                </AppHeading>
+            <AppHeading tag="h2" font="prata" size="3xl" weight="normal" class="mt-2">
+                Evidence for better understanding
+            </AppHeading>
 
-                <AppText tag="p" font="lora" size="sm" color="muted" leading="relaxed" class="mt-4">
-                    Explore original research and evidence-driven work
-                    across Alfrik's areas of study.
-                </AppText>
-            </div>
+            <AppText tag="p" font="lora" size="sm" color="muted" leading="relaxed" class="mt-4">
+                Explore original research and evidence-driven work
+                across Alfrik's areas of study.
+            </AppText>
+        </div>
 
-            <div class="
+        <div class="
                     grid
                     gap-6
                     md:grid-cols-2
                 ">
-                <ResearchCard v-for="paper in research.slice(0, 4)" :key="paper.id" :research="research"
-                    :href="researchShow(paper.slug).url" />
-            </div>
+            <ResearchCard v-for="paper in research.slice(0, 4)" :key="paper.id" :research="research"
+                :href="researchShow(paper.slug).url" />
+        </div>
 
-            <div class="mt-8">
-                <Link href="/research" class="
+        <div class="mt-8">
+            <Link href="/research" class="
                         inline-flex
                         items-center
                         gap-2
@@ -448,11 +426,10 @@ const featuredUrl = () => {
                         text-brand
                         hover:gap-3
                     ">
-                    Explore all research
-                    <ArrowRight class="h-4 w-4" />
-                </Link>
-            </div>
-        </AppContainer>
+                Explore all research
+                <ArrowRight class="h-4 w-4" />
+            </Link>
+        </div>
     </section>
 
     <!--
@@ -460,7 +437,6 @@ const featuredUrl = () => {
     | Reports + Surveys
     |--------------------------------------------------------------------------
     -->
-
     <section v-if="reports.length || surveys.length" class="
             border-y
             border-border-light
@@ -470,7 +446,7 @@ const featuredUrl = () => {
             dark:bg-surface-dark
             lg:py-24
         ">
-        <AppContainer>
+        <Container>
             <div class="grid gap-14 lg:grid-cols-2 lg:gap-20">
                 <!-- Reports -->
 
@@ -568,7 +544,7 @@ const featuredUrl = () => {
                     </div>
                 </div>
             </div>
-        </AppContainer>
+        </Container>
     </section>
 
     <!--
@@ -578,7 +554,7 @@ const featuredUrl = () => {
     -->
 
     <section v-if="magazines.length" class="py-20 lg:py-28">
-        <AppContainer>
+        <Container>
             <div class="grid items-center gap-12 lg:grid-cols-[0.7fr_1.3fr]">
                 <div class="flex justify-center lg:justify-start">
                     <Link :href="`/magazines/${magazines[0].slug}`" class="
@@ -641,7 +617,7 @@ const featuredUrl = () => {
                     </Link>
                 </div>
             </div>
-        </AppContainer>
+        </Container>
     </section>
 
     <!--
@@ -657,7 +633,7 @@ const featuredUrl = () => {
             dark:border-border-dark
             lg:py-24
         ">
-        <AppContainer>
+        <Container>
             <div class="mb-10 flex items-end justify-between">
                 <div>
                     <AppText tag="p" font="redhat" size="xs" weight="bold" tracking="wide" uppercase color="brand">
@@ -735,7 +711,7 @@ const featuredUrl = () => {
                     </div>
                 </Link>
             </div>
-        </AppContainer>
+        </Container>
     </section>
 
     <!--
@@ -750,7 +726,7 @@ const featuredUrl = () => {
             dark:border-border-dark
             lg:py-24
         ">
-        <AppContainer>
+        <Container>
             <div class="grid gap-12 lg:grid-cols-[0.75fr_1.25fr]">
                 <div>
                     <AppText tag="p" font="redhat" size="xs" weight="bold" tracking="wide" uppercase class="text-brand">
@@ -799,7 +775,7 @@ const featuredUrl = () => {
                     </Link>
                 </div>
             </div>
-        </AppContainer>
+        </Container>
     </section>
 
     <!--
@@ -809,7 +785,7 @@ const featuredUrl = () => {
     -->
 
     <section class="py-20 lg:py-24">
-        <AppContainer>
+        <Container>
             <div class="
                     border
                     border-border-light
@@ -870,6 +846,6 @@ const featuredUrl = () => {
                     </Button>
                 </form>
             </div>
-        </AppContainer>
+        </Container>
     </section>
 </template>

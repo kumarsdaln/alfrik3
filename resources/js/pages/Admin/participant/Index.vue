@@ -1,112 +1,105 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
-import { router, Form } from '@inertiajs/vue3'
+    import { computed, ref } from 'vue'
+    import { router, Form } from '@inertiajs/vue3'
 
-import AppInput from '@/components/form/AppInput.vue'
-import AppSelect from '@/components/form/AppSelect.vue'
-import Heading from '@/components/Heading.vue'
-import ProfileCell from '@/components/profile/ProfileCell.vue'
-import Button from '@/components/ui/button/Button.vue'
+    import AppInput from '@/components/form/AppInput.vue'
+    import AppSelect from '@/components/form/AppSelect.vue'
+    import Heading from '@/components/Heading.vue'
+    import ProfileCell from '@/components/profile/ProfileCell.vue'
+    import Button from '@/components/ui/button/Button.vue'
 
-import { index, store, destroy } from '@/actions/App/Http/Controllers/Admin/ContentParticipant/ContentParticipantController'
+    import { index, store, destroy } from '@/actions/App/Http/Controllers/Admin/ContentParticipant/ContentParticipantController'
 
-import type {
-    ContentParticipant,
-    ParticipantRole,
-    Pagination,
-    Profile,
-    Model,
-} from '@/types'
+    import type {
+        Participant,
+        ParticipantRole,
+        Pagination,
+        Profile,
+        Model,
+    } from '@/types'
+    import BackButton from '@/components/ui/BackButton.vue'
+import { Check, Plus, X } from '@lucide/vue'
 
-interface Props {
-    model: Model
-    users: Pagination<Profile>
-    participants: ContentParticipant[]
-    roles: Pick<ParticipantRole, 'id' | 'name' | 'slug' | 'description'>[]
-    filters?: {
-        search?: string
-    }
-}
-
-const props = defineProps<Props>()
-
-const search = ref(props.filters?.search ?? '')
-
-const selectedRoles = ref<Record<number, number>>({})
-
-const participantRoleOptions = computed(() =>
-    props.roles.map((role) => ({
-        label: role.name,
-        value: role.id,
-    })),
-)
-
-const getRole = (userId: number): number | undefined =>
-    selectedRoles.value[userId] ?? props.roles[0]?.id
-
-function setRole(
-    userId: number,
-    value: string | number | undefined,
-) {
-    if (value === undefined || value === '') {
-        return
+    interface Props {
+        model: Model
+        users: Pagination<Profile>
+        participants: Participant[]
+        roles: Pick<ParticipantRole, 'id' | 'name' | 'slug' | 'description'>[]
+        filters?: {
+            search?: string
+        }
     }
 
-    selectedRoles.value[userId] = Number(value)
-}
+    const props = defineProps<Props>()
 
-function isSelected(userId: number): boolean {
-    return props.participants.some(
-        (participant) => participant.user?.id === userId,
+    const search = ref(props.filters?.search ?? '')
+
+    const selectedRoles = ref<Record<number, number>>({})
+
+    const participantRoleOptions = computed(() =>
+        props.roles.map((role) => ({
+            label: role.name,
+            value: role.id,
+        })),
     )
-}
 
-function searchUsers() {
-    router.get(
-        index({type: props.model.type, content: props.model.id}),
-        { search: search.value || undefined },
-        {
+    const getRole = (userId: number): number | undefined =>
+        selectedRoles.value[userId] ?? props.roles[0]?.id
+
+    function setRole(
+        userId: number,
+        value: string | number | undefined,
+    ) {
+        if (value === undefined || value === '') {
+            return
+        }
+
+        selectedRoles.value[userId] = Number(value)
+    }
+
+    function isSelected(userId: number): boolean {
+        return props.participants.some(
+            (participant) => participant.user?.id === userId,
+        )
+    }
+
+    function searchUsers() {
+        router.get(
+            index({ type: props.model.type, id: props.model.id }),
+            { search: search.value || undefined },
+            {
+                preserveState: true,
+                preserveScroll: true,
+                replace: true,
+            },
+        )
+    }
+
+    function goToPage(url: string | null) {
+        if (!url) {
+            return
+        }
+
+        router.visit(url, {
             preserveState: true,
             preserveScroll: true,
-            replace: true,
-        },
-    )
-}
-
-function goToPage(url: string | null) {
-    if (!url) {
-        return
+        })
     }
-
-    router.visit(url, {
-        preserveState: true,
-        preserveScroll: true,
-    })
-}
 </script>
 
 <template>
     <div class="mt-4 space-y-6">
         <!-- Header -->
-        <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div class="flex min-w-0 gap-4">
+            <BackButton />
             <Heading title="Participants" :description="`Manage participants for ${model.title}`" />
-
-            <div class="flex shrink-0 items-center gap-2 rounded-lg border px-4 py-2">
-                <div>
-                    <p class="text-xs text-muted-foreground">
-                        Selected participants
-                    </p>
-                    <p class="text-xl font-semibold">
-                        {{ participants.length }}
-                    </p>
-                </div>
-            </div>
         </div>
+
 
         <!-- Main Content -->
         <div class="grid gap-6 lg:grid-cols-2">
             <!-- LEFT: ADD PARTICIPANTS -->
-            <section class="min-w-0 rounded-lg border bg-card">
+            <section class="min-w-0 border bg-card">
                 <div class="border-b p-5 sm:p-6">
                     <div class="flex items-start justify-between gap-4">
                         <div>
@@ -147,15 +140,15 @@ function goToPage(url: string | null) {
                             <!-- Already Added -->
                             <div v-if="isSelected(user.id)" class="flex shrink-0 items-center">
                                 <span
-                                    class="inline-flex items-center rounded-md bg-muted px-3 py-1.5 text-sm font-medium text-muted-foreground">
-                                    Already Added
+                                    class="inline-flex items-center bg-green-100 text-green-800 h-10 px-5 text-sm font-medium text-muted-foreground">
+                                    <Check class="h-4 w-4" />
                                 </span>
                             </div>
 
                             <!-- Add Form -->
                             <Form v-else v-bind="store.form({
                                 type: props.model.type,
-                                content: props.model.id,
+                                id: props.model.id,
                             })" class="flex w-full shrink-0 flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
                                 <AppSelect :name="`role_${user.id}`" :options="participantRoleOptions"
                                     :default-value="getRole(user.id)" class="w-full sm:w-36"
@@ -166,7 +159,7 @@ function goToPage(url: string | null) {
                                 <input type="hidden" name="participant_role_id" :value="getRole(user.id)" />
 
                                 <Button type="submit" class="w-full sm:w-auto" :disabled="!roles.length">
-                                    Add
+                                    <Plus class="h-4 w-4" />
                                 </Button>
                             </Form>
                         </div>
@@ -209,7 +202,7 @@ function goToPage(url: string | null) {
             </section>
 
             <!-- RIGHT: SELECTED PARTICIPANTS -->
-            <section class="min-w-0 rounded-lg border bg-card">
+            <section class="min-w-0 border bg-card">
                 <div class="border-b p-5 sm:p-6">
                     <div class="flex items-start justify-between gap-4">
                         <div>
@@ -252,11 +245,11 @@ function goToPage(url: string | null) {
 
                                 <Form v-bind="destroy.form({
                                     type: model.type,
-                                    content: model.id,
+                                    id: model.id,
                                     participant: participant.id,
                                 })">
                                     <Button type="submit" variant="destructive" size="sm">
-                                        Remove
+                                        <X class="h-4 w-4" />
                                     </Button>
                                 </Form>
                             </div>

@@ -13,24 +13,35 @@ use App\Http\Resources\Report\ReportContentBlockResource;
 use App\Models\Report\Report;
 use App\Models\Report\ReportContentBlock;
 use App\Models\Report\ReportSection;
+use App\Support\Breadcrumbs\BreadcrumbBuilder;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class ReportContentBlockController extends Controller
 {
+    private const int PER_PAGE = 20;
+
+    /*
+    |--------------------------------------------------------------------------
+    | Index
+    |--------------------------------------------------------------------------
+    */
+
     public function index(
+        Request $request,
         Report $report,
         ReportSection $section,
     ): Response {
-        $this->ensureSectionBelongsToReport(
-            $report,
-            $section,
+        abort_unless(
+            (int) $section->report_id === (int) $report->id,
+            404
         );
 
-        $section->load([
-            'contentBlocks',
-        ]);
+        $blocks = $section->blocks()
+            ->paginate(self::PER_PAGE)
+            ->withQueryString();
 
         return Inertia::render(
             'admin/report/section/block/Index',
@@ -39,26 +50,39 @@ class ReportContentBlockController extends Controller
                     'id' => $report->id,
                     'title' => $report->title,
                 ],
-
                 'section' => [
                     'id' => $section->id,
                     'title' => $section->title,
                 ],
-
-                'blocks' => ReportContentBlockResource::collection(
-                    $section->contentBlocks
-                ),
+                'blocks' => ReportContentBlockResource::collection($blocks),
+                'breadcrumbs' => BreadcrumbBuilder::make()
+                ->admin()
+                ->add('Reports', route('admin.report.index'))
+                ->add($report->title, route('admin.report.show', $report))
+                ->add('Sections', route('admin.report.sections.index', $report))
+                ->add($section->title, route('admin.report.sections.show', [
+                    'report' => $report->id,
+                    'section' => $section->id,
+                ]))
+                ->add('Content Blocks')
+                ->toArray(),
             ]
         );
     }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Create
+    |--------------------------------------------------------------------------
+    */
 
     public function create(
         Report $report,
         ReportSection $section,
     ): Response {
-        $this->ensureSectionBelongsToReport(
-            $report,
-            $section,
+        abort_unless(
+            (int) $section->report_id === (int) $report->id,
+            404
         );
 
         return Inertia::render(
@@ -68,16 +92,32 @@ class ReportContentBlockController extends Controller
                     'id' => $report->id,
                     'title' => $report->title,
                 ],
-
                 'section' => [
                     'id' => $section->id,
                     'title' => $section->title,
                 ],
-
                 'typeOptions' => ReportContentBlockType::dropdown(),
+                'breadcrumbs' => BreadcrumbBuilder::make()
+                ->admin()
+                ->add('Reports', route('admin.report.index'))
+                ->add($report->title, route('admin.report.show', $report))
+                ->add('Sections', route('admin.report.sections.index', $report))
+                ->add($section->title, route('admin.report.sections.index', $section->report_id))
+                ->add('Content Blocks', route('admin.report.sections.blocks.index', [
+                    'report' => $report->id,
+                    'section' => $section->id,
+                ]))
+                ->add('Create')
+                ->toArray(),
             ]
         );
     }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Store
+    |--------------------------------------------------------------------------
+    */
 
     public function store(
         StoreReportContentBlockRequest $request,
@@ -85,9 +125,9 @@ class ReportContentBlockController extends Controller
         ReportSection $section,
         CreateReportContentBlock $action,
     ): RedirectResponse {
-        $this->ensureSectionBelongsToReport(
-            $report,
-            $section,
+        abort_unless(
+            (int) $section->report_id === (int) $report->id,
+            404
         );
 
         $action->handle(
@@ -96,31 +136,31 @@ class ReportContentBlockController extends Controller
         );
 
         return redirect()
-            ->route(
-                'admin.report.sections.blocks.index',
-                [
-                    'report' => $report,
-                    'section' => $section,
-                ]
-            )
-            ->with(
-                'success',
-                'Content block created successfully.'
-            );
+            ->route('admin.report.sections.blocks.index', [
+                'report' => $report->id,
+                'section' => $section->id,
+            ])
+            ->with('success', 'Content block created successfully.');
     }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Show
+    |--------------------------------------------------------------------------
+    */
 
     public function show(
         Report $report,
         ReportSection $section,
         ReportContentBlock $block,
     ): Response {
-        $this->ensureSectionBelongsToReport(
-            $report,
-            $section,
+        abort_unless(
+            (int) $section->report_id === (int) $report->id,
+            404
         );
 
         abort_unless(
-            $block->report_section_id === $section->id,
+            (int) $block->report_section_id === (int) $section->id,
             404
         );
 
@@ -131,31 +171,48 @@ class ReportContentBlockController extends Controller
                     'id' => $report->id,
                     'title' => $report->title,
                 ],
-
                 'section' => [
                     'id' => $section->id,
                     'title' => $section->title,
                 ],
-
-                'block' => new ReportContentBlockResource(
-                    $block
-                ),
+                'block' => new ReportContentBlockResource($block),
+                'breadcrumbs' => BreadcrumbBuilder::make()
+                    ->admin()
+                    ->add('Reports', route('admin.report.index'))
+                    ->add($report->title, route('admin.report.show', $report))
+                    ->add('Sections', route('admin.report.sections.index', $report))
+                    ->add($section->title, route('admin.report.sections.index', [
+                        'report' => $report->id,
+                        'section' => $section->id,
+                    ]))
+                    ->add('Content Blocks', route('admin.report.sections.blocks.index', [
+                        'report' => $report->id,
+                        'section' => $section->id,
+                    ]))
+                    ->add($block->title)
+                    ->toArray(),
             ]
         );
     }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Edit
+    |--------------------------------------------------------------------------
+    */
 
     public function edit(
         Report $report,
         ReportSection $section,
         ReportContentBlock $block,
     ): Response {
-        $this->ensureSectionBelongsToReport(
-            $report,
-            $section,
+        abort_unless(
+            (int) $section->report_id === (int) $report->id,
+            404
         );
 
         abort_unless(
-            $block->report_section_id === $section->id,
+            (int) $block->report_section_id === (int) $section->id,
             404
         );
 
@@ -166,20 +223,36 @@ class ReportContentBlockController extends Controller
                     'id' => $report->id,
                     'title' => $report->title,
                 ],
-
                 'section' => [
                     'id' => $section->id,
                     'title' => $section->title,
                 ],
-
-                'block' => new ReportContentBlockResource(
-                    $block
-                ),
-
+                'block' => new ReportContentBlockResource($block),
                 'typeOptions' => ReportContentBlockType::dropdown(),
+                'breadcrumbs' => BreadcrumbBuilder::make()
+                    ->admin()
+                    ->add('Reports', route('admin.report.index'))
+                    ->add($report->title, route('admin.report.show', $report))
+                    ->add($section->title, route('admin.report.sections.index', [
+                        'report' => $report->id,
+                        'section' => $section->id,
+                    ]))
+                    ->add($block->title, route('admin.report.sections.blocks.show', [
+                        'report' => $report->id,
+                        'section' => $section->id,
+                        'block' => $block->id,
+                    ]))
+                    ->add('Edit')
+                    ->toArray(),
             ]
         );
     }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Update
+    |--------------------------------------------------------------------------
+    */
 
     public function update(
         UpdateReportContentBlockRequest $request,
@@ -188,13 +261,13 @@ class ReportContentBlockController extends Controller
         ReportContentBlock $block,
         UpdateReportContentBlock $action,
     ): RedirectResponse {
-        $this->ensureSectionBelongsToReport(
-            $report,
-            $section,
+        abort_unless(
+            (int) $section->report_id === (int) $report->id,
+            404
         );
 
         abort_unless(
-            $block->report_section_id === $section->id,
+            (int) $block->report_section_id === (int) $section->id,
             404
         );
 
@@ -204,18 +277,18 @@ class ReportContentBlockController extends Controller
         );
 
         return redirect()
-            ->route(
-                'admin.report.sections.blocks.index',
-                [
-                    'report' => $report,
-                    'section' => $section,
-                ]
-            )
-            ->with(
-                'success',
-                'Content block updated successfully.'
-            );
+            ->route('admin.report.sections.blocks.index', [
+                'report' => $report->id,
+                'section' => $section->id,
+            ])
+            ->with('success', 'Content block updated successfully.');
     }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Destroy
+    |--------------------------------------------------------------------------
+    */
 
     public function destroy(
         Report $report,
@@ -223,39 +296,23 @@ class ReportContentBlockController extends Controller
         ReportContentBlock $block,
         DeleteReportContentBlock $action,
     ): RedirectResponse {
-        $this->ensureSectionBelongsToReport(
-            $report,
-            $section,
+        abort_unless(
+            (int) $section->report_id === (int) $report->id,
+            404
         );
 
         abort_unless(
-            $block->report_section_id === $section->id,
+            (int) $block->report_section_id === (int) $section->id,
             404
         );
 
         $action->handle($block);
 
         return redirect()
-            ->route(
-                'admin.report.sections.blocks.index',
-                [
-                    'report' => $report,
-                    'section' => $section,
-                ]
-            )
-            ->with(
-                'success',
-                'Content block deleted successfully.'
-            );
-    }
-
-    private function ensureSectionBelongsToReport(
-        Report $report,
-        ReportSection $section,
-    ): void {
-        abort_unless(
-            $section->report_id === $report->id,
-            404
-        );
+            ->route('admin.report.sections.blocks.index', [
+                'report' => $report->id,
+                'section' => $section->id,
+            ])
+            ->with('success', 'Content block deleted successfully.');
     }
 }

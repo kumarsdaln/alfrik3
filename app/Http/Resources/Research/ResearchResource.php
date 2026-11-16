@@ -2,6 +2,9 @@
 
 namespace App\Http\Resources\Research;
 
+use App\Http\Resources\CategoryResource;
+use App\Http\Resources\ContentParticipant\ParticipantResource;
+use App\Http\Resources\TagResource;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -33,12 +36,19 @@ class ResearchResource extends JsonResource
 
             'status' => $this->status->option(),
 
-            'author' => $this->whenLoaded(
-                'author',
-                fn () => [
-                    'id' => $this->author->id,
-                    'name' => $this->author->name,
-                ]
+            'participants' => $this->whenLoaded(
+                'participants',
+                fn () => ParticipantResource::collection($this->participants)
+            ),
+
+            'categories' => $this->whenLoaded(
+                'categories',
+                fn () => CategoryResource::collection($this->categories)
+            ),
+
+            'tags' => $this->whenLoaded(
+                'tags',
+                fn () => TagResource::collection($this->tags)
             ),
 
             'featured' => $this->featured,

@@ -2,10 +2,10 @@
 
 namespace App\Models\Report;
 
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable([
@@ -19,7 +19,6 @@ class ReportSection extends Model
 {
     use HasFactory;
 
-
     protected function casts(): array
     {
         return [
@@ -27,12 +26,22 @@ class ReportSection extends Model
         ];
     }
 
+    /*
+    |--------------------------------------------------------------------------
+    | Relationships
+    |--------------------------------------------------------------------------
+    */
+
     public function report(): BelongsTo
     {
-        return $this->belongsTo(Report::class);
+        return $this->belongsTo(
+            Report::class,
+            'report_id',
+            'id',
+        );
     }
 
-    public function contentBlocks(): HasMany
+    public function blocks(): HasMany
     {
         return $this->hasMany(ReportContentBlock::class)
             ->orderBy('position');

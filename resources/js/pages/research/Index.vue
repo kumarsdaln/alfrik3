@@ -1,117 +1,168 @@
+
 <script setup lang="ts">
-    import { computed } from 'vue'
-    import { Head, InfiniteScroll } from '@inertiajs/vue3'
+import { computed } from 'vue'
+import { Head, InfiniteScroll } from '@inertiajs/vue3'
 
-    import ResearchCard from '@/components/research/ResearchCard.vue'
-    import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
+import ResearchCard from '@/components/research/ResearchCard.vue'
+import ResearchHero from '@/components/research/ResearchHero.vue'
 
-    import FilterControl from '@/components/filters/FilterControl.vue'
-    import AppSelect from '@/components/form/AppSelect.vue'
-    import Empty from '@/components/datadisplay/empty/Empty.vue'
+import AppHeading from '@/components/ui/AppHeading.vue'
+import AppText from '@/components/ui/AppText.vue'
+import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
+import Section from '@/components/ui/Section.vue'
 
-    import { useFilters } from '@/composables/useFilters'
-    import { show as researchShow } from '@/routes/research'
+import FilterControl from '@/components/filters/FilterControl.vue'
+import AppSelect from '@/components/form/AppSelect.vue'
+import Empty from '@/components/datadisplay/empty/Empty.vue'
 
-    import ResearchHero from '@/components/research/ResearchHero.vue'
+import { useFilters } from '@/composables/useFilters'
+import { show as researchShow } from '@/routes/research'
 
-    import type { FormOption, Pagination, Research } from '@/types'
+import type { FormOption, Pagination, Research } from '@/types'
 
-    interface Props {
-        researches: Pagination<Research>
-        featured: {
-            data: Research | null
-        }
-        typeOptions: FormOption[]
-        filters?: {
-            search?: string
-            type?: string
-        }
+interface Props {
+    researches: Pagination<Research>
+
+    featured: {
+        data: Research | null
     }
 
-    const props = defineProps<Props>()
+    typeOptions: FormOption[]
 
-    /*
-    |--------------------------------------------------------------------------
-    | Filters
-    |--------------------------------------------------------------------------
-    */
-
-    const {
-        filters,
-        filterCount,
-        applyFilters,
-        clearFilters,
-    } = useFilters(
-        {
-            search: props.filters?.search ?? '',
-            type: props.filters?.type ?? '',
-        },
-        {
-            url: window.location.pathname,
-            searchKey: 'search',
-            debounce: 500,
-        },
-    )
-
-    /*
-    |--------------------------------------------------------------------------
-    | Type Options
-    |--------------------------------------------------------------------------
-    */
-
-    const researchTypeOptions = computed(() =>
-        props.typeOptions.map((option) => ({
-            value: option.value,
-            label: option.label,
-        })),
-    )
-
-    /*
-    |--------------------------------------------------------------------------
-    | Helpers
-    |--------------------------------------------------------------------------
-    */
-
-    const yearOf = (date?: string | null) => {
-        if (!date) {
-            return ''
-        }
-
-        return new Date(date).getFullYear()
+    filters?: {
+        search?: string
+        type?: string
     }
+}
+
+const props = defineProps<Props>()
+
+/*
+|--------------------------------------------------------------------------
+| Filters
+|--------------------------------------------------------------------------
+*/
+
+const {
+    filters,
+    filterCount,
+    applyFilters,
+    clearFilters,
+} = useFilters(
+    {
+        search: props.filters?.search ?? '',
+        type: props.filters?.type ?? '',
+    },
+    {
+        url: window.location.pathname,
+        searchKey: 'search',
+        debounce: 500,
+    },
+)
+
+/*
+|--------------------------------------------------------------------------
+| Filter Options
+|--------------------------------------------------------------------------
+*/
+
+const researchTypeOptions = computed(() => [
+    {
+        value: '',
+        label: 'All research types',
+    },
+    ...props.typeOptions.map(option => ({
+        value: option.value,
+        label: option.label,
+    })),
+])
+
+/*
+|--------------------------------------------------------------------------
+| Page State
+|--------------------------------------------------------------------------
+*/
+
+const hasResearches = computed(() =>
+    props.researches.data.length > 0
+)
+
+const hasFeaturedResearch = computed(() =>
+    Boolean(props.featured.data)
+)
+
+const resultCount = computed(() =>
+    props.researches.data.length
+)
 </script>
+
 
 <template>
     <Head title="Research — Alfrik">
         <meta
+            head-key="description"
             name="description"
-            content="Explore research papers, studies, working papers and data-driven analysis from Alfrik."
+            content="Explore research papers, industry studies, market insights and data-driven analysis from Alfrik."
         />
     </Head>
 
-    <!--
-    |--------------------------------------------------------------------------
-    | Featured Research
-    |--------------------------------------------------------------------------
-    -->
-
+    <!-- Featured Research -->
     <ResearchHero
         v-if="featured.data"
         :research="featured.data"
         :research-url="researchShow(featured.data.slug).url"
-        :year="yearOf(featured.data.published_at)"
+        class="mt-4"
     />
 
-    <!--
-    |--------------------------------------------------------------------------
-    | Filters
-    |--------------------------------------------------------------------------
-    -->
+    <!-- Page Introduction -->
+    <Section
+        background="transparent"
+        spacing="sm"
+    >
+        <AppText
+            tag="p"
+            size="xs"
+            color="brand"
+            weight="semibold"
+            uppercase
+            tracking="wide"
+        >
+            Alfrik Research
+        </AppText>
 
-    <section>
+        <AppHeading
+            tag="h1"
+            font="prata"
+            size="3xl"
+            weight="normal"
+            leading="tight"
+        >
+            Research & Insights
+        </AppHeading>
+
+        <AppText
+            tag="p"
+            font="lora"
+            size="sm"
+            color="muted"
+            leading="relaxed"
+            class="max-w-2xl"
+        >
+            Explore industry research, market studies, consumer insights
+            and data-driven perspectives across the fashion industry.
+        </AppText>
+    </Section>
+
+    <!-- Filters -->
+    <Section
+        background="transparent"
+        border="none"
+        padding="none"
+        spacing="none"
+    >
         <FilterControl
             v-model:search="filters.search"
-            search-placeholder="Search research..."
+            search-placeholder="Search research, studies and insights..."
             :filter-count="filterCount"
             @clear="clearFilters"
             @apply="applyFilters"
@@ -126,19 +177,44 @@
                 />
             </div>
         </FilterControl>
-    </section>
+    </Section>
 
-    <!--
-    |--------------------------------------------------------------------------
-    | Research List
-    |--------------------------------------------------------------------------
-    -->
+    <!-- Research Results -->
+    <Section
+        background="transparent"
+        spacing="lg"
+    >
+        <div class="flex flex-wrap items-end justify-between gap-4">
+            <div class="space-y-2">
+                <AppHeading
+                    tag="h2"
+                    font="prata"
+                    size="2xl"
+                    weight="normal"
+                >
+                    Explore research
+                </AppHeading>
 
-    <section class="pb-20 pt-10">
+                <AppText tag="p" size="sm" color="muted">
+                    Discover reports, studies and research publications.
+                </AppText>
+            </div>
+
+            <AppText
+                v-if="hasResearches"
+                tag="span"
+                size="xs"
+                color="muted"
+            >
+                {{ researches.data.length }} results loaded
+            </AppText>
+        </div>
+
         <InfiniteScroll
+            v-if="hasResearches"
             data="researches"
             :key="`${filters.search}-${filters.type}`"
-            class="divide-y divide-border-light dark:divide-border-dark"
+            class="space-y-8"
         >
             <ResearchCard
                 v-for="research in researches.data"
@@ -154,8 +230,11 @@
             </template>
         </InfiniteScroll>
 
-        <!-- Empty -->
-        <Empty v-if="!researches.data.length" title="No reports found."
-            description="Try changing your filters or search keywords." />
-    </section>
+        <Empty
+            v-else
+            title="No research found"
+            description="We couldn't find research matching your search. Try changing your filters or search keywords."
+        />
+    </Section>
 </template>
+

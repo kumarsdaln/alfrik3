@@ -42,6 +42,7 @@
     import {index as surveys} from '@/routes/surveys';
     import {index as reports} from '@/routes/reports';
     import {index as magazines} from '@/routes/magazine';
+import { home } from '@/routes';
 
     type Props = {
         breadcrumbs?: BreadcrumbItem[];
@@ -143,7 +144,7 @@
                     </Sheet>
                 </div>
 
-                <Link href="dashboard()" class="flex items-center gap-x-2">
+                <Link :href="home().url" class="flex items-center gap-x-2">
                     <AppLogo />
                 </Link>
 

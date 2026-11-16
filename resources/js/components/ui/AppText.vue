@@ -1,3 +1,4 @@
+
 <script setup lang="ts">
 import { computed } from 'vue'
 
@@ -19,6 +20,10 @@ type TextTag =
     | 'h6'
 
 type TextFont =
+    | 'body'
+    | 'heading'
+    | 'editorial'
+    // Backward-compatible aliases
     | 'redhat'
     | 'lora'
     | 'prata'
@@ -42,14 +47,13 @@ type TextColor =
     | 'default'
     | 'muted'
     | 'brand'
+    | 'inverse'
     | 'success'
-    | 'danger'
     | 'warning'
+    | 'danger'
+    | 'info'
 
-type TextAlign =
-    | 'left'
-    | 'center'
-    | 'right'
+type TextAlign = 'left' | 'center' | 'right'
 
 type TextLeading =
     | 'none'
@@ -75,7 +79,6 @@ interface Props {
     align?: TextAlign
     leading?: TextLeading
     tracking?: TextTracking
-
     clamp?: TextClamp
     truncate?: boolean
     uppercase?: boolean
@@ -86,7 +89,7 @@ const props = withDefaults(
     defineProps<Props>(),
     {
         tag: 'p',
-        font: 'redhat',
+        font: 'body',
         size: 'md',
         weight: 'normal',
         color: 'default',
@@ -99,17 +102,21 @@ const props = withDefaults(
     },
 )
 
-
 /*
 |--------------------------------------------------------------------------
-| Class Maps
+| Typography
 |--------------------------------------------------------------------------
 */
 
 const fontClasses: Record<TextFont, string> = {
-    redhat: 'font-redhat',
-    lora: 'font-lora',
-    prata: 'font-prata',
+    body: 'font-body',
+    heading: 'font-heading',
+    editorial: 'font-editorial',
+
+    // Legacy aliases mapped to actual Alfrik fonts
+    redhat: 'font-body',
+    lora: 'font-editorial',
+    prata: 'font-heading',
 }
 
 const sizeClasses: Record<TextSize, string> = {
@@ -129,20 +136,40 @@ const weightClasses: Record<TextWeight, string> = {
     bold: 'font-bold',
 }
 
+/*
+|--------------------------------------------------------------------------
+| Theme Colors
+|--------------------------------------------------------------------------
+*/
+
 const colorClasses: Record<TextColor, string> = {
-    default: 'text-content-light dark:text-content-dark',
-    muted: 'text-content-lightMuted dark:text-content-darkMuted',
+    default: 'text-foreground',
+    muted: 'text-muted-foreground',
     brand: 'text-brand',
-    success: 'text-green-600 dark:text-green-500',
-    danger: 'text-red-600 dark:text-red-500',
-    warning: 'text-yellow-600 dark:text-yellow-500',
+    inverse: 'text-content-inverse',
+    success: 'text-success',
+    warning: 'text-warning',
+    danger: 'text-destructive',
+    info: 'text-info',
 }
+
+/*
+|--------------------------------------------------------------------------
+| Alignment
+|--------------------------------------------------------------------------
+*/
 
 const alignClasses: Record<TextAlign, string> = {
     left: 'text-left',
     center: 'text-center',
     right: 'text-right',
 }
+
+/*
+|--------------------------------------------------------------------------
+| Line Height
+|--------------------------------------------------------------------------
+*/
 
 const leadingClasses: Record<TextLeading, string> = {
     none: 'leading-none',
@@ -152,12 +179,24 @@ const leadingClasses: Record<TextLeading, string> = {
     loose: 'leading-loose',
 }
 
+/*
+|--------------------------------------------------------------------------
+| Letter Spacing
+|--------------------------------------------------------------------------
+*/
+
 const trackingClasses: Record<TextTracking, string> = {
     tighter: 'tracking-tighter',
     tight: 'tracking-tight',
     normal: 'tracking-normal',
     wide: 'tracking-wide',
 }
+
+/*
+|--------------------------------------------------------------------------
+| Line Clamping
+|--------------------------------------------------------------------------
+*/
 
 const clampClasses: Record<TextClamp, string> = {
     1: 'line-clamp-1',
@@ -168,10 +207,9 @@ const clampClasses: Record<TextClamp, string> = {
     6: 'line-clamp-6',
 }
 
-
 /*
 |--------------------------------------------------------------------------
-| Classes
+| Computed Classes
 |--------------------------------------------------------------------------
 */
 
@@ -185,14 +223,11 @@ const classes = computed(() => [
     trackingClasses[props.tracking],
 
     props.uppercase && 'uppercase',
-
     props.truncate && 'truncate',
-
     props.clamp && clampClasses[props.clamp],
 
     props.hoverBrand && [
-        'transition-colors',
-        'duration-200',
+        'transition-colors duration-200',
         'group-hover:text-brand',
     ],
 ])

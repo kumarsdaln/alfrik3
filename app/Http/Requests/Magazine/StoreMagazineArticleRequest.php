@@ -44,12 +44,6 @@ class StoreMagazineArticleRequest extends FormRequest
                 'string',
             ],
 
-            'author_id' => [
-                'nullable',
-                'integer',
-                'exists:users,id',
-            ],
-
             'type' => [
                 'required',
                 'string',

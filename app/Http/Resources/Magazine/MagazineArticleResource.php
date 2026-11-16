@@ -3,6 +3,7 @@
 namespace App\Http\Resources\Magazine;
 
 use App\Http\Resources\CategoryResource;
+use App\Http\Resources\ContentParticipant\ParticipantResource;
 use App\Http\Resources\MediaResource;
 use App\Http\Resources\TagResource;
 use Illuminate\Http\Request;
@@ -16,7 +17,6 @@ class MagazineArticleResource extends JsonResource
             'id' => $this->id,
 
             'issue_id' => $this->issue_id,
-            'author_id' => $this->author_id,
 
             'title' => $this->title,
             'slug' => $this->slug,
@@ -46,14 +46,9 @@ class MagazineArticleResource extends JsonResource
                 ];
             }),
 
-            'author' => $this->whenLoaded('author', function () {
-                return [
-                    'id' => $this->author->id,
-                    'name' => $this->author->name,
-                    'username' => $this->author->username,
-                    'avatar' => $this->author->avatar,
-                ];
-            }),
+            'participants' => ParticipantResource::collection(
+                $this->whenLoaded('participants')
+            ),
 
             'media' => MediaResource::collection(
                 $this->whenLoaded('media')

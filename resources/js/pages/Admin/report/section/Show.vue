@@ -1,9 +1,13 @@
 <script setup lang="ts">
+    import { computed } from 'vue'
     import { Link } from '@inertiajs/vue3'
     import {
         ArrowLeft,
         Edit,
         Plus,
+        Eye,
+        Trash2,
+        Edit2,
     } from '@lucide/vue'
 
     import AppButton from '@/components/ui/AppButton.vue'
@@ -13,25 +17,38 @@
     import TableLayout from '@/layouts/table/TableLayout.vue'
 
     import {
-        edit,
+        edit as editSection,
+        index as sectionIndex,
     } from '@/routes/admin/report/sections'
 
-    import { index as sectionIndex } from '@/routes/admin/report/sections'
+    import {
+        create as createBlock,
+        show as showBlock,
+        edit as editBlock,
+        destroy as deleteBlock,
+    } from '@/routes/admin/report/sections/blocks'
 
     import type {
         Report,
         ReportSection,
         ReportContentBlock,
     } from '@/types/report'
+    import BackButton from '@/components/ui/BackButton.vue'
+    import Button from '@/components/ui/button/Button.vue'
 
     interface Props {
         report: Report
-        section: ReportSection & {
-            content_blocks?: ReportContentBlock[]
+
+        section: {
+            data: ReportSection & {
+                blocks?: ReportContentBlock[]
+            }
         }
     }
 
     const props = defineProps<Props>()
+
+    const blocks = computed(() => props.section.data.blocks ?? [])
 
     const columns = [
         {
@@ -60,73 +77,94 @@
             align: 'right' as const,
         },
     ]
+
+    const createBlockUrl = computed(() =>
+        createBlock({
+            report: props.report.id,
+            section: props.section.data.id,
+        }).url
+    )
+
+    const sectionIndexUrl = computed(() =>
+        sectionIndex({
+            report: props.report.id,
+        }).url
+    )
+
+    const sectionEditUrl = computed(() =>
+        editSection({
+            report: props.report.id,
+            section: props.section.data.id,
+        }).url
+    )
+
+    const blockActions = (block: ReportContentBlock) => [
+        {
+            label: 'View',
+            icon: Eye,
+            href: showBlock({
+                report: props.report.id,
+                section: props.section.data.id,
+                block: block.id,
+            }).url,
+        },
+        {
+            label: 'Edit',
+            icon: Edit,
+            href: editBlock({
+                report: props.report.id,
+                section: props.section.data.id,
+                block: block.id,
+            }).url,
+        },
+        {
+            label: 'Delete',
+            icon: Trash2,
+            href: deleteBlock({
+                report: props.report.id,
+                section: props.section.data.id,
+                block: block.id,
+            }).url,
+            method: 'delete',
+            confirm: true,
+        },
+    ]
 </script>
 
 <template>
     <TableLayout>
         <template #header>
-            <div class="flex items-center justify-between gap-4 py-5">
+            <div class="flex items-center justify-between gap-4 border-b py-5">
                 <div class="flex items-center gap-4">
-                    <Link :href="sectionIndex({
-                        report: props.report.id,
-                    }).url
-                        ">
-                        <AppButton variant="ghost" size="icon" type="button">
-                            <ArrowLeft class="size-4" />
-                        </AppButton>
-                    </Link>
+                    <BackButton />
 
-                    <Heading title="Report Section" :description="props.report.title" />
+                    <Heading :title="section.data.title" :description="section.data.subtitle" />
                 </div>
-
-                <Link :href="edit({
-                    report: props.report.id,
-                    section: props.section.id,
-                }).url
-                    ">
-                    <AppButton>
-                        <Edit class="mr-2 size-4" />
+                <Button variant="outline" as-child class="gap-2">
+                    <Link :href="editSection({
+                        report: props.report.id,
+                        section: props.section.data.id,
+                    }).url">
+                        <Edit2 class="size-4" />
                         Edit Section
-                    </AppButton>
-                </Link>
+                    </Link>
+                </Button>
             </div>
         </template>
 
         <div class="space-y-8 py-6">
             <!-- Section Information -->
-
-            <section class="rounded-lg border bg-background">
-                <div class="border-b px-6 py-5">
-                    <div class="flex items-start justify-between gap-4">
-                        <div class="min-w-0">
-                            <p class="mb-2 text-sm font-medium text-muted-foreground">
-                                Section {{ props.section.position + 1 }}
-                            </p>
-
-                            <h2 class="text-xl font-semibold">
-                                {{ props.section.title }}
-                            </h2>
-
-                            <p v-if="props.section.subtitle" class="mt-2 text-sm text-muted-foreground">
-                                {{ props.section.subtitle }}
-                            </p>
-                        </div>
-                    </div>
+            <div>
+                <div v-if="section.data.content" class="prose max-w-none dark:prose-invert">
+                    {{ section.data.content }}
                 </div>
 
-                <div class="px-6 py-6">
-                    <div v-if="props.section.content" class="prose max-w-none dark:prose-invert">
-                        {{ props.section.content }}
-                    </div>
-
-                    <div v-else class="py-8 text-center text-sm text-muted-foreground">
-                        No section content has been added.
-                    </div>
+                <div v-else class="py-8 text-center text-sm text-muted-foreground">
+                    No section content has been added.
                 </div>
-            </section>
+            </div>
 
             <!-- Content Blocks -->
-
             <section>
                 <div class="mb-4 flex items-center justify-between gap-4">
                     <div>
@@ -135,28 +173,31 @@
                         </h2>
 
                         <p class="mt-1 text-sm text-muted-foreground">
-                            Manage the content blocks that make up this
-                            section.
+                            Manage the content blocks that make up this section.data.
                         </p>
                     </div>
-
-                    <AppButton>
-                        <Plus class="mr-2 size-4" />
-                        Add Block
-                    </AppButton>
+                    <Button as-child class="gap-2">
+                        <Link :href="createBlock({
+                            report: props.report.id,
+                            section: props.section.data.id,
+                        }).url">
+                            <Plus class="size-4" />
+                            Add Block
+                        </Link>
+                    </Button>
                 </div>
 
-                <div v-if="props.section.content_blocks?.length" class="rounded-lg border bg-background">
-                    <AppTable :columns="columns" :data="props.section.content_blocks">
+                <div v-if="blocks.length" class="border bg-background">
+                    <AppTable :columns="columns" :data="blocks">
                         <template #cell-position="{ row }">
                             <span class="text-sm text-muted-foreground">
-                                {{ row.position + 1 }}
+                                {{ row.position }}
                             </span>
                         </template>
 
                         <template #cell-type="{ row }">
                             <span class="text-sm font-medium">
-                                {{ row.type }}
+                                {{ typeof row.type === 'object' ? row.type.label : row.type }}
                             </span>
                         </template>
 
@@ -181,24 +222,26 @@
                         </template>
 
                         <template #cell-actions="{ row }">
-                            <AppTableActions :actions="[]" />
+                            <AppTableActions :actions="blockActions(row)" />
                         </template>
                     </AppTable>
                 </div>
 
-                <div v-else class="rounded-lg border bg-background px-6 py-12 text-center">
-                    <p class="font-medium">
+                <div v-else class="border bg-background px-6 py-12 text-center">
+                    <h3 class="font-medium">
                         No content blocks yet
-                    </p>
+                    </h3>
 
                     <p class="mt-1 text-sm text-muted-foreground">
-                        Add content blocks to build this section.
+                        Add content blocks to build this section.data.
                     </p>
 
-                    <AppButton class="mt-4">
-                        <Plus class="mr-2 size-4" />
-                        Add Block
-                    </AppButton>
+                    <Link :href="createBlockUrl" class="mt-4 inline-flex">
+                        <AppButton>
+                            <Plus class="mr-2 size-4" />
+                            Add Block
+                        </AppButton>
+                    </Link>
                 </div>
             </section>
         </div>

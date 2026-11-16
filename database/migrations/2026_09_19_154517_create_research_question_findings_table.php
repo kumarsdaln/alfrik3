@@ -16,7 +16,7 @@ return new class extends Migration
                 ->constrained('research_questions')
                 ->cascadeOnDelete();
 
-            $table->foreignId('finding_id')
+            $table->foreignId('research_finding_id')
                 ->constrained('research_findings')
                 ->cascadeOnDelete();
 
@@ -27,7 +27,7 @@ return new class extends Migration
 
             $table->primary([
                 'question_id',
-                'finding_id',
+                'research_finding_id',
             ]);
 
             $table->index([

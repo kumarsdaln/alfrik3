@@ -12,6 +12,7 @@ use App\Http\Requests\Research\UpdateResearchRequest;
 use App\Http\Resources\Research\ResearchResource;
 use App\Models\Research\Research;
 use App\Models\User;
+use App\Support\Breadcrumbs\BreadcrumbBuilder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -22,7 +23,13 @@ class ResearchController extends Controller
     public function index(Request $request): Response
     {
         $researches = Research::query()
-            ->with('author')
+            ->with([
+                'participants.user',
+                'participants.role',
+                'categories',
+                'tags',
+            ])
+            ->latest()
             ->when(
                 $request->filled('search'),
                 fn($query) => $query->where(function ($query) use ($request) {
@@ -106,9 +113,6 @@ class ResearchController extends Controller
         return Inertia::render('admin/research/Create', [
             'statusOptions' => ResearchStatus::dropdown(),
             'typeOptions' => ResearchType::dropdown(),
-            'authors' => User::query()
-                ->orderBy('name')
-                ->get(['id', 'name']),
         ]);
     }
 
@@ -129,24 +133,34 @@ class ResearchController extends Controller
 
     public function show(Research $research): Response
     {
-        $research->load('author');
+        $research->load([
+            'participants.user',
+            'participants.role',
+            'categories',
+            'tags',
+            'sources',
+            'questions',
+            'findings',
+            'members',
+            'methodology',
+        ]);
 
         return Inertia::render('admin/research/Show', [
             'research' => new ResearchResource($research),
+            'breadcrumbs' => BreadcrumbBuilder::make()
+                ->admin()
+                ->add('Research', route('admin.research.index'))
+                ->add($research->title)
+                ->toArray(),
         ]);
     }
 
     public function edit(Research $research): Response
     {
-        $research->load('author');
-
         return Inertia::render('admin/research/Edit', [
             'research' => new ResearchResource($research),
             'statusOptions' => ResearchStatus::dropdown(),
             'typeOptions' => ResearchType::dropdown(),
-            'authors' => User::query()
-                ->orderBy('name')
-                ->get(['id', 'name']),
         ]);
     }
 

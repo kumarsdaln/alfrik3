@@ -40,7 +40,7 @@ Route::middleware(['auth', 'verified'])
             });
 
         // Content Participants
-        Route::prefix('{type}/{content}')
+        Route::prefix('{type}/{id}')
             ->controller(ContentParticipantController::class)
             ->group(function () {
                 Route::get('/', 'index')

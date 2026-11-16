@@ -9,6 +9,7 @@ use App\Http\Resources\Research\ResearchResource;
 use App\Http\Resources\SeoMetadataResource;
 use App\Models\Research\Research;
 use App\Support\Breadcrumbs\BreadcrumbBuilder;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -20,57 +21,34 @@ class ResearchController extends Controller
      */
     public function index(Request $request): Response
     {
-        $activeType = trim(
-            (string) $request->query('type', '')
-        );
-
-        $search = trim(
-            (string) $request->query('search', '')
-        );
+        $activeType = trim((string) $request->query('type', ''));
+        $search = trim((string) $request->query('search', ''));
 
         /*
         |--------------------------------------------------------------------------
-        | Research Query
+        | Base Research Query
         |--------------------------------------------------------------------------
         */
 
         $query = Research::query()
             ->where('status', ResearchStatus::Published)
-            ->with([
-                'author:id,name',
-                'media',
-            ])
+            ->where(function (Builder $query) {
+                $query->whereNull('published_at')
+                    ->orWhere('published_at', '<=', now());
+            })
+            ->with($this->researchRelations())
             ->when(
                 $activeType !== '',
-                fn($query) => $query->where(
-                    'type',
-                    $activeType
-                )
+                fn(Builder $query) => $query->where('type', $activeType)
             )
             ->when(
                 $search !== '',
-                fn($query) => $query->where(function ($query) use ($search) {
+                fn(Builder $query) => $query->where(function (Builder $query) use ($search) {
                     $query
-                        ->where(
-                            'title',
-                            'ilike',
-                            "%{$search}%"
-                        )
-                        ->orWhere(
-                            'subtitle',
-                            'ilike',
-                            "%{$search}%"
-                        )
-                        ->orWhere(
-                            'summary',
-                            'ilike',
-                            "%{$search}%"
-                        )
-                        ->orWhere(
-                            'description',
-                            'ilike',
-                            "%{$search}%"
-                        );
+                        ->where('title', 'ilike', "%{$search}%")
+                        ->orWhere('subtitle', 'ilike', "%{$search}%")
+                        ->orWhere('summary', 'ilike', "%{$search}%")
+                        ->orWhere('description', 'ilike', "%{$search}%");
                 })
             )
             ->orderByDesc('published_at')
@@ -80,10 +58,6 @@ class ResearchController extends Controller
         |--------------------------------------------------------------------------
         | Featured Research
         |--------------------------------------------------------------------------
-        |
-        | Only show featured research when the user is browsing
-        | the main research page without filters.
-        |
         */
 
         $featured = null;
@@ -92,31 +66,26 @@ class ResearchController extends Controller
             $featured = Research::query()
                 ->where('status', ResearchStatus::Published)
                 ->where('featured', true)
-                ->with([
-                    'author:id,name',
-                    'media',
-                ])
+                ->where(function (Builder $query) {
+                    $query->whereNull('published_at')
+                        ->orWhere('published_at', '<=', now());
+                })
+                ->with($this->researchRelations())
                 ->orderByDesc('published_at')
                 ->orderByDesc('created_at')
                 ->first();
 
-            /*
-            |--------------------------------------------------------------------------
-            | Fallback to Latest Published Research
-            |--------------------------------------------------------------------------
-            */
-
-            if (! $featured) {
-                $featured = Research::query()
-                    ->where('status', ResearchStatus::Published)
-                    ->with([
-                        'author:id,name',
-                        'media',
-                    ])
-                    ->orderByDesc('published_at')
-                    ->orderByDesc('created_at')
-                    ->first();
-            }
+            // Fallback to latest published research.
+            $featured ??= Research::query()
+                ->where('status', ResearchStatus::Published)
+                ->where(function (Builder $query) {
+                    $query->whereNull('published_at')
+                        ->orWhere('published_at', '<=', now());
+                })
+                ->with($this->researchRelations())
+                ->orderByDesc('published_at')
+                ->orderByDesc('created_at')
+                ->first();
         }
 
         /*
@@ -128,9 +97,7 @@ class ResearchController extends Controller
         return Inertia::render('research/Index', [
             'researches' => Inertia::scroll(
                 fn() => ResearchResource::collection(
-                    $query
-                        ->paginate(12)
-                        ->withQueryString()
+                    $query->paginate(12)->withQueryString()
                 )
             ),
 
@@ -138,19 +105,7 @@ class ResearchController extends Controller
                 ? new ResearchResource($featured)
                 : null,
 
-            /*
-            |--------------------------------------------------------------------------
-            | Research Types
-            |--------------------------------------------------------------------------
-            */
-
             'typeOptions' => ResearchType::dropdown(),
-
-            /*
-            |--------------------------------------------------------------------------
-            | Filters
-            |--------------------------------------------------------------------------
-            */
 
             'filters' => [
                 'type' => $activeType,
@@ -167,92 +122,137 @@ class ResearchController extends Controller
     /**
      * Display a single published research.
      */
+
     public function show(Research $research): Response
     {
-        abort_unless(
-            $this->isLive($research),
-            404
-        );
+        abort_unless($this->isLive($research), 404);
 
         /*
-        |--------------------------------------------------------------------------
-        | Research
-        |--------------------------------------------------------------------------
-        */
+    |--------------------------------------------------------------------------
+    | Research Details
+    |--------------------------------------------------------------------------
+    */
 
         $research->load([
-            'author:id,name',
-            'media',
+            ...$this->researchRelations(),
+
             'methodology',
-            'sources' => fn($query) => $query
-                ->orderBy('position'),
-            'questions' => fn($query) => $query
-                ->orderBy('position'),
-            'findings' => fn($query) => $query
-                ->orderBy('position'),
-            'evidence' => fn($query) => $query
-                ->orderBy('position'),
-            'members',
+
+            'sources' => fn($query) => $query->orderBy('position'),
+
+            'questions' => fn($query) => $query->orderBy('position'),
+
+            'findings' => fn($query) => $query->orderBy('position'),
+
+            'evidence' => fn($query) => $query->orderBy('position'),
         ]);
 
         /*
-        |--------------------------------------------------------------------------
-        | Related Research
-        |--------------------------------------------------------------------------
-        |
-        | Related research is based on the same research type.
-        |
-        */
+    |--------------------------------------------------------------------------
+    | Related Research
+    |--------------------------------------------------------------------------
+    */
+
+        $categoryIds = $research->categories->pluck('id');
+        $tagIds = $research->tags->pluck('id');
 
         $related = Research::query()
             ->where('status', ResearchStatus::Published)
-            ->where('id', '!=', $research->id)
-            ->where(
-                'type',
-                $research->type instanceof ResearchType
-                    ? $research->type->value
-                    : $research->type
-            )
-            ->with([
-                'author:id,name',
-                'media',
-            ])
+            ->where(function (Builder $query) {
+                $query->whereNull('published_at')
+                    ->orWhere('published_at', '<=', now());
+            })
+            ->where('id', '!=', $research->getKey())
+            ->where(function (Builder $query) use (
+                $categoryIds,
+                $tagIds,
+                $research
+            ) {
+                $hasTaxonomy = false;
+
+                if ($categoryIds->isNotEmpty()) {
+                    $query->whereHas(
+                        'categories',
+                        fn($relation) => $relation->whereIn(
+                            'categories.id',
+                            $categoryIds
+                        )
+                    );
+
+                    $hasTaxonomy = true;
+                }
+
+                if ($tagIds->isNotEmpty()) {
+                    $method = $hasTaxonomy
+                        ? 'orWhereHas'
+                        : 'whereHas';
+
+                    $query->{$method}(
+                        'tags',
+                        fn($relation) => $relation->whereIn(
+                            'tags.id',
+                            $tagIds
+                        )
+                    );
+
+                    $hasTaxonomy = true;
+                }
+
+                if (! $hasTaxonomy) {
+                    $query->where('type', $research->type);
+                }
+            })
+            ->with($this->researchRelations())
             ->orderByDesc('published_at')
             ->orderByDesc('created_at')
             ->take(3)
             ->get();
 
         /*
-        |--------------------------------------------------------------------------
-        | Response
-        |--------------------------------------------------------------------------
-        */
+    |--------------------------------------------------------------------------
+    | Response
+    |--------------------------------------------------------------------------
+    */
 
         return Inertia::render('research/Show', [
             'research' => new ResearchResource($research),
 
-            'related' => ResearchResource::collection(
-                $related
-            ),
+            'related' => ResearchResource::collection($related),
 
             'breadcrumbs' => BreadcrumbBuilder::make()
                 ->home()
-                ->add(
-                    'Research',
-                    route('research.index')
-                )
+                ->add('Research', route('research.index'))
                 ->add($research->title)
                 ->toArray(),
 
-            /*
-            |--------------------------------------------------------------------------
-            | SEO
-            |--------------------------------------------------------------------------
-            */
-
-            'meta_data' => $research->seo ? new SeoMetadataResource($research->seo) : null,
+            'meta_data' => $research->seo
+                ? new SeoMetadataResource($research->seo)
+                : null,
         ]);
     }
+
+
+    /**
+     * Shared relationships used by public research listings.
+     */
+
+    private function researchRelations(): array
+    {
+        return [
+            'participants' => fn($query) => $query
+                ->with([
+                    'user:id,name,username,avatar',
+                    'role:id,name,slug',
+                ])
+                ->orderBy('position'),
+
+            'media',
+            'categories',
+            'tags',
+            'seo',
+        ];
+    }
+
 
     /**
      * Determine whether research is publicly available.

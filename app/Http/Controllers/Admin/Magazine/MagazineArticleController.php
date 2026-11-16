@@ -30,7 +30,7 @@ class MagazineArticleController extends Controller
     ): Response {
         $articles = $issue->articles()
             ->with([
-                'author',
+                'participants',
                 'categories',
                 'tags',
                 'media',

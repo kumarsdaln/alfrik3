@@ -23,9 +23,9 @@ class ContentParticipantController extends Controller
     public function index(
         Request $request,
         string $type,
-        int $contentId,
+        int $id,
     ): Response {
-        $content = $this->resolveContent($type, $contentId);
+        $content = $this->resolveContent($type, $id);
 
         // $this->authorize('update', $content);
 
@@ -76,9 +76,9 @@ class ContentParticipantController extends Controller
     public function store(
         Request $request,
         string $type,
-        int $contentId,
+        int $id,
     ): RedirectResponse {
-        $content = $this->resolveContent($type, $contentId);
+        $content = $this->resolveContent($type, $id);
 
         // $this->authorize('update', $content);
 
@@ -135,10 +135,10 @@ class ContentParticipantController extends Controller
     public function update(
         Request $request,
         string $type,
-        int $contentId,
+        int $id,
         int $participantId,
     ): RedirectResponse {
-        $content = $this->resolveContent($type, $contentId);
+        $content = $this->resolveContent($type, $id);
 
         $this->authorize('update', $content);
 
@@ -183,10 +183,10 @@ class ContentParticipantController extends Controller
      */
     public function destroy(
         string $type,
-        int $contentId,
+        int $id,
         int $participantId,
     ): RedirectResponse {
-        $content = $this->resolveContent($type, $contentId);
+        $content = $this->resolveContent($type, $id);
 
         // Prevent deleting an assignment belonging to another content item.
         $participant = $content->participants()

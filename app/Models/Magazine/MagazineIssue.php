@@ -2,8 +2,10 @@
 
 namespace App\Models\Magazine;
 
+use App\Enums\Magazine\MagazineArticleStatus;
 use App\Enums\Magazine\MagazineIssueStatus;
 use App\Traits\HasMedia;
+use App\Traits\HasParticipants;
 use App\Traits\HasSeo;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Scope;
@@ -17,22 +19,20 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'title',
     'slug',
     'subtitle',
+    'description',
     'volume',
     'issue_number',
     'cover_date',
     'published_at',
-    'description',
-    'editor',
-    'file_path',
-    'file_size',
-    'file_type',
-    'download_count',
     'status',
     'featured',
 ])]
 class MagazineIssue extends Model
 {
-    use HasMedia, HasSeo;
+    use HasMedia;
+    use HasSeo;
+    use HasParticipants;
+
     /*
     |--------------------------------------------------------------------------
     | Casts
@@ -46,8 +46,6 @@ class MagazineIssue extends Model
             'issue_number' => 'integer',
             'cover_date' => 'date',
             'published_at' => 'datetime',
-            'file_size' => 'integer',
-            'download_count' => 'integer',
             'status' => MagazineIssueStatus::class,
             'featured' => 'boolean',
         ];
@@ -58,32 +56,23 @@ class MagazineIssue extends Model
     | Scopes
     |--------------------------------------------------------------------------
     */
+
     #[Scope]
-    protected function published(Builder $query): Builder
+    protected function published(Builder $query): void
     {
-        return $query
-            ->where(
-                'status',
-                MagazineIssueStatus::Published
-            )
+        $query
+            ->where('status', MagazineIssueStatus::Published)
             ->where(function (Builder $query) {
                 $query
                     ->whereNull('published_at')
-                    ->orWhere(
-                        'published_at',
-                        '<=',
-                        now()
-                    );
+                    ->orWhere('published_at', '<=', now());
             });
     }
 
     #[Scope]
-    protected function featured(Builder $query): Builder
+    protected function featured(Builder $query): void
     {
-        return $query->where(
-            'featured',
-            true
-        );
+        $query->where('featured', true);
     }
 
     /*
@@ -94,10 +83,7 @@ class MagazineIssue extends Model
 
     public function magazine(): BelongsTo
     {
-        return $this->belongsTo(
-            Magazine::class,
-            'magazine_id',
-        );
+        return $this->belongsTo(Magazine::class);
     }
 
     public function articles(): HasMany
@@ -105,6 +91,18 @@ class MagazineIssue extends Model
         return $this->hasMany(
             MagazineArticle::class,
             'issue_id',
+            'id',
         )->orderBy('position');
+    }
+
+    public function publishedArticles(): HasMany
+    {
+        return $this->articles()
+            ->where('status', MagazineArticleStatus::Published)
+            ->where(function (Builder $query) {
+                $query
+                    ->whereNull('published_at')
+                    ->orWhere('published_at', '<=', now());
+            });
     }
 }

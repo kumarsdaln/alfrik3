@@ -16,123 +16,153 @@ use Inertia\Response;
 class InterviewController extends Controller
 {
     /**
+     * Number of interviews per page.
+     */
+    private const PER_PAGE = 12;
+
+    /**
      * Display published interviews.
      */
     public function index(Request $request): Response
     {
-        $itemsOnPage = 12;
-
-        $pipes = [
-            new SearchFilter(
-                'title',
-                $request->input('search')
-            ),
-        ];
+        $filters = $request->validate([
+            'search' => ['nullable', 'string', 'max:150'],
+            'type' => ['nullable', 'string', 'max:50'],
+        ]);
 
         $query = Pipeline::send(Interview::query())
-            ->through($pipes)
+            ->through([
+                new SearchFilter(
+                    'title',
+                    $filters['search'] ?? null,
+                ),
+            ])
             ->thenReturn();
-
-        if ($request->filled('type')) {
-            $query->where(
-                'interview_type',
-                $request->input('type')
-            );
-        }
 
         $query
             ->where('status', 'published')
-            ->with([
-                'participants:id,interview_id,user_id,role',
-                'participants.user:id,name,username,avatar',
-
-                'media:id,mediable_type,mediable_id,collection,name,file_name,mime_type,extension,size,path,alt,metadata',
-            ]);
+            ->when(
+                !empty($filters['type']),
+                fn ($query) => $query->where(
+                    'interview_type',
+                    $filters['type'],
+                ),
+            )
+            ->with($this->listingRelations());
 
         /*
-     * Featured interview
-     */
+         * Featured interview.
+         *
+         * If you have an is_featured column, add:
+         * ->where('is_featured', true)
+         *
+         * Currently, the latest published interview
+         * is used as the featured interview.
+         */
         $featured = Interview::query()
             ->where('status', 'published')
-            // ->where('is_featured', true)
-            ->with([
-                'participants:id,interview_id,user_id,role',
-                'participants.user:id,name,username,avatar',
-
-                'media:id,mediable_type,mediable_id,collection,name,file_name,mime_type,extension,size,path,alt,metadata',
-            ])
+            ->with($this->listingRelations())
             ->latest('published_at')
+            ->latest('id')
             ->first();
 
         return Inertia::render('interviews/Index', [
-            /*
-         * Featured interview
-         */
             'featured' => $featured
                 ? InterviewResource::make($featured)
                 : null,
 
-            /*
-         * Interview listing
-         */
             'interviews' => Inertia::scroll(
-                fn() => InterviewResource::collection(
+                fn () => InterviewResource::collection(
                     $query
                         ->latest('published_at')
-                        ->paginate($itemsOnPage)
+                        ->latest('id')
+                        ->paginate(self::PER_PAGE)
                         ->withQueryString()
                 )
             ),
 
-            /*
-         * Current filters
-         */
             'filters' => [
-                'search' => $request->input('search', ''),
-                'type' => $request->input('type', ''),
+                'search' => $filters['search'] ?? '',
+                'type' => $filters['type'] ?? '',
             ],
 
-            /*
-         * Interview types
-         */
             'types' => InterviewType::dropdown(),
 
-            /*
-         * Breadcrumbs
-         */
             'breadcrumbs' => BreadcrumbBuilder::make()
                 ->home()
-                ->add('Interview')
+                ->add('Interviews')
                 ->toArray(),
         ]);
     }
 
     /**
-     * Display the specified interview.
+     * Display a published interview.
      */
-    public function show(Interview $interview)
+    public function show(Interview $interview): Response
     {
-        $interview->load([
-            'participants:id,interview_id,user_id,role',
-            'participants.user:id,name,username,avatar',
+        abort_unless(
+            $interview->status === 'published',
+            404,
+        );
 
-            'questions:id,interview_id,asked_by,question,position',
-            'questions.asker:id,name,username,avatar',
-
-            'questions.answers:id,question_id,answered_by,answer',
-            'questions.answers.answerer:id,name,username,avatar',
-
-            'media:id,mediable_type,mediable_id,collection,name,path,file_name,mime_type,extension,size,alt,metadata',
-        ]);
+        $interview->load($this->detailRelations());
 
         return Inertia::render('interviews/Show', [
+            'interview' => InterviewResource::make($interview),
+
             'breadcrumbs' => BreadcrumbBuilder::make()
                 ->home()
-                ->add('Interview', route('interviews.index'))
+                ->add('Interviews', route('interviews.index'))
                 ->add($interview->title)
                 ->toArray(),
-
-            'interview' => InterviewResource::make($interview),
         ]);
+    }
+
+    /**
+     * Relationships required for interview listings.
+     */
+    private function listingRelations(): array
+    {
+        return [
+            'participants:id,participantable_type,participantable_id,user_id,participant_role_id,position,is_primary,contribution',
+
+            'participants.user:id,name,username,avatar',
+
+            'participants.role:id,name,slug',
+
+            'media:id,mediable_type,mediable_id,collection,name,file_name,mime_type,extension,size,path,alt,metadata',
+        ];
+    }
+
+    /**
+     * Relationships required for interview details.
+     */
+    private function detailRelations(): array
+    {
+        return [
+            ...$this->listingRelations(),
+
+            'questions' => fn ($query) => $query
+                ->select([
+                    'id',
+                    'interview_id',
+                    'asked_by',
+                    'question',
+                    'position',
+                ])
+                ->orderBy('position'),
+
+            'questions.asker:id,name,username,avatar',
+
+            'questions.answers' => fn ($query) => $query
+                ->select([
+                    'id',
+                    'question_id',
+                    'answered_by',
+                    'answer',
+                ]),
+
+            'questions.answers.answerer:id,name,username,avatar',
+        ];
     }
 }

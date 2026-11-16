@@ -19,6 +19,7 @@ import TableLayout from '@/layouts/table/TableLayout.vue'
     import { index as manageMedia } from '@/routes/admin/media'
     import { index as manageCategory } from '@/routes/admin/categories/assignment'
     import { index as manageTags } from '@/routes/admin/tags/assignment'
+    import { index as manageParticipants } from '@/routes/admin/participants'
     import { edit as manageMethodology } from '@/routes/admin/research/methodology';
     import { index as manageSources } from '@/routes/admin/research/sources';
     import { index as manageQuestions } from '@/routes/admin/research/questions';
@@ -43,6 +44,9 @@ import type {
 } from '@/types'
 
 import type { TableAction } from '@/components/ui/AppTableActions.vue'
+import ParticipantCell from '@/components/datadisplay/ParticipantCell.vue'
+import CategoryCell from '@/components/datadisplay/CategoryCell.vue'
+import TagCell from '@/components/datadisplay/TagCell.vue'
 
 interface Props {
     researches: Pagination<Research>
@@ -138,8 +142,18 @@ const columns = [
         width: '180px',
     },
     {
-        key: 'author',
-        label: 'Author',
+        key: 'participants',
+        label: 'Participants',
+        width: '180px',
+    },
+    {
+        key: 'categories',
+        label: 'Categories',
+        width: '180px',
+    },
+    {
+        key: 'tags',
+        label: 'Tags',
         width: '180px',
     },
     {
@@ -209,6 +223,12 @@ function getResearchActions(research: Research): TableAction[] {
         },
 
         {
+            label: 'Manage Participants',
+            icon: Users,
+            href: manageParticipants({type:'research', id:research.id}).url,
+        },
+
+        {
             label: 'Manage Methodology',
             icon: ClipboardList,
             href: manageMethodology(research.id).url,
@@ -252,6 +272,8 @@ function getResearchActions(research: Research): TableAction[] {
         },
     ]
 }
+
+console.log('props.researches', props.researches)
 </script>
 
 <template>
@@ -326,15 +348,17 @@ function getResearchActions(research: Research): TableAction[] {
                     </span>
                 </template>
 
-                <!-- Author -->
-                <template #cell-author="{ value }">
-                    <span v-if="value">
-                        {{ value.name }}
-                    </span>
+                <!-- Participants -->
+                <template #cell-participants="{ value }">
+                    <ParticipantCell :participants="value" :max-visible="3" />
+                </template>
 
-                    <span v-else class="text-sm text-muted-foreground">
-                        —
-                    </span>
+                <template #cell-categories="{ value }">
+                    <CategoryCell :categories="value" :max-visible="3" />
+                </template>
+
+                <template #cell-tags="{ value }">
+                    <TagCell :tags="value" :max-visible="3" />
                 </template>
 
                 <!-- Status -->

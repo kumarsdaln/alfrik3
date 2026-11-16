@@ -11,97 +11,53 @@ return new class extends Migration
         Schema::create('magazine_articles', function (Blueprint $table) {
             $table->id();
 
-            /*
-            |--------------------------------------------------------------------------
-            | Relationships
-            |--------------------------------------------------------------------------
-            */
-
+            // Parent issue
             $table->foreignId('issue_id')
                 ->constrained('magazine_issues')
                 ->cascadeOnDelete();
 
-            /*
-            |--------------------------------------------------------------------------
-            | Identity
-            |--------------------------------------------------------------------------
-            */
-
+            // Identity
             $table->string('title');
-            $table->string('slug')->unique();
+            $table->string('slug');
             $table->string('subtitle')->nullable();
 
-            /*
-            |--------------------------------------------------------------------------
-            | Content
-            |--------------------------------------------------------------------------
-            */
-
+            // Editorial content
             $table->text('excerpt')->nullable();
             $table->longText('content')->nullable();
 
-            /*
-            |--------------------------------------------------------------------------
-            | Editorial
-            |--------------------------------------------------------------------------
-            */
-
+            // Article classification
             $table->string('type', 50)->default('article');
-            $table->string('byline')->nullable();
 
-            /*
-            |--------------------------------------------------------------------------
-            | Ordering
-            |--------------------------------------------------------------------------
-            */
-
+            // Ordering within an issue
             $table->unsignedInteger('position')->default(0);
 
-            /*
-            |--------------------------------------------------------------------------
-            | Featured
-            |--------------------------------------------------------------------------
-            */
-
-            $table->boolean('featured')->default(false)->index();
-
-            /*
-            |--------------------------------------------------------------------------
-            | Publishing
-            |--------------------------------------------------------------------------
-            */
-
-            $table->string('status', 30)->default('draft')->index();
-            $table->timestamp('published_at')->nullable()->index();
-
-            /*
-            |--------------------------------------------------------------------------
-            | Engagement
-            |--------------------------------------------------------------------------
-            */
-
-            $table->unsignedBigInteger('views')->default(0);
-
-            /*
-            |--------------------------------------------------------------------------
-            | Reading Information
-            |--------------------------------------------------------------------------
-            */
-
-            $table->unsignedSmallInteger('reading_time')->nullable();
+            // Publishing
+            $table->string('status', 30)->default('draft');
+            $table->boolean('featured')->default(false);
+            $table->timestamp('published_at')->nullable();
 
             $table->timestamps();
 
-            /*
-            |--------------------------------------------------------------------------
-            | Indexes
-            |--------------------------------------------------------------------------
-            */
+            // Same slug may appear in different issues
+            $table->unique(
+                ['issue_id', 'slug'],
+                'magazine_articles_issue_slug_unique'
+            );
 
+            // Table of contents
             $table->index(['issue_id', 'position']);
+
+            // Public article listings
             $table->index(['status', 'published_at']);
-            $table->index(['issue_id', 'status']);
-            $table->index('type');
+
+            // Issue-specific published articles
+            $table->index(['issue_id', 'status', 'position']);
+
+            // Article type filtering
+            $table->index(['type', 'status']);
+
+            // Featured article listings
+            $table->index(['featured', 'status']);
         });
     }
 

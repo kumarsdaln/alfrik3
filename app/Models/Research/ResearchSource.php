@@ -11,7 +11,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'research_id',
     'title',
     'source_type',
-    'author',
     'publisher',
     'url',
     'published_at',

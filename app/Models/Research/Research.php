@@ -4,23 +4,18 @@ namespace App\Models\Research;
 
 use App\Enums\Research\ResearchStatus;
 use App\Enums\Research\ResearchType;
-use App\Models\Category;
-use App\Models\ContentParticipant;
-use App\Models\Media;
 use App\Models\Report\Report;
-use App\Models\SeoMetadata;
-use App\Models\Tag;
-use App\Models\User;
+use App\Traits\HasCategories;
+use App\Traits\HasMedia;
+use App\Traits\HasParticipants;
+use App\Traits\HasSeo;
+use App\Traits\HasTags;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
-use Illuminate\Database\Eloquent\Relations\MorphMany;
-use Illuminate\Database\Eloquent\Relations\MorphOne;
-use Illuminate\Database\Eloquent\Relations\MorphToMany;
 
 #[Fillable([
     'title',
@@ -30,7 +25,6 @@ use Illuminate\Database\Eloquent\Relations\MorphToMany;
     'summary',
     'type',
     'status',
-    'author_id',
     'featured',
     'published_at',
 ])]
@@ -38,6 +32,7 @@ use Illuminate\Database\Eloquent\Relations\MorphToMany;
 class Research extends Model
 {
     use HasFactory;
+    use HasCategories, HasTags, HasMedia, HasSeo, HasParticipants;
 
     protected function casts(): array
     {
@@ -47,39 +42,6 @@ class Research extends Model
             'featured' => 'boolean',
             'published_at' => 'datetime',
         ];
-    }
-
-    public function author(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'author_id');
-    }
-
-    public function participants(): MorphMany
-    {
-        return $this->morphMany(
-            ContentParticipant::class,
-            'participantable'
-        )->orderBy('position');
-    }
-
-    public function media(): MorphMany
-    {
-        return $this->morphMany(Media::class, 'mediable');
-    }
-
-    public function categories(): MorphToMany
-    {
-        return $this->morphToMany(Category::class, 'categorizable');
-    }
-
-    public function tags(): MorphToMany
-    {
-        return $this->morphToMany(Tag::class, 'taggable');
-    }
-
-    public function seo(): MorphOne
-    {
-        return $this->morphOne(SeoMetadata::class, 'seoable');
     }
 
     public function sources(): HasMany

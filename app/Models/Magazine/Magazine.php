@@ -2,16 +2,16 @@
 
 namespace App\Models\Magazine;
 
+use App\Enums\Magazine\MagazineIssueStatus;
 use App\Enums\Magazine\MagazineStatus;
-use App\Models\Category;
 use App\Traits\HasCategories;
 use App\Traits\HasMedia;
 use App\Traits\HasParticipants;
 use App\Traits\HasSeo;
 use App\Traits\HasTags;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Scope;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
@@ -26,10 +26,18 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 ])]
 class Magazine extends Model
 {
-    use HasCategories, HasTags, HasMedia, HasSeo, HasParticipants;
-    /**
-     * Attribute casts.
-     */
+    use HasCategories;
+    use HasTags;
+    use HasMedia;
+    use HasSeo;
+    use HasParticipants;
+
+    /*
+    |--------------------------------------------------------------------------
+    | Casts
+    |--------------------------------------------------------------------------
+    */
+
     protected function casts(): array
     {
         return [
@@ -45,13 +53,10 @@ class Magazine extends Model
     |--------------------------------------------------------------------------
     */
 
-    /**
-     * Scope published magazines.
-     */
     #[Scope]
-    protected function published(Builder $query): Builder
+    protected function published(Builder $query): void
     {
-        return $query
+        $query
             ->where('status', MagazineStatus::Published)
             ->where(function (Builder $query) {
                 $query
@@ -60,13 +65,10 @@ class Magazine extends Model
             });
     }
 
-    /**
-     * Scope featured magazines.
-     */
     #[Scope]
-    protected function featured(Builder $query): Builder
+    protected function featured(Builder $query): void
     {
-        return $query->where('featured', true);
+        $query->where('featured', true);
     }
 
     /*
@@ -75,13 +77,19 @@ class Magazine extends Model
     |--------------------------------------------------------------------------
     */
 
-    /**
-     * Magazine issues.
-     */
     public function issues(): HasMany
     {
-        return $this->hasMany(
-            MagazineIssue::class,
-        );
+        return $this->hasMany(MagazineIssue::class);
+    }
+
+    public function publishedIssues(): HasMany
+    {
+        return $this->issues()
+            ->where('status', MagazineIssueStatus::Published)
+            ->where(function (Builder $query) {
+                $query
+                    ->whereNull('published_at')
+                    ->orWhere('published_at', '<=', now());
+            });
     }
 }

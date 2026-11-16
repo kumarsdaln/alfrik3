@@ -6,9 +6,6 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('interviews', function (Blueprint $table) {
@@ -17,7 +14,12 @@ return new class extends Migration
             $table->string('title');
             $table->string('slug')->unique();
 
+            // Short editorial summary / excerpt
             $table->text('description')->nullable();
+
+            // Editorial content before and after the conversation
+            $table->longText('introduction')->nullable();
+            $table->longText('conclusion')->nullable();
 
             $table->string('interview_type', 30)
                 ->default('written');
@@ -27,22 +29,12 @@ return new class extends Migration
 
             $table->timestamp('published_at')->nullable();
 
-            $table->unsignedBigInteger('created_by')
-                ->nullable()
-                ->index();
-
-            $table->unsignedBigInteger('views_count')
-                ->default(0);
-
             $table->timestamps();
 
-            $table->index('status');
+            $table->index(['status', 'published_at']);
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('interviews');
